@@ -3,6 +3,8 @@ extends Node3D
 ## A first-person firearm. Shooting is hitscan with CS-style first-shot accuracy, bloom and recoil,
 ## on top of a real pistol's mechanics: chamber, magazine, slide lock, double/single-action hammer
 ## and a decocking safety. There's no ammo HUD; press T to check the magazine by feel.
+## The same node carries a bolt-action rifle: equip() swaps the weapon, and each weapon keeps its own
+## mechanical state (rounds, chamber, safety) while it's slung or holstered.
 
 signal fired(origin: Vector3, direction: Vector3)
 
@@ -61,6 +63,19 @@ var _flash_mesh: MeshInstance3D
 var _flash_t := 0.0
 var _casings: Array = []
 var _ads_toggled := false
+var _bolt_lift := 0.0
+var _bolt_back := 0.0
+var _bolt_queued := false
+var _spent_in_chamber := false
+var _reload_n := 0
+var _reload_clip := false
+var _loaded := 0
+var _swap_to: WeaponData = null
+var _swap_state := {}
+## Mechanical state of the weapons not in hand, by weapon id.
+var _states := {}
+var _sleeve_mats: Array[BaseMaterial3D] = []
+var sleeve_tint := Color.WHITE
 
 
 func _ready() -> void:
@@ -72,12 +87,90 @@ func _ready() -> void:
 	camera = n as Camera3D if n else get_viewport().get_camera_3d()
 	if data == null:
 		data = WeaponData.new()
-	mag_rounds = data.magazine_capacity
-	spare_mags = [data.magazine_capacity, data.magazine_capacity]
-	chambered = true
-	hammer_cocked = false   # carried hammer-down on a loaded chamber, the way the P38 was designed to be
+	_apply_state(_default_state(data))
 	_build_model()
 	_build_flash()
+
+
+## A fresh weapon from the armoury: full and chambered. The P38 is carried hammer-down on a loaded
+## chamber, the way it was designed to be.
+static func _default_state(d: WeaponData) -> Dictionary:
+	return {"mag_inserted": true, "mag_rounds": d.magazine_capacity, "chambered": true,
+		"hammer_cocked": d.action == "bolt", "safety_on": false, "slide_locked": false,
+		"spare_mags": [d.magazine_capacity, d.magazine_capacity] if d.detachable_magazine else []}
+
+
+func get_state() -> Dictionary:
+	return {"mag_inserted": mag_inserted, "mag_rounds": mag_rounds, "chambered": chambered,
+		"hammer_cocked": hammer_cocked, "safety_on": safety_on, "slide_locked": slide_locked,
+		"spare_mags": spare_mags.duplicate()}
+
+
+func _apply_state(st: Dictionary) -> void:
+	mag_inserted = st.get("mag_inserted", true)
+	mag_rounds = st.get("mag_rounds", data.magazine_capacity)
+	chambered = st.get("chambered", true)
+	hammer_cocked = st.get("hammer_cocked", false)
+	safety_on = st.get("safety_on", false)
+	slide_locked = st.get("slide_locked", false)
+	spare_mags.clear()
+	for r in st.get("spare_mags", []):
+		spare_mags.append(int(r))
+
+
+## The state of a weapon you carry: the one in hand, or one that's put away.
+func state_of(weapon_id: String) -> Dictionary:
+	if data and data.id == weapon_id:
+		return get_state()
+	return _states.get(weapon_id, {})
+
+
+func set_state_of(weapon_id: String, st: Dictionary) -> void:
+	if data and data.id == weapon_id:
+		_apply_state(st)
+	else:
+		_states[weapon_id] = st
+
+
+## Put the current weapon away and bring `next` up. `state` overrides what we remember of it.
+func switch_to(next: WeaponData, state := {}) -> void:
+	if next == null or (data and next.id == data.id and state.is_empty()):
+		return
+	_swap_to = next
+	_swap_state = state
+	holstered = false
+	_bolt_queued = false
+	_begin_busy("swap", 0.4)
+	SoundLib.play_2d("player/cloth_wool_move", -2.0)
+
+
+## Swap the weapon immediately (no animation).
+func equip(next: WeaponData, state := {}) -> void:
+	_states[data.id] = get_state()
+	data = next
+	_apply_state(state if not state.is_empty() else _states.get(next.id, _default_state(next)))
+	_states.erase(next.id)
+	if _model:
+		remove_child(_model)
+		_model.queue_free()
+	_parts.clear()
+	_rest.clear()
+	_sleeve_mats.clear()
+	_slide = 0.0
+	_bolt_lift = 0.0
+	_bolt_back = 0.0
+	_bloom = 0.0
+	_spent_in_chamber = false
+	_build_model()
+	_build_flash()
+	set_sleeve_tint(sleeve_tint)
+
+
+## The coat sleeves on the first-person arms follow what you're wearing.
+func set_sleeve_tint(c: Color) -> void:
+	sleeve_tint = c
+	for m in _sleeve_mats:
+		m.albedo_color = c
 
 
 func _find_player() -> Player:
@@ -97,6 +190,7 @@ func _build_model() -> void:
 	else:
 		_model = _placeholder_model()
 	add_child(_model)
+	_borrow_hands()
 	for n: String in PART_NAMES:
 		var node := _model.find_child(n, true, false) as Node3D
 		if node:
@@ -106,6 +200,24 @@ func _build_model() -> void:
 	_compute_poses()
 	if _parts.has("Hand_L"):
 		_parts["Hand_L"].visible = false
+
+
+## Long guns are modelled without arms. Take the gloved hands and sleeves from another model and put them
+## where they hold this one: right hand at the wrist of the stock, left under the fore-end.
+func _borrow_hands() -> void:
+	if data.hands_from == "" or not ResourceLoader.exists(data.hands_from):
+		return
+	var donor := (load(data.hands_from) as PackedScene).instantiate() as Node3D
+	for pair in [["Hand_R", data.hand_r_xform], ["Hand_L", data.hand_l_xform]]:
+		var h := donor.find_child(pair[0], true, false) as Node3D
+		if h == null:
+			continue
+		var xf: Transform3D = pair[1]
+		h.get_parent().remove_child(h)
+		h.owner = null
+		_model.add_child(h)
+		h.transform = xf
+	donor.free()
 
 
 ## Viewmodel materials draw squashed toward the camera (no clipping into walls) with their own FOV,
@@ -133,6 +245,8 @@ func _prepare_meshes(node: Node) -> void:
 					if Debug.args.has("gun-rough"):
 						m.roughness_texture = null
 						m.roughness = float(Debug.args["gun-rough"])
+					if m.resource_name.contains("FP_Hands"):
+						_sleeve_mats.append(m)
 					mi.set_surface_override_material(i, m)
 	for c in node.get_children():
 		_prepare_meshes(c)
@@ -152,7 +266,7 @@ func _compute_poses() -> void:
 	var f: Vector3 = _model_space(_parts.get("SightFront"), Vector3(0, 0.02, -0.12))
 	var sight_dir := (f - r).normalized()
 	var basis := Basis(Quaternion(sight_dir, Vector3.FORWARD))
-	_ads_xform = Transform3D(basis, Vector3(0, 0, -data.ads_eye_relief) - basis * r)
+	_ads_xform = Transform3D(basis, Vector3(0, -data.ads_sight_lift, -data.ads_eye_relief) - basis * r)
 
 
 func _model_space(node: Node3D, fallback: Vector3) -> Vector3:
@@ -243,6 +357,10 @@ func _process(delta: float) -> void:
 	_update_mechanics(delta)
 	_update_pose(delta)
 	_update_flash(delta)
+	# A rifleman works the bolt as soon as the shot has gone, once the trigger finger lets go.
+	if _bolt_queued and _busy == "" and _now() - _last_shot > 0.2 and not Input.is_action_pressed("fire"):
+		_bolt_queued = false
+		_begin_busy("bolt", data.bolt_time)
 	_bloom = maxf(_bloom - delta * data.bloom_recovery, 0.0)
 
 
@@ -257,7 +375,7 @@ func _handle_input() -> void:
 		_start_reload()
 	elif Input.is_action_just_pressed("check_ammo"):
 		_begin_busy("check", 1.5)
-	elif Input.is_action_just_pressed("safety") and data.has_decocker:
+	elif Input.is_action_just_pressed("safety") and (data.has_decocker or data.action == "bolt"):
 		_toggle_safety()
 	elif data.automatic and Input.is_action_pressed("fire"):
 		_pull_trigger()
@@ -273,7 +391,7 @@ func _pull_trigger() -> void:
 	var now := _now()
 	if player.sprinting or _lower > 0.5 or _retract > 0.6 or _holster_amt > 0.1:
 		return
-	if now - _last_shot < data.min_shot_interval or _pending_da >= 0.0:
+	if now - _last_shot < data.min_shot_interval or _pending_da >= 0.0 or _bolt_queued:
 		return
 	_trigger = 1.0
 	if safety_on:
@@ -302,15 +420,20 @@ func _discharge(extra_spread_deg: float) -> void:
 	_hitscan(origin, dir)
 	fired.emit(origin, dir)
 
-	# The slide cycles: it ejects, cocks the hammer, and strips the next round if there is one.
-	_slide = 1.0
-	hammer_cocked = true
-	if mag_inserted and mag_rounds > 0:
-		mag_rounds -= 1
-		chambered = true
+	if data.action == "bolt":
+		# The spent case stays in the chamber until the bolt is worked.
+		_spent_in_chamber = true
+		_bolt_queued = true
 	else:
-		# The slide stop is worked by the magazine follower, so it only holds open with a magazine in.
-		slide_locked = mag_inserted and data.holds_open_on_empty
+		# The slide cycles: it ejects, cocks the hammer, and strips the next round if there is one.
+		_slide = 1.0
+		hammer_cocked = true
+		if mag_inserted and mag_rounds > 0:
+			mag_rounds -= 1
+			chambered = true
+		else:
+			# The slide stop is worked by the magazine follower, so it only holds open with a magazine in.
+			slide_locked = mag_inserted and data.holds_open_on_empty
 
 	_bloom += data.bloom_per_shot
 	_kick = 1.0
@@ -323,7 +446,8 @@ func _discharge(extra_spread_deg: float) -> void:
 	ImpactFX.spawn_muzzle_smoke(get_tree().current_scene, muzzle_node.global_position, -camera.global_basis.z, player.velocity)
 	_flash_mesh.rotation.z = randf() * TAU
 	_flash_mesh.scale = Vector3.ONE * randf_range(0.8, 1.25)
-	_eject_casing()
+	if data.action != "bolt":
+		_eject_casing()
 
 	var enclosed := _is_enclosed()
 	SoundLib.play_2d(data.sound_shot, 0.0, Game.BUS_WORLD, 0.02)
@@ -380,7 +504,7 @@ func _is_enclosed() -> bool:
 
 
 func _eject_casing() -> void:
-	var port: Node3D = _parts.get("EjectPort", _model)
+	var port: Node3D = _parts.get("EjectPort", _parts.get("Bolt", _model))
 	var c := RigidBody3D.new()
 	c.collision_layer = Game.LAYER_DEBRIS
 	c.collision_mask = Game.LAYER_WORLD
@@ -419,6 +543,11 @@ func _eject_casing() -> void:
 
 func _toggle_safety() -> void:
 	safety_on = not safety_on
+	if data.action == "bolt":
+		# The Mauser's wing safety locks the striker. It decocks nothing.
+		SoundLib.play_2d(data.sound_safety, -6.0)
+		player.note("Safety on." if safety_on else "Safety off.", 1.6)
+		return
 	if safety_on:
 		hammer_cocked = false   # the lever decocks, dropping the hammer safely onto a blocked firing pin
 	SoundLib.play_2d(data.sound_safety, 0.0)
@@ -432,6 +561,9 @@ func _toggle_holster() -> void:
 
 
 func _start_reload() -> void:
+	if not data.detachable_magazine:
+		_start_fixed_reload()
+		return
 	var best := -1
 	_reload_from = -1
 	for i in spare_mags.size():
@@ -448,6 +580,26 @@ func _start_reload() -> void:
 		return
 	_reload_empty = slide_locked or not chambered
 	_begin_busy("reload", data.reload_empty_time if _reload_empty else data.reload_time)
+
+
+## A fixed magazine is charged through the open action: a full stripper clip pushed in with the thumb when
+## it's empty and you have five, otherwise round by round.
+func _start_fixed_reload() -> void:
+	var pool: int = player.ammo.get(data.caliber, 0)
+	var space := data.magazine_capacity - mag_rounds
+	if space <= 0 and chambered:
+		return
+	if space <= 0:
+		# A full magazine but an empty chamber: just work the bolt.
+		_begin_busy("bolt", data.bolt_time)
+		return
+	if pool <= 0:
+		player.note("No more rifle rounds." if mag_rounds + int(chambered) == 0 else "No spare rounds for it.", 2.0)
+		return
+	_reload_n = mini(space, pool)
+	_reload_clip = mag_rounds == 0 and _reload_n == data.magazine_capacity
+	_loaded = 0
+	_begin_busy("reload", data.clip_reload_time if _reload_clip else 0.9 + data.round_reload_time * _reload_n)
 
 
 func _begin_busy(kind: String, length: float) -> void:
@@ -470,6 +622,59 @@ func _update_busy(delta: float) -> void:
 	_busy_t += delta
 	var f := _busy_t / _busy_len
 	match _busy:
+		"swap":
+			if _busy_t >= _busy_len and _swap_to:
+				var next := _swap_to
+				_swap_to = null
+				equip(next, _swap_state)
+				_begin_busy("draw", 0.55)
+				SoundLib.play_2d("player/cloth_wool_move", -4.0)
+				return
+		"bolt":
+			# Lift, back (the case flies), forward (a round is stripped from the magazine), down.
+			if _busy_event("open", 0.0):
+				SoundLib.play_2d(data.sound_bolt, -2.0, Game.BUS_WORLD, 0.04)
+				Game.emit_noise(player.global_position, 48.0, player)
+				hammer_cocked = true   # the Mauser cocks on opening
+			if _busy_event("eject", 0.4):
+				if _spent_in_chamber or chambered:
+					_eject_casing()
+				_spent_in_chamber = false
+				chambered = false
+			if _busy_event("feed", 0.62) and mag_rounds > 0:
+				mag_rounds -= 1
+				chambered = true
+			_bolt_lift = _bump(f, 0.0, 0.16, 0.84, 1.0)
+			_bolt_back = _bump(f, 0.16, 0.42, 0.58, 0.84)
+		"reload" when not data.detachable_magazine:
+			if _busy_event("open", 0.02):
+				SoundLib.play_2d(data.sound_bolt, -4.0)
+				hammer_cocked = true
+				if _spent_in_chamber:
+					_eject_casing()
+					_spent_in_chamber = false
+			var want := 0
+			if _reload_clip:
+				want = _reload_n if f >= 0.6 else 0
+			else:
+				want = int(_reload_n * clampf((f - 0.15) / 0.65, 0.0, 1.0))
+			while _loaded < want:
+				_loaded += 1
+				mag_rounds += 1
+				player.ammo[data.caliber] = maxi(int(player.ammo.get(data.caliber, 0)) - 1, 0)
+				if not _reload_clip:
+					SoundLib.play_2d("weapons/p38_mag_in", -10.0, Game.BUS_WORLD, 0.1)
+			if _reload_clip and _busy_event("clip", 0.6):
+				SoundLib.play_2d("weapons/p38_mag_in", -2.0)
+			if _busy_event("close", 0.86):
+				if not chambered and mag_rounds > 0:
+					mag_rounds -= 1
+					chambered = true
+				SoundLib.play_2d(data.sound_bolt, -6.0, Game.BUS_WORLD, 0.06)
+			var open := _bump(f, 0.0, 0.1, 0.86, 0.97)
+			_bolt_lift = open
+			_bolt_back = open
+			_hand_l = _bump(f, 0.05, 0.18, 0.8, 0.92)
 		"reload":
 			if _busy_event("out", 0.18):
 				SoundLib.play_2d(data.sound_mag_out, 0.0)
@@ -501,6 +706,8 @@ func _update_busy(delta: float) -> void:
 		_busy = ""
 		_mag_out = 0.0
 		_hand_l = 0.0
+		_bolt_lift = 0.0
+		_bolt_back = 0.0
 
 
 ## Smooth 0 → 1 → 0 envelope across the four fractions.
@@ -515,6 +722,13 @@ func _bump(f: float, a: float, b: float, c: float, d: float) -> float:
 
 
 func _ammo_estimate() -> String:
+	if not data.detachable_magazine:
+		# Easing the bolt back shows the top round; a rifleman counts as he loads.
+		var r := "Magazine empty." if mag_rounds == 0 else ("%d in the magazine." % mag_rounds)
+		var c := " One up the spout." if chambered else " The chamber is empty."
+		var pool: int = player.ammo.get(data.caliber, 0)
+		var p := "  No spare rounds." if pool == 0 else ("  %d loose rounds in your pockets." % pool)
+		return r + c + p
 	if not mag_inserted:
 		return "No magazine."
 	var frac := float(mag_rounds) / float(data.magazine_capacity)
@@ -573,8 +787,14 @@ func _update_mechanics(delta: float) -> void:
 	if _parts.has("Magazine"):
 		_parts["Magazine"].visible = _mag_out < 0.97
 	if _parts.has("Hand_L"):
-		_parts["Hand_L"].visible = _hand_l > 0.01
+		_parts["Hand_L"].visible = _hand_l > 0.01 and data.hands_from == ""
 		_pose_part("Hand_L", data.hand_l_reach * _hand_l, Vector3.ZERO)
+	if _parts.has("Bolt"):
+		# The handle lifts about the bore line, then the whole bolt slides back.
+		var pivot := Vector3(0, data.bore_height, 0)
+		var lift := Transform3D(Basis(Vector3.BACK, deg_to_rad(data.bolt_lift_deg) * _bolt_lift), Vector3.ZERO)
+		var t := Transform3D(Basis.IDENTITY, pivot) * lift * Transform3D(Basis.IDENTITY, -pivot)
+		_parts["Bolt"].transform = (_rest["Bolt"] as Transform3D).translated(Vector3(0, 0, data.bolt_travel * _bolt_back)) * t
 
 
 func _pose_part(part: String, offset: Vector3, euler: Vector3) -> void:
@@ -595,7 +815,7 @@ func _update_pose(delta: float) -> void:
 			_ads_toggled = false
 		aim_input = _ads_toggled
 	var want_ads := aim_input or player.debug_force_ads
-	want_ads = want_ads and not holstered and not player.sprinting and _busy == "" and _retract < 0.5 \
+	want_ads = want_ads and not holstered and not player.sprinting and (_busy == "" or _busy == "bolt") and _retract < 0.5 \
 		and player.busy <= 0.0 and player.dragging == null
 	ads = move_toward(ads, 1.0 if want_ads else 0.0, delta / data.ads_time)
 	var a := smoothstep(0.0, 1.0, ads)
@@ -630,11 +850,13 @@ func _update_pose(delta: float) -> void:
 	var bob := Vector3(sin(ph) * 0.007, -absf(sin(ph)) * 0.009, 0.0) * amt
 
 	var busy_tilt := 0.0
-	if _busy == "reload" or _busy == "check":
+	if (_busy == "reload" or _busy == "check") and data.detachable_magazine:
 		busy_tilt = _bump(_busy_t / _busy_len, 0.0, 0.18, 0.82, 1.0)
 	var draw := 0.0
 	if _busy == "draw":
 		draw = 1.0 - _busy_t / _busy_len
+	elif _busy == "swap":
+		draw = _busy_t / _busy_len
 
 	var view_rot := Vector3(
 		-deg_to_rad(32.0) * _lower - deg_to_rad(55.0) * maxf(_holster_amt, draw) + _sway.x,
@@ -647,6 +869,9 @@ func _update_pose(delta: float) -> void:
 		_kick_rot.z * _kick + deg_to_rad(28.0) * busy_tilt)
 	var local_pos := Vector3(-0.03 * busy_tilt, 0.04 * busy_tilt, 0.035 * _kick + 0.09 * _retract)
 
+	# Borrowed arms are shaped for a pistol; at the cheek they'd cross the view, so they drop out of sight.
+	if data.hands_from != "" and _parts.has("Hand_R"):
+		_parts["Hand_R"].visible = a < 0.35
 	var base := _hip_xform.interpolate_with(_ads_xform, a)
 	_model.transform = Transform3D(Basis.from_euler(view_rot), view_pos) * base \
 		* Transform3D(Basis.from_euler(local_rot), local_pos)
@@ -663,4 +888,9 @@ func _update_flash(delta: float) -> void:
 func debug_fire() -> void:
 	safety_on = false
 	hammer_cocked = true
+	_bolt_queued = false
 	_hammer_fall(0.0)
+
+
+func busy_kind() -> String:
+	return _busy

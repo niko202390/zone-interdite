@@ -35,6 +35,9 @@ const BARKS := {
 	"phone_dead": [["Die Leitung ist tot! Verdammt!", "The line's dead! Damn it!"]],
 	"greet": [["'n Abend, Kamerad.", "Evening, mate."], ["Na, Matrose? Auch noch unterwegs?", "Out late too, sailor?"]],
 	"unmasked": [["Moment... Sie sind kein Matrose! Halt!", "Wait... you're no sailor! Halt!"]],
+	"greet_army": [["'n Abend, Kamerad.", "Evening, mate."], ["Na? Auch Wache gehabt?", "You been on watch too?"],
+		["Kalt heute, was?", "Cold tonight, eh?"]],
+	"unmasked_army": [["Moment... welche Einheit? Sie sind nicht von uns! Halt!", "Wait... what unit? You're not one of ours! Halt!"]],
 }
 
 ## Small talk at the checkpoint, [sentry line, patrol reply]. Some of it is useful to an eavesdropper.
@@ -77,6 +80,10 @@ const FELDGRAU := Color(0.29, 0.31, 0.27)
 @export var phone_position := Vector3.INF
 ## Which soldier model to wear: "rifleman" or "feldgendarm".
 @export var model_variant := "rifleman"
+## Set once his body has been gone through, and once his greatcoat has been taken.
+var searched := false
+var coat_taken := false
+var _died_quietly := false
 ## The approach in front of a checkpoint, where the sentry calls you over.
 @export var challenge_zone := AABB()
 
@@ -351,14 +358,20 @@ func _eye_pos() -> Vector3:
 ## How hostile what he sees is. 1 or more means "enemy", below 1 means "a civilian worth watching".
 func _hostility() -> float:
 	var h := 0.0
-	if _player.disguise == "kriegsmarine":
-		# A sailor on the street is one of their own, unless he's waving a pistol about.
-		if _player.firearm and not _player.firearm.holstered:
-			h += 1.0
+	var gun_out: bool = _player.firearm != null and not _player.firearm.holstered
+	if _player.disguise != "":
+		# A man in uniform on the street is one of their own, unless he's waving a pistol about or
+		# aiming a rifle. Carrying a rifle at the ready is only a little odd.
+		if gun_out:
+			var rifle: bool = _player.firearm.data.action == "bolt"
+			h += 0.25 if rifle and not _player.is_aiming() else 1.0
 		if _combat_t < 90.0:
 			h += 1.0
 		return h
-	if _player.firearm and not _player.firearm.holstered:
+	if gun_out:
+		h += 1.0
+	elif _player.has_long_gun():
+		# A civilian with a Mauser slung on his back.
 		h += 1.0
 	if _player.crouching:
 		h += 0.45
@@ -551,18 +564,21 @@ func _perceive() -> void:
 	_visibility = light_f * dist_f * angle_f * posture_f * motion_f * (seen_points * 0.5) * (1.0 + alertness)
 	if dist < 2.5:
 		_visibility = maxf(_visibility, 2.0)
-	if _player.disguise == "kriegsmarine":
-		# Seen clearly up close, the civilian shoes and the wrong face give it away.
-		if dist < 4.5 and light_f > 0.8 and suspicion > 0.45:
-			_player.disguise = ""
+	if _player.disguise != "":
+		# Seen clearly up close, the civilian shoes and the wrong face give it away. A good disguise
+		# (a clean coat, the right cap) has to be looked at from nearer.
+		var q: float = _player.disguise_quality
+		if dist < lerpf(6.5, 2.0, q) and light_f > 0.8 and suspicion > 0.45:
+			var navy: bool = _player.disguise == "kriegsmarine"
+			_player.wear("", 0.0)
 			_player.note("He's seen through the coat.", 3.0)
 			_bark_cd = 0.0
-			bark("unmasked")
+			bark("unmasked" if navy else "unmasked_army")
 			_combat_t = 0.0
 			suspicion = 1.3
 			_enter(State.ALERTED)
 		else:
-			_visibility *= 0.5
+			_visibility *= 1.0 - 0.6 * _player.disguise_quality
 
 
 func _on_noise(pos: Vector3, loudness: float, source: Node) -> void:
@@ -655,9 +671,9 @@ func _think(delta: float) -> void:
 		_bark_cd = 0.0
 		bark("warning")
 	# He remembers turning you back for a minute and just watches rather than asking again.
-	if checkpoint and _player.disguise == "kriegsmarine" and _can_see_player and state == State.PATROL \
+	if checkpoint and _player.disguise != "" and _can_see_player and state == State.PATROL \
 			and global_position.distance_to(_player.global_position) < 9.0 and _bark_cd <= 0.0 and randf() < 0.02:
-		bark("greet")
+		bark("greet" if _player.disguise == "kriegsmarine" else "greet_army")
 	if checkpoint and _player.disguise == "" and _turned_away_t > 60.0 and state in [State.PATROL, State.CURIOUS, State.SUSPICIOUS] \
 			and _can_see_player and not hostile and (_player_in_challenge_zone() or _zone_violation()):
 		_enter(State.CHALLENGE)
@@ -938,6 +954,7 @@ func take_hit(damage: float, pos: Vector3, _dir: Vector3, attacker: Node) -> voi
 
 
 func _die(quiet := false) -> void:
+	_died_quietly = quiet
 	_papers_checkers.erase(self)
 	state = State.DEAD
 	_state_t = 0.0
@@ -961,6 +978,9 @@ func _drop_rifle() -> void:
 	rb.mass = 4.1
 	rb.continuous_cd = true
 	rb.set_meta("weapon", "kar98k")
+	# Sentries carry five in the magazine; whether one is chambered depends on the man.
+	rb.set_meta("rounds", 5 if randf() < 0.7 else 4)
+	rb.set_meta("chambered", randf() < 0.6)
 	var cs := CollisionShape3D.new()
 	var box := BoxShape3D.new()
 	box.size = Vector3(0.07, 0.14, 1.15) if _model else Vector3(0.07, 1.1, 0.12)
@@ -989,6 +1009,24 @@ func _drop_rifle() -> void:
 
 func is_dead() -> bool:
 	return state == State.DEAD
+
+
+## What's in his pouches. A rifleman carries rifle clips; a Feldgendarm has his pistol magazines too.
+func take_loot() -> Dictionary:
+	if searched:
+		return {}
+	searched = true
+	var loot := {"7.92x57": 5 * randi_range(2, 4), "cigarettes": randf() < 0.6, "paybook": true}
+	if model_variant == "feldgendarm":
+		loot["7.92x57"] = 10
+		loot["p38_mag"] = 1
+	return loot
+
+
+## His greatcoat and cap. Clean if he was taken quietly, holed and bloody if he was shot.
+func take_coat() -> float:
+	coat_taken = true
+	return 0.85 if _died_quietly else 0.7
 
 
 ## Sent by headquarters after a call: run to the trouble and search.

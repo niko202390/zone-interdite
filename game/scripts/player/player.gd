@@ -51,8 +51,19 @@ var dead := false
 var papers := {"identity": true, "zone_pass": false}
 ## Things in your coat pockets.
 var items := {"bottle": 0}
-## "" for your own clothes, "kriegsmarine" for a stolen navy greatcoat.
+## "" for your own clothes, "kriegsmarine" for a stolen navy greatcoat, "wehrmacht" for an army one.
 var disguise := ""
+## How convincing the disguise is, 0..1. A coat taken off a knifed man is clean; one with a bullet hole isn't.
+var disguise_quality := 0.0
+## The guns you carry, in slot order (1, 2). The one in hand is firearm.data.
+var weapons: Array[WeaponData] = []
+## Loose ammunition in your pockets, by calibre.
+var ammo := {"7.92x57": 0}
+const KAR98K := preload("res://data/weapons/kar98k.tres")
+const SLEEVES := {"": Color(1, 1, 1), "kriegsmarine": Color(0.55, 0.6, 0.85), "wehrmacht": Color(0.85, 0.95, 0.75)}
+var _hold_body: Guard = null
+var _hold_t := 0.0
+var _pickup: RigidBody3D = null
 var _gaze := {}
 var _notice_t := 0.0
 var _vault_t := -1.0
@@ -96,6 +107,8 @@ func _ready() -> void:
 	_breath_calm = _make_loop("player/breath_calm_loop")
 	_breath_hard = _make_loop("player/breath_exhausted_loop")
 	_heart = _make_loop("player/heartbeat_loop")
+	if firearm and firearm.data:
+		weapons = [firearm.data]
 
 
 func _make_loop(key: String) -> AudioStreamPlayer:
@@ -132,6 +145,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		_jump_requested = true
 	elif event.is_action_pressed("throw"):
 		_throw()
+	elif event.is_action_pressed("weapon_1"):
+		select_weapon(0)
+	elif event.is_action_pressed("weapon_2"):
+		select_weapon(1)
 	elif event.is_action_pressed("interact"):
 		_interact()
 	elif event.is_action_pressed("watch"):
@@ -267,6 +284,100 @@ func _update_noticing(delta: float) -> void:
 				overlay.add_lead(nb.lead)
 
 
+# --- weapons and clothes ----------------------------------------------------------------------
+
+func select_weapon(slot: int) -> void:
+	if slot < 0 or slot >= weapons.size() or firearm == null or busy > 0.0:
+		return
+	if weapons[slot].id == firearm.data.id:
+		return
+	firearm.switch_to(weapons[slot])
+
+
+func has_weapon(id: String) -> bool:
+	for w in weapons:
+		if w.id == id:
+			return true
+	return false
+
+
+## A rifle can't be hidden under a coat. Slung or in your hands, everyone can see it.
+func has_long_gun() -> bool:
+	return has_weapon("kar98k")
+
+
+func wear(kind: String, quality: float) -> void:
+	disguise = kind
+	disguise_quality = quality if kind != "" else 0.0
+	if firearm:
+		firearm.set_sleeve_tint(SLEEVES.get(kind, Color.WHITE))
+
+
+## Pick up a rifle from the ground. A second one is only good for the rounds in it.
+func pick_up_rifle(rb: RigidBody3D) -> void:
+	var rounds: int = rb.get_meta("rounds", randi_range(3, 5))
+	var chambered: bool = rb.get_meta("chambered", randf() < 0.5)
+	if has_long_gun():
+		ammo["7.92x57"] = int(ammo.get("7.92x57", 0)) + rounds + int(chambered)
+		note("You work the rounds out of it: %d more for your rifle." % (rounds + int(chambered)), 3.5)
+	else:
+		weapons.append(KAR98K)
+		var st := {"mag_inserted": true, "mag_rounds": rounds, "chambered": chambered,
+			"hammer_cocked": chambered, "safety_on": false, "slide_locked": false, "spare_mags": []}
+		firearm.switch_to(KAR98K, st)
+		note("A Kar98k. Five-shot, bolt action, and loud. Press 1 for the pistol, 2 for the rifle.", 5.0)
+		if overlay and overlay.has_method("add_lead"):
+			overlay.add_lead("Carrying a German rifle. No civilian may be seen with one; only a uniform explains it.")
+	SoundLib.play_2d("player/cloth_wool_move", 0.0)
+	rb.queue_free()
+
+
+func _search_body(g: Guard) -> void:
+	busy = 2.2
+	var loot := g.take_loot()
+	var found: Array[String] = []
+	var rounds: int = loot.get("7.92x57", 0)
+	if rounds > 0:
+		ammo["7.92x57"] = int(ammo.get("7.92x57", 0)) + rounds
+		found.append("%d rifle clips" % (rounds / 5) if rounds >= 10 else "a clip of rifle rounds")
+	if loot.get("p38_mag", 0) > 0 and firearm:
+		var st := firearm.state_of("p38_ac43")
+		if not st.is_empty():
+			st["spare_mags"].append(8)
+			firearm.set_state_of("p38_ac43", st)
+			found.append("a full P38 magazine")
+	if loot.get("cigarettes", false):
+		found.append("cigarettes")
+	if loot.has("paybook"):
+		found.append("his Soldbuch")
+	SoundLib.play_2d("player/cloth_wool_move", -2.0)
+	Game.emit_noise(global_position, 38.0, self)
+	note(("You go through his pockets: " + ", ".join(found) + ".") if not found.is_empty() else "Nothing in his pockets you can use.", 4.0)
+
+
+func _take_coat(g: Guard) -> void:
+	busy = 4.5
+	var q := g.take_coat()
+	wear("wehrmacht", q)
+	SoundLib.play_2d("player/cloth_wool_move", 2.0)
+	Game.emit_noise(global_position, 42.0, self)
+	if q >= 0.8:
+		note("You pull his greatcoat and field cap on over your clothes. At a distance you're a Landser on his rounds.", 6.0)
+	else:
+		note("You pull his greatcoat on. There's a hole in it, and blood. Keep to the dark.", 6.0)
+	if overlay and overlay.has_method("add_lead"):
+		overlay.add_lead("Wearing a Wehrmacht greatcoat. Soldiers greet you, but up close in good light they'll see a stranger.")
+
+
+## What a tap of F does to a body: search it, then take the coat. Holding F drags it.
+func _body_action(g: Guard) -> String:
+	if not g.searched:
+		return "search"
+	if not g.coat_taken:
+		return "coat"
+	return ""
+
+
 # --- interaction: takedowns and bodies ---------------------------------------------------------
 
 func _interact() -> void:
@@ -278,6 +389,16 @@ func _interact() -> void:
 		SoundLib.play_2d("player/cloth_wool_move", -2.0)
 		return
 	_refresh_interact()
+	if _interact_kind == "pickup" and _pickup:
+		pick_up_rifle(_pickup)
+		_pickup = null
+		return
+	if _interact_kind == "body":
+		if _body_action(_interact_target) != "":
+			_hold_body = _interact_target
+			_hold_t = 0.0
+			return
+		_interact_kind = "drag"
 	if _interact_kind == "object" and _interactable:
 		busy = _interactable.busy_time
 		_interactable.interact(self)
@@ -303,9 +424,24 @@ func _refresh_interact() -> void:
 	_interact_target = null
 	_interact_kind = ""
 	_interactable = null
+	_pickup = null
 	var best := 9999.0
 	var eye := camera.global_position
 	var look := -camera.global_basis.z
+	for n in get_tree().get_nodes_in_group("dropped_weapons"):
+		var rb := n as RigidBody3D
+		if rb == null or not is_instance_valid(rb):
+			continue
+		var to_w := rb.global_position - eye
+		var ang_w := rad_to_deg(look.angle_to(to_w))
+		var dw := global_position.distance_to(rb.global_position)
+		if dw > 2.2 or ang_w > 55.0:
+			continue
+		var sw := dw * (1.0 + ang_w / 30.0)
+		if sw < best:
+			best = sw
+			_pickup = rb
+			_interact_kind = "pickup"
 	for n in get_tree().get_nodes_in_group("interactables"):
 		var it := n as Interactable
 		if it and it.can_interact(self):
@@ -318,6 +454,7 @@ func _refresh_interact() -> void:
 			if d0 < best:
 				best = d0
 				_interactable = it
+				_pickup = null
 				_interact_kind = "object"
 	for n in get_tree().get_nodes_in_group("guards"):
 		var g := n as Guard
@@ -328,7 +465,9 @@ func _refresh_interact() -> void:
 			if d < 1.7 and d < best:
 				best = d
 				_interact_target = g
-				_interact_kind = "drag"
+				_interactable = null
+				_pickup = null
+				_interact_kind = "body"
 		elif g.wants_papers_from(self):
 			_interact_target = g
 			_interact_kind = "papers"
@@ -343,6 +482,25 @@ func _refresh_interact() -> void:
 
 func _update_interaction(delta: float) -> void:
 	busy = maxf(busy - delta, 0.0)
+	if _hold_body:
+		# Tap F: search him or take his coat. Hold it: take him under the arms and drag.
+		if not is_instance_valid(_hold_body):
+			_hold_body = null
+		elif Input.is_action_pressed("interact") and not Debug.active():
+			_hold_t += delta
+			if _hold_t >= 0.35:
+				dragging = _hold_body
+				dragging.dragged_by = self
+				_hold_body = null
+				SoundLib.play_2d("player/cloth_wool_move", 0.0)
+		else:
+			var g := _hold_body
+			_hold_body = null
+			match _body_action(g):
+				"search":
+					_search_body(g)
+				"coat":
+					_take_coat(g)
 	if dragging:
 		var fwd := -global_basis.z
 		fwd.y = 0.0
@@ -360,8 +518,16 @@ func _update_interaction(delta: float) -> void:
 		match _interact_kind:
 			"takedown":
 				overlay.hint("[F]  take him down")
-			"drag":
-				overlay.hint("[F]  drag the body")
+			"body":
+				match _body_action(_interact_target):
+					"search":
+						overlay.hint("[F]  search him      hold [F]  drag")
+					"coat":
+						overlay.hint("[F]  take his greatcoat      hold [F]  drag")
+					_:
+						overlay.hint("[F]  drag the body")
+			"pickup":
+				overlay.hint("[F]  take the rifle" if not has_long_gun() else "[F]  take the rounds from the rifle")
 			"papers":
 				overlay.hint("[F]  show your papers")
 			"object":

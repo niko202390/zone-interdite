@@ -4,8 +4,8 @@ extends CanvasLayer
 
 const CONTROLS := """WASD  move        Mouse wheel  walking pace        Shift  sprint
 C  crouch        Space  jump        Q / E  lean
-RMB  aim        LMB  fire        R  reload        T  check magazine
-B  safety (decocks the hammer)        H  holster        F  interact / take down / papers        G  throw        X  watch        J  notebook
+RMB  aim        LMB  fire        R  reload        T  check magazine        1 / 2  pistol / rifle
+B  safety (decocks the hammer)        H  holster        F  interact / take down / search        hold F  drag a body        G  throw        X  watch        J  notebook
 F1  this card        F11  fullscreen        Esc  pause / settings        F10  quit"""
 
 const INK := Color(0.86, 0.83, 0.76)

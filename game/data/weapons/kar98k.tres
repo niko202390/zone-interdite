@@ -1,0 +1,57 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/weapons/weapon_data.gd" id="1_wd"]
+
+[resource]
+script = ExtResource("1_wd")
+id = "kar98k"
+display_name = "Mauser Kar98k"
+model_path = "res://assets/models/weapons/kar98k.glb"
+caliber = "7.92x57"
+action = "bolt"
+detachable_magazine = false
+magazine_capacity = 5
+min_shot_interval = 0.3
+holds_open_on_empty = false
+has_decocker = false
+double_action = false
+damage = 120.0
+range_m = 600.0
+impulse = 6.0
+loudness_db = 166.0
+hip_spread_deg = 3.6
+ads_spread_deg = 0.06
+move_spread_deg = 4.5
+fatigue_spread_deg = 2.2
+bloom_per_shot = 1.4
+bloom_recovery = 1.6
+recoil_pitch_deg = 6.5
+recoil_yaw_deg = 1.6
+recoil_recovery = 5.0
+recoil_stick = 0.3
+ads_time = 0.36
+ads_fov = 48.0
+ads_eye_relief = 0.44
+hip_position = Vector3(0.15, -0.2, -0.32)
+hip_rotation_deg = Vector3(1.0, 2.0, 4.0)
+bolt_time = 0.85
+clip_reload_time = 3.0
+round_reload_time = 0.6
+viewmodel_fov = 56.0
+z_clip_scale = 0.4
+finish_roughness = -1.0
+hands_from = "res://assets/models/weapons/p38.glb"
+hand_r_xform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.01, 0.0, 0.06)
+hand_l_xform = Transform3D(0.9511, 0.0000, 0.3090, -0.1158, 0.9272, 0.3563, -0.2865, -0.3746, 0.8818, -0.01, -0.075, -0.28)
+eject_velocity = Vector3(1.6, 1.8, 0.2)
+bolt_travel = 0.09
+bolt_lift_deg = 70.0
+bore_height = 0.045
+sound_shot = "weapons/kar98k_shot"
+sound_dry = "weapons/p38_dryfire"
+sound_mag_in = "weapons/kar98k_bolt"
+sound_mag_out = "weapons/kar98k_bolt"
+sound_safety = "weapons/p38_decocker"
+sound_bolt = "weapons/kar98k_bolt"
+hand_l_reach = Vector3(0.0, 0.03, 0.22)
+ads_sight_lift = 0.014

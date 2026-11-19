@@ -9,6 +9,11 @@ extends Resource
 @export var caliber := ""
 
 @export_group("Feeding")
+## "semi" for a self-loading pistol, "bolt" for a rifle whose bolt is worked by hand after every shot.
+@export var action := "semi"
+## Detachable magazines (P38) are swapped whole. A fixed magazine (Kar98k) is filled from loose rounds
+## or a five-round stripper clip, drawn from the player's pocket ammunition of this calibre.
+@export var detachable_magazine := true
 @export var magazine_capacity := 8
 @export var automatic := false
 @export var rpm := 0.0
@@ -49,8 +54,15 @@ extends Resource
 @export var ads_fov := 54.0
 ## Distance from the eye to the rear sight when aiming (arm's length for a one-handed pistol).
 @export var ads_eye_relief := 0.5
+## How far the eye sits above the line through the sights. Rifles need a little so the cocking piece clears.
+@export var ads_sight_lift := 0.0
 @export var hip_position := Vector3(0.15, -0.17, -0.44)
 @export var hip_rotation_deg := Vector3(1.0, 3.0, 0.0)
+## Seconds to work a bolt between shots (lift, back, forward, down).
+@export var bolt_time := 0.85
+## Fixed magazines: a full clip stripped in from an empty magazine, otherwise this per round plus a base time.
+@export var clip_reload_time := 3.0
+@export var round_reload_time := 0.55
 @export var reload_time := 2.4
 @export var reload_empty_time := 3.0
 @export var viewmodel_fov := 58.0
@@ -62,7 +74,17 @@ extends Resource
 @export var finish_metallic_scale := 0.8
 @export var finish_materials: PackedStringArray = PackedStringArray(["P38"])
 
+## Models without their own hands borrow them from another model (the P38's gloves and sleeves),
+## placed by these model-space transforms (they replace the donor's own placement).
+@export_file("*.glb") var hands_from := ""
+@export var hand_r_xform := Transform3D.IDENTITY
+@export var hand_l_xform := Transform3D.IDENTITY
+
 @export_group("Mechanism")
+## Bolt: how far it travels back and how far the handle lifts (degrees about the bore).
+@export var bolt_travel := 0.09
+@export var bolt_lift_deg := 70.0
+@export var bore_height := 0.045
 ## Animation constants for the named parts in the model (metres / degrees).
 @export var slide_travel := 0.046
 @export var barrel_travel := 0.008
@@ -88,3 +110,4 @@ extends Resource
 @export var sound_mag_in := "weapons/p38_mag_in"
 @export var sound_safety := "weapons/p38_decocker"
 @export var sound_casing := "weapons/casing_cobble"
+@export var sound_bolt := ""

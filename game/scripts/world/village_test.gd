@@ -7,6 +7,7 @@ extends Node3D
 ## The carriageway spans x = -3.5..3.5. Houses line both sides and face the street.
 
 const ENV := "res://assets/models/env/"
+const TOWN := "res://assets/models/town/"
 const GROUND := "res://assets/textures/ground/"
 const STREET_HALF := 3.5
 const FRONT_SETBACK := 0.15
@@ -44,6 +45,11 @@ func _ready() -> void:
 	_build_houses()
 	_build_square()
 	_build_checkpoint()
+	_build_harbour()
+	_build_church_and_mairie()
+	_build_strongpoint()
+	_build_farm()
+	_build_mill_and_wood()
 	_build_poles_and_wires()
 	_build_window_lights()
 	_build_reflection_probes()
@@ -55,8 +61,12 @@ func _ready() -> void:
 	add_child(amb)
 	# The checkpoint: just being seen here unchallenged is enough to get you stopped.
 	Visibility.restricted_zones.append(AABB(Vector3(-6.0, -1.0, 41.0), Vector3(12.0, 6.0, 12.0)))
+	# Beyond it, the whole harbour zone: the quays, the fish hall and the hotel.
+	Visibility.restricted_zones.append(AABB(Vector3(-50.0, -3.0, 53.0), Vector3(100.0, 12.0, 45.0)))
 	_build_navigation()
 	_spawn_guards()
+	# The mission begins in the field behind the Le Goff farm, south of the bourg.
+	player.debug_place(_ground_at(-10.0, -104.0, 0.1), 180.0, 0.0)
 	_setup_test_objective()
 	_build_back_lanes()
 	_place_options()
@@ -79,7 +89,7 @@ func _build_navigation() -> void:
 	nm.agent_radius = 0.5
 	nm.agent_height = 1.75
 	nm.agent_max_climb = 0.5
-	nm.filter_baking_aabb = AABB(Vector3(-60.0, -2.0, -80.0), Vector3(120.0, 14.0, 160.0))
+	nm.filter_baking_aabb = AABB(Vector3(-60.0, -2.0, -80.0), Vector3(120.0, 14.0, 175.0))
 	region.navigation_mesh = nm
 	add_child(region)
 	region.bake_finished.connect(func() -> void: Visibility.nav_ready = true)
@@ -107,6 +117,31 @@ func _spawn_guards() -> void:
 	patrol.global_position = Vector3(1.2, 0.05, 30.0)
 	patrol.rotation.y = 0.0
 
+	# Kriegsmarine signals post: a sentry on the hotel door, and a man walking the quay.
+	var door := Guard.new()
+	door.name = "HotelSentry"
+	door.patrol_points = PackedVector3Array([HOTEL_DOOR])
+	add_child(door)
+	door.global_position = HOTEL_DOOR
+	door.rotation.y = deg_to_rad(180.0)
+
+	var quay := Guard.new()
+	quay.name = "QuayPatrol"
+	quay.patrol_points = PackedVector3Array([Vector3(-40.0, 0.05, 88.0), Vector3(-8.0, 0.05, 86.0),
+		Vector3(38.0, 0.05, 88.0), Vector3(-8.0, 0.05, 86.0)])
+	add_child(quay)
+	quay.global_position = Vector3(-8.0, 0.05, 86.0)
+
+	# The strongpoint on the western headland, watching the cove under the searchlight.
+	var bunker := Guard.new()
+	bunker.name = "StrongpointSentry"
+	var post := _ground_at(STRONGPOINT.x + 4.0, STRONGPOINT.z + 6.0, 0.05)
+	bunker.patrol_points = PackedVector3Array([post])
+	bunker.view_distance = 70.0
+	add_child(bunker)
+	bunker.global_position = post
+	bunker.rotation.y = deg_to_rad(-30.0)
+
 
 # --- asset helpers -----------------------------------------------------------------------------
 
@@ -114,6 +149,8 @@ func _spawn_guards() -> void:
 ## Tags every collider with `surface`. If the .glb doesn't exist, a box of `fallback_size` is used instead.
 func spawn(asset: String, pos: Vector3, facing_deg: float, surface: String, fallback_size: Vector3) -> Node3D:
 	var path := ENV + asset + ".glb"
+	if not ResourceLoader.exists(path) and ResourceLoader.exists(TOWN + asset + ".glb"):
+		path = TOWN + asset + ".glb"
 	var node: Node3D
 	if ResourceLoader.exists(path):
 		node = (load(path) as PackedScene).instantiate()
@@ -431,7 +468,174 @@ func _build_houses() -> void:
 	_row(-1, -62.0, 52.0, ["house_bourg_int", "house_cafe_int", "house_bourg", "house_longere_int", "house_bourg"],
 		[Vector2(-30.0, -26.0), Vector2(6.0, 9.0)])
 	_row(1, -62.0, 40.0, ["house_longere", "house_bourg_int", "house_bourg", "house_cafe", "house_bourg_int"],
-		[Vector2(-6.0, 12.0), Vector2(26.0, 29.0)])
+		[Vector2(-6.0, 24.0), Vector2(26.0, 29.0)])
+
+
+# --- the town plan -----------------------------------------------------------------------------
+# North: the harbour zone behind the checkpoint, with the Hôtel de la Plage. East of the street: the square,
+# the mairie and the parish close. West: the headland strongpoint above the Anse de Kerlo. South: the Le Goff
+# farm where the mission starts. East, on the river: the mill. South-west: the wood with the SOE cache.
+
+const HOTEL := Vector3(-26.0, 0.0, 78.0)
+const HOTEL_DOOR := Vector3(-24.0, 0.05, 67.2)
+const STRONGPOINT := Vector3(-128.0, 0.0, 58.0)
+const FARM := Vector3(-16.0, 0.0, -120.0)
+const CACHE := Vector3(-70.0, 0.0, -88.0)
+
+
+func _ground_at(x: float, z: float, y_offset := 0.0) -> Vector3:
+	return Vector3(x, Terrain.height(x, z) + y_offset, z)
+
+
+## The cove: walking north along the headland's foot until the land meets the sea.
+func cove_position() -> Vector3:
+	var x := -135.0
+	var z := 70.0
+	while z < 118.0 and Terrain.height(x, z) > Terrain.SEA_LEVEL + 0.4:
+		z += 1.0
+	return _ground_at(x, z - 2.0)
+
+
+func _build_harbour() -> void:
+	# The road runs on from the checkpoint down to the quay.
+	for i in 3:
+		spawn("street_pave_10m", Vector3(0, 0, 65.0 + i * 10.0), 0.0, "cobble", Vector3(7.0, 0.05, 10.0))
+	# The quay wall: dressed granite dropping into the harbour, with bollards and moored boats.
+	for i in 10:
+		var x := -45.0 + i * 10.0
+		# The kit's quay has its sea face on +X and its deck at y = 0; turned so the face looks north at z 93.
+		spawn("quay_10m", Vector3(x, 0.0, 87.3), -90.0, "stone", Vector3(10.0, 0.3, 9.7))
+	var boats := [["fishing_boat_a", Vector3(-30.0, Terrain.SEA_LEVEL, 99.0), 92.0, Vector3(3.2, 2.2, 10.0)],
+		["fishing_boat_a", Vector3(12.0, Terrain.SEA_LEVEL, 100.0), -85.0, Vector3(3.2, 2.2, 10.0)],
+		["dinghy", Vector3(-4.0, Terrain.SEA_LEVEL, 96.5), 10.0, Vector3(1.4, 0.6, 3.6)],
+		["dinghy", Vector3(26.0, Terrain.SEA_LEVEL, 96.8), -15.0, Vector3(1.4, 0.6, 3.6)]]
+	for b in boats:
+		spawn(b[0], b[1], b[2], "wood", b[3])
+	spawn("fish_hall", Vector3(16.0, 0.0, 79.0), 0.0, "wood", Vector3(16.0, 6.0, 9.0))
+	# The harbourmaster's house, and the Kriegsmarine signals post in the old seafront hotel.
+	spawn("house_bourg", Vector3(34.0, 0.0, 70.0), 180.0, "stone", _fallback_house_size("house_bourg"))
+	spawn("hotel_de_la_plage", HOTEL, 180.0, "stone", Vector3(24.0, 11.0, 13.0))
+	for p in [Vector3(-10.0, 0, 88.5), Vector3(-6.0, 0, 89.2), Vector3(30.0, 0, 88.0)]:
+		spawn("crate_wood", p, randf_range(0.0, 90.0), "wood", Vector3(0.8, 0.6, 0.6))
+	spawn("barrel_wood", Vector3(8.0, 0, 89.0), 0.0, "wood", Vector3(0.6, 0.9, 0.6))
+	_notable(HOTEL + Vector3(0, 4.0, -7.0), "The Hôtel de la Plage. Aerials on the roof, a sentry on the door. The naval signals post.",
+		"The signals post is in the Hôtel de la Plage, on the quay. One sentry on the front door. There must be a back way in.", 40.0)
+
+
+func _build_church_and_mairie() -> void:
+	# The parish close: a granite wall round the churchyard, the church facing west across the square.
+	spawn("church_plouzennec", Vector3(42.0, 0.0, 3.0), -90.0, "stone", Vector3(16.0, 14.0, 32.0))
+	for k in 9:
+		var z := -16.0 + k * 4.0
+		if absf(z - 2.0) < 2.5:
+			continue   # the gate
+		spawn("stone_wall_low_4m", Vector3(23.5, 0, z), -90.0, "stone", Vector3(4.0, 1.1, 0.6))
+	# The mairie, with the Kommandantur's flag, on the north side of the square.
+	spawn("mairie", Vector3(14.5, 0.0, 18.0), 180.0, "stone", Vector3(18.0, 9.0, 11.0))
+	_notable(Vector3(14.0, 4.0, 11.5), "The mairie. A swastika flag over the door; the Ortskommandantur has moved in.",
+		"The Germans run the town from the mairie on the square.", 25.0)
+
+
+func _build_strongpoint() -> void:
+	# A Regelbau bunker on the headland, wired in, with a 60 cm searchlight sweeping the cove after dark.
+	var base := _ground_at(STRONGPOINT.x, STRONGPOINT.z)
+	spawn("bunker_atlantic", base + Vector3.DOWN * 0.6, 0.0, "concrete", Vector3(9.0, 3.2, 8.0))
+	for k in 8:
+		var ang := deg_to_rad(-60.0 + k * 22.0)
+		var p := STRONGPOINT + Vector3(sin(ang), 0, -cos(ang)) * 18.0
+		spawn("wire_fence_5m", _ground_at(p.x, p.z), rad_to_deg(ang) + 90.0, "metal", Vector3(5.0, 1.2, 0.3))
+	for p in [Vector3(-110.0, 0, 50.0), Vector3(-118.0, 0, 76.0), Vector3(-140.0, 0, 40.0)]:
+		spawn("minefield_sign", _ground_at(p.x, p.z), randf_range(-30.0, 30.0) + 90.0, "wood", Vector3(0.5, 1.0, 0.1))
+	var sl_pos := _ground_at(STRONGPOINT.x + 6.0, STRONGPOINT.z + 7.0)
+	spawn("searchlight_60cm", sl_pos, 0.0, "metal", Vector3(1.0, 1.4, 1.0))
+	var beam := SpotLight3D.new()
+	beam.name = "Searchlight"
+	beam.light_color = Color(0.86, 0.9, 1.0)
+	beam.light_energy = 18.0
+	beam.spot_range = 160.0
+	beam.spot_angle = 3.5
+	beam.shadow_enabled = true
+	beam.light_volumetric_fog_energy = 3.0
+	add_child(beam)
+	beam.position = sl_pos + Vector3.UP * 1.3
+	Visibility.register_light(beam)
+	_searchlight = beam
+	_notable(STRONGPOINT + Vector3(0, 3, 0), "Concrete on the headland. A bunker, and wire. They watch the cove from up there.",
+		"A bunker on the western headland overlooks the Anse de Kerlo, with a searchlight. Mines on the slopes.", 60.0)
+
+
+var _searchlight: SpotLight3D
+
+
+## The searchlight is lit at dusk and swings slowly back and forth across the cove and the approaches.
+func _update_searchlight() -> void:
+	if _searchlight == null:
+		return
+	var lit := Game.clock_minutes >= 18.0 * 60.0 or Game.clock_minutes < 6.5 * 60.0
+	_searchlight.visible = lit
+	if lit:
+		var t := Time.get_ticks_msec() / 1000.0
+		var yaw := deg_to_rad(-20.0 + sin(t * 0.09) * 55.0)
+		var target := _searchlight.global_position + Vector3(sin(yaw), -0.16, cos(yaw))
+		_searchlight.look_at(target, Vector3.UP)
+
+
+func _build_farm() -> void:
+	# The Le Goff farm: a longère, a barn, the midden and a cart. You wake in the field behind it.
+	spawn("house_longere", FARM + Vector3(-6.0, 0, 0), 90.0, "stone", _fallback_house_size("house_longere"))
+	spawn("house_longere", FARM + Vector3(4.0, 0, -12.0), 0.0, "stone", _fallback_house_size("house_longere"))
+	spawn("cart_charrette", FARM + Vector3(6.0, 0, 4.0), 30.0, "wood", Vector3(1.6, 1.2, 3.2))
+	spawn("barrel_wood", FARM + Vector3(-1.5, 0, 5.5), 0.0, "wood", Vector3(0.6, 0.9, 0.6))
+	_notable(FARM + Vector3(0, 2, 0), "The Le Goff farm. A safe house, London said. No light in the windows.",
+		"Le Goff farm, south of the bourg: the circuit's safe house. Dark. Is anyone still there?", 30.0)
+
+
+func _build_mill_and_wood() -> void:
+	# The mill on the river, with a plank footbridge: another way across, out of sight of the street.
+	var mz := -40.0
+	var cx := Terrain.river_center_x(mz)
+	var half := lerpf(7.0, 22.0, smoothstep(-100.0, 100.0, mz)) * 0.9 + 1.5
+	var bank_y := maxf(Terrain.height(cx - half, mz), Terrain.height(cx + half, mz))
+	spawn("watermill", _ground_at(cx - half - 6.0, mz + 6.0), 90.0, "stone", Vector3(9.0, 7.0, 8.0))
+	var bridge := _fallback_box(Vector3(half * 2.0 + 2.0, 0.14, 1.3), "wood")
+	bridge.name = "MillBridge"
+	add_child(bridge)
+	bridge.position = Vector3(cx, bank_y + 0.05, mz)
+	_tag_surface(bridge, "wood")
+	# The wood south-west of the bourg, and in it, under a fallen trunk, the container from the drop.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 311
+	for i in 34:
+		var a := rng.randf() * TAU
+		var r := 6.0 + sqrt(rng.randf()) * 26.0
+		var p := CACHE + Vector3(cos(a) * r, 0, sin(a) * r)
+		var kind: String = ["tree_oak_a", "tree_beech_a", "tree_oak_b", "tree_beech_b", "tree_chestnut_a"][i % 5]
+		var path := "res://assets/models/nature/" + kind + ".glb"
+		if ResourceLoader.exists(path):
+			var t: Node3D = (load(path) as PackedScene).instantiate()
+			add_child(t)
+			t.position = _ground_at(p.x, p.z, -0.1)
+			t.rotation.y = rng.randf() * TAU
+			t.scale = Vector3.ONE * rng.randf_range(0.85, 1.2)
+	var cpos := _ground_at(CACHE.x, CACHE.z)
+	var box := spawn("soe_container", cpos, 30.0, "metal", Vector3(0.45, 0.45, 1.7))
+	var ci := Interactable.new()
+	ci.prompt = "open the container"
+	ci.busy_time = 3.5
+	ci.noise_db = 44.0
+	add_child(ci)
+	ci.global_position = cpos + Vector3.UP * 0.4
+	ci.on_use = func(_p: Node3D) -> void:
+		ci.enabled = false
+		var st: Dictionary = player.firearm.state_of("p38_ac43")
+		if not st.is_empty():
+			st["spare_mags"].append(8)
+			st["spare_mags"].append(8)
+			player.firearm.set_state_of("p38_ac43", st)
+		player.items["bottle"] = int(player.items.get("bottle", 0))
+		player.note("The drop container, half buried in leaves. Two loaded pistol magazines in oilcloth, and a note from London in the lid.", 7.0)
+		player.overlay.add_lead("From the container: the hotel's kitchen door opens onto the quay. The cook, Madame Riou, is one of ours.")
+	_notable(cpos + Vector3.UP * 0.5, "Something long and grey under the leaves. A drop container.", "", 10.0)
 
 
 # --- set dressing ------------------------------------------------------------------------------
@@ -444,8 +648,6 @@ func _build_square() -> void:
 	spawn("barrel_wood", Vector3(5.9, 0, 9.3), 40.0, "wood", Vector3(0.6, 0.9, 0.6))
 	spawn("crate_wood", Vector3(-4.3, 0, -18.0), 10.0, "wood", Vector3(0.8, 0.6, 0.6))
 	spawn("crate_wood", Vector3(-4.2, 0.62, -18.1), 25.0, "wood", Vector3(0.8, 0.6, 0.6))
-	for k in 4:
-		spawn("stone_wall_low_4m", Vector3(13.5, 0, -5.0 + k * 4.0), -90.0, "stone", Vector3(4.0, 1.1, 0.6))
 
 
 func _build_checkpoint() -> void:
@@ -653,11 +855,12 @@ func _setup_test_objective() -> void:
 	cs.shape = box
 	shore.add_child(cs)
 	add_child(shore)
-	shore.position = Vector3(0.0, 0.0, 104.0)
+	box.size = Vector3(26.0, 20.0, 26.0)
+	shore.position = cove_position()
 	shore.body_entered.connect(func(b: Node) -> void:
 		if b == player and not player.dead:
-			player.note("The sea. You made it past them, for now. (Test objective complete.)", 8.0)
-			player.overlay.notebook_text = NOTEBOOK.replace("TO DO", "DONE: reached the shore at " + Game.clock_text() + ".
+			player.note("The Anse de Kerlo. Shingle, and the sea. You made it past them, for now. (Test objective complete.)", 8.0)
+			player.overlay.notebook_text = NOTEBOOK.replace("TO DO", "DONE: reached the cove at " + Game.clock_text() + ".
 
 TO DO (next build)"))
 	get_tree().create_timer(2.5, false).timeout.connect(func() -> void:
@@ -810,7 +1013,7 @@ func _place_options() -> void:
 	add_child(ci)
 	ci.global_position = coat.global_position + Vector3.DOWN * 0.6
 	ci.on_use = func(_p: Node3D) -> void:
-		player.disguise = "kriegsmarine"
+		player.wear("kriegsmarine", 0.6)
 		ci.enabled = false
 		coat.queue_free()
 		player.note("A Kriegsmarine greatcoat, still damp. At a distance you're one of them. Up close, in the light, your shoes and face will give you away.", 7.0)
@@ -1135,8 +1338,8 @@ func _build_rain() -> void:
 
 func _build_bounds() -> void:
 	# Invisible edges well inside the fog.
-	for spec in [[Vector3(0, 5, 120), Vector3(260, 10, 1)], [Vector3(0, 5, -120), Vector3(260, 10, 1)],
-			[Vector3(120, 5, 0), Vector3(1, 10, 260)], [Vector3(-120, 5, 0), Vector3(1, 10, 260)]]:
+	for spec in [[Vector3(-30, 5, 125), Vector3(320, 30, 1)], [Vector3(-30, 5, -150), Vector3(320, 30, 1)],
+			[Vector3(120, 5, -12), Vector3(1, 30, 280)], [Vector3(-180, 5, -12), Vector3(1, 30, 280)]]:
 		var body := StaticBody3D.new()
 		var cs := CollisionShape3D.new()
 		var shape := BoxShape3D.new()
@@ -1148,6 +1351,7 @@ func _build_bounds() -> void:
 
 
 func _process(_delta: float) -> void:
+	_update_searchlight()
 	if _rain and player:
 		_rain.global_position = player.global_position + Vector3(0, 11, 0) + player.velocity * 0.6
 	var t := Time.get_ticks_msec() / 1000.0

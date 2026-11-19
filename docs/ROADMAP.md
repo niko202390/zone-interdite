@@ -9,6 +9,10 @@ The milestones and design are in `docs/DESIGN.md`.
 - [x] Integrate the **house interiors** (done 19 Nov): coloured doors, lamps, an interior probe. The hooks already exist in village_test.gd `_setup_interior`.
 - [ ] Nature polish: the pollarded oaks on top of the talus banks have trunks like pillars. Thin twig cards could use alpha antialiasing.
 - [ ] Build size is up to 1.4 GB (nature textures). Consider 1K textures for small plants and shared textures on the talus.
+- [ ] Rifle first-person arms. The Kar98k borrows the P38's gloved hands (right hand only, hidden at the cheek). It needs its own two-handed arms, with the left hand on the fore-end and working the bolt.
+- [ ] Hotel de la Plage: hook up the kit's swinging `Door` and the `CoalChute` (lifts -90°), cut the terrain for the chute pit and the mill race, then build the interior and the signals room.
+- [ ] Level load is about 40 s headless, mostly the terrain build in GDScript. Move the height sampling to a cached image or a thread.
+- [ ] Map: a track from the farm to the bourg; the beach and shingle at the Anse de Kerlo; mines that actually go off; nav mesh around the strongpoint.
 
 ## Now: finishing M1 "First Night"
 - [x] Integrate the generated environment kit (houses, street, props, ground textures). *Still to do: a final lighting pass against the real materials.*
@@ -41,7 +45,7 @@ The milestones and design are in `docs/DESIGN.md`.
 - [ ] Mission data format: map, season, time of day, objectives with alternative completions, outcome grades.
 - [ ] CampaignState autoload: your description, network, intel level, gear and choices, saved at the hideout.
 - [x] Time of day: a 5x clock, blue hour fading to a moonless night, curfew 22:00–05:00, the church striking the hours, and X to check your watch. *Still to do: moon phase and seasons.*
-- [ ] Grow the test street into Plouzennec: the harbour, the signals post, the café, the church, the road to the cliffs.
+- [x] Grow the test street into Plouzennec: the harbour, the signals post, the café, the church, the road to the cliffs.
 
 ## M3 "The Wire"
 - [ ] Alert as information. Report objects that travel by voice, whistle, phone, runner and radio.
@@ -62,6 +66,7 @@ The milestones and design are in `docs/DESIGN.md`.
 - [ ] A better rain bed, and rework the dog barks if they don't convince.
 
 ## Session log
+- **2026-11-19 (late):** Enemy weapons and uniforms. Dropped Kar98ks can be picked up: bolt action, five-round stripper clips or loose rounds from your pockets, and keys 1 and 2 to swap weapons, each keeping its own state. Bodies can be searched (rifle clips; a P38 magazine from a Feldgendarm) and stripped of the greatcoat, which gives a Wehrmacht disguise. Its quality is 0.85 after a knife and 0.7 after a shot, and the unmasking distance scales with it. Hold F to drag a body. A civilian carrying a rifle is hostile. Map structure pass on Plouzennec with the town kit (13 models): harbour and quay, boats, fish hall, the Hotel de la Plage with a door sentry, a quay patrol, the church and parish close, the mairie on the square, the headland strongpoint with a sweeping searchlight, wire and mine signs, the Le Goff farm start, the mill and plank bridge, and the wood with the SOE container. The objective is now the cove. New test: tools/godot/test_pickup.gd.
 - **2026-11-19 (afternoon):** Self-updating builds. The repo is public. Full build base-0.3.0 released (the last big download). Patch 0.3.1 (14.8 KB) verified end to end: the game downloaded it, checked the SHA-256, restarted and ran as v0.3.1.
 - **2026-11-19 (day):** Checked the agents: soldier, interiors and nature all complete. The rigged soldiers and the Feldgendarm sentry are in, with state-driven animation, rifle sockets and dropping. The BBC wireless is in the café, with the V-signal, news, and messages personnels including ours, plus static, jamming and a radio bus. Rain no longer falls indoors (heightfield roof collision). F prefers what you're looking at. Opening, deer and parachute ideas went into MISSION_01 §0.
 - **2026-11-19 (night):** Playtest feedback (walk/sprint speed, aim toggle, fullscreen default, headshots, cumulative ear ringing, rifles drop). Mission 1 full design (docs/MISSION_01.md). Terrain, sea and river; nature kit (32 assets) scattered, with MultiMesh grass. Discoverable options: noticing, notebook leads, overheard chat, zone pass, greatcoat disguise, throwables, vaulting, back lanes, a ford. Chimney smoke, valley mist, distant farm lights. Synthesized babble voices. Title screen, intro and SOE briefing document. Playtest build 2 released.

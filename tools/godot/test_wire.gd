@@ -51,9 +51,9 @@ func _run() -> void:
 	await _load()
 	var pole_box: Node3D = null
 	for it in get_nodes_in_group("interactables"):
-		if is_instance_valid(it) and level.is_ancestor_of(it):
+		if is_instance_valid(it) and level.is_ancestor_of(it) and String(it.prompt).contains("telephone"):
 			pole_box = it
-	player.debug_place(pole_box.global_position + Vector3(-0.8, -1.2, 0.0), 90.0, 0.0)
+	player.debug_place(pole_box.global_position + Vector3(-0.8, -1.2, 0.0), -90.0, 0.0)
 	await _wait(0.3)
 	player._refresh_interact()
 	print("CUT option=", player._interact_kind, " prompt=", player._interactable.prompt if player._interactable else "-")

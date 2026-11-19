@@ -67,6 +67,11 @@ func _run_views() -> void:
 	DirAccess.make_dir_recursive_absolute(outdir)
 	await _frames(int(args.get("warm", "240")))
 	var player := get_tree().get_first_node_in_group("player") as Player
+	if player and args.has("rifle"):
+		player.weapons.append(Player.KAR98K)
+		player.firearm.equip(Player.KAR98K)
+		if args.has("disguise"):
+			player.wear(String(args["disguise"]), 0.85)
 	for spec: String in String(args["views"]).split(";", false):
 		var parts := spec.split(":")
 		var view_name := parts[0]

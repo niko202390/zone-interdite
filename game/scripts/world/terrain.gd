@@ -36,7 +36,18 @@ static func _fbm(p: Vector2) -> float:
 static func village_mask(x: float, z: float) -> float:
 	var dx := maxf(absf(x) - 22.0, 0.0)
 	var dz := maxf(maxf(-75.0 - z, z - 64.0), 0.0)
-	return 1.0 - smoothstep(0.0, 22.0, sqrt(dx * dx + dz * dz))
+	var street := 1.0 - smoothstep(0.0, 22.0, sqrt(dx * dx + dz * dz))
+	# The harbour: a broad flat quayside ending at the quay wall (z 93), where it drops straight to the sea.
+	var hx := maxf(absf(x) - 48.0, 0.0)
+	var hz := maxf(40.0 - z, 0.0)
+	var harbour := (1.0 - smoothstep(0.0, 16.0, sqrt(hx * hx + hz * hz))) * (1.0 - smoothstep(93.0, 95.0, z))
+	# The square, the mairie and the churchyard to the east of the street.
+	var ex := maxf(maxf(-x, x - 60.0), 0.0)
+	var ez := maxf(absf(z) - 22.0, 0.0)
+	var square := 1.0 - smoothstep(0.0, 14.0, sqrt(ex * ex + ez * ez))
+	# The Le Goff farmyard to the south, where the mission begins.
+	var farm := 1.0 - smoothstep(10.0, 24.0, Vector2(x + 16.0, z + 120.0).length())
+	return maxf(maxf(street, harbour), maxf(square, farm))
 
 
 static func river_center_x(z: float) -> float:
