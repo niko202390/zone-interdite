@@ -314,6 +314,9 @@ func _row(side: int, z_from: float, z_to: float, order: Array, gaps: Array) -> v
 			continue
 		var asset: String = order[i % order.size()]
 		i += 1
+		# Enterable variants (with coloured doors) are used where they've been built.
+		if asset.ends_with("_int") and not ResourceLoader.exists(ENV + asset + ".glb"):
+			asset = asset.trim_suffix("_int")
 		var house := spawn(asset, Vector3.ZERO, facing, "stone", _fallback_house_size(asset))
 		var fp := footprint(house)
 		# Push the house back so its front sits on the street edge, and start it at the cursor.
@@ -321,11 +324,49 @@ func _row(side: int, z_from: float, z_to: float, order: Array, gaps: Array) -> v
 		var x := -STREET_HALF - FRONT_SETBACK - front_x if side < 0 else STREET_HALF + FRONT_SETBACK - front_x
 		house.position = Vector3(x, 0.0, z - fp.position.z)
 		_houses.append(house)
+		if asset.ends_with("_int"):
+			_setup_interior(house)
 		z += fp.size.z + randf_range(0.0, 1.2)
 
 
+## Doors that swing (F), warm lamps inside, and an interior reflection probe.
+func _setup_interior(house: Node3D) -> void:
+	var door := house.find_child("Door", true, false) as Node3D
+	if door:
+		var it := Interactable.new()
+		it.prompt = "open the door"
+		it.radius = 1.3
+		it.noise_db = 44.0
+		add_child(it)
+		it.global_position = door.global_position + house.global_basis.z * 0.5 + Vector3.UP * 1.0
+		var closed_y := door.rotation.y
+		var state := {"open": false}
+		it.on_use = func(_p: Node3D) -> void:
+			state["open"] = not state["open"]
+			it.prompt = "close the door" if state["open"] else "open the door"
+			var tw := create_tween()
+			tw.tween_property(door, "rotation:y", closed_y + (deg_to_rad(-100.0) if state["open"] else 0.0), 0.9) 				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+			SoundLib.play_3d("impacts/impact_wood", door.global_position + Vector3.UP, -14.0, 25.0, 0.2, 2.0)
+	for n in house.find_children("LightSpot_*", "Node3D", true, false):
+		var l := OmniLight3D.new()
+		l.light_color = Color(1.0, 0.62, 0.32)
+		l.light_energy = 1.2
+		l.omni_range = 6.0
+		l.shadow_enabled = true
+		(n as Node3D).add_child(l)
+		Visibility.register_light(l)
+	var fp := footprint(house)
+	var probe := ReflectionProbe.new()
+	probe.interior = true
+	probe.box_projection = true
+	probe.size = fp.size * 0.95
+	probe.update_mode = ReflectionProbe.UPDATE_ONCE
+	add_child(probe)
+	probe.global_position = house.global_position + fp.get_center()
+
+
 func _fallback_house_size(asset: String) -> Vector3:
-	match asset:
+	match asset.trim_suffix("_int"):
 		"house_longere":
 			return Vector3(14.0, 5.5, 6.5)
 		"house_cafe":
@@ -335,9 +376,9 @@ func _fallback_house_size(asset: String) -> Vector3:
 
 func _build_houses() -> void:
 	seed(1943)
-	_row(-1, -62.0, 52.0, ["house_bourg", "house_cafe", "house_bourg", "house_longere", "house_bourg"],
+	_row(-1, -62.0, 52.0, ["house_bourg_int", "house_cafe_int", "house_bourg", "house_longere_int", "house_bourg"],
 		[Vector2(-30.0, -26.0), Vector2(6.0, 9.0)])
-	_row(1, -62.0, 40.0, ["house_longere", "house_bourg", "house_bourg", "house_cafe", "house_bourg"],
+	_row(1, -62.0, 40.0, ["house_longere", "house_bourg_int", "house_bourg", "house_cafe", "house_bourg_int"],
 		[Vector2(-6.0, 12.0), Vector2(26.0, 29.0)])
 
 
