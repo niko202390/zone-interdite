@@ -75,6 +75,8 @@ const FELDGRAU := Color(0.29, 0.31, 0.27)
 ## Where his field telephone is. Vector3.INF means no telephone. When trouble starts and he can't see
 ## its cause, he runs to it and calls it in, unless someone has cut the line.
 @export var phone_position := Vector3.INF
+## Which soldier model to wear: "rifleman" or "feldgendarm".
+@export var model_variant := "rifleman"
 ## The approach in front of a checkpoint, where the sentry calls you over.
 @export var challenge_zone := AABB()
 
@@ -134,6 +136,11 @@ var _arm_r: Node3D
 var _head: Node3D
 var _rifle: Node3D
 var _torch: SpotLight3D
+## The rigged soldier model, when it exists (otherwise the primitive stand-in is built).
+var _model: Node3D
+var _anim: AnimationPlayer
+var _anim_current := ""
+var _torch_mount: Node3D
 
 
 func _ready() -> void:
@@ -191,7 +198,57 @@ func _cyl(top: float, bottom: float, h: float) -> CylinderMesh:
 	return c
 
 
+## The rigged soldier from tools/blender/characters: skinned, animated, with rifle and torch sockets.
+func _build_model() -> bool:
+	var path := "res://assets/models/characters/soldier_%s.glb" % model_variant
+	if not ResourceLoader.exists(path):
+		return false
+	_body = Node3D.new()
+	add_child(_body)
+	_model = (load(path) as PackedScene).instantiate()
+	_body.add_child(_model)
+	_model.rotation.y = PI   # the model faces +Z; a guard looks down -Z
+	_anim = _model.find_child("AnimationPlayer", true, false) as AnimationPlayer
+	if _anim:
+		for n: String in ["Idle", "Walk", "Run", "AimRifle", "LookAround"]:
+			if _anim.has_animation(n):
+				_anim.get_animation(n).loop_mode = Animation.LOOP_LINEAR
+		_play("Idle", 0.0)
+		_anim.seek(randf() * 3.0, true)
+	for gi in _model.find_children("*", "GeometryInstance3D", true, false):
+		(gi as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	var shoulder := _model.find_child("RifleSocket_Shoulder", true, false) as Node3D
+	var rifle_path := "res://assets/models/weapons/kar98k.glb"
+	if shoulder and ResourceLoader.exists(rifle_path):
+		_rifle = (load(rifle_path) as PackedScene).instantiate()
+		shoulder.add_child(_rifle)
+	_torch = SpotLight3D.new()
+	_torch.light_color = Color(1.0, 0.92, 0.76)
+	_torch.light_energy = 3.2
+	_torch.spot_range = 24.0
+	_torch.spot_angle = 17.0
+	_torch.spot_attenuation = 1.2
+	_torch.shadow_enabled = true
+	_torch.light_volumetric_fog_energy = 2.0
+	_torch.rotation_degrees = Vector3(-12, 0, 0)
+	_torch.visible = torch_on
+	_body.add_child(_torch)
+	_torch.position = Vector3(-0.1, 1.32, -0.23)
+	_torch_mount = _model.find_child("TorchMount", true, false) as Node3D
+	Visibility.register_light(_torch)
+	return true
+
+
+func _play(anim_name: String, blend: float) -> void:
+	if _anim == null or _anim_current == anim_name or not _anim.has_animation(anim_name):
+		return
+	_anim_current = anim_name
+	_anim.play(anim_name, blend)
+
+
 func _build_body() -> void:
+	if _build_model():
+		return
 	var wool := _mat(FELDGRAU, 0.95)
 	var leather := _mat(Color(0.05, 0.045, 0.04), 0.45)
 	var belt := _mat(Color(0.08, 0.06, 0.045), 0.6)
@@ -906,7 +963,7 @@ func _drop_rifle() -> void:
 	rb.set_meta("weapon", "kar98k")
 	var cs := CollisionShape3D.new()
 	var box := BoxShape3D.new()
-	box.size = Vector3(0.07, 1.1, 0.12)
+	box.size = Vector3(0.07, 0.14, 1.15) if _model else Vector3(0.07, 1.1, 0.12)
 	cs.shape = box
 	cs.position = Vector3(0, -0.1, 0)
 	rb.add_child(cs)
@@ -1063,6 +1120,14 @@ func _check_bodies() -> void:
 
 func _update_death(delta: float) -> void:
 	_death_t += delta
+	if _model:
+		_play("Death", 0.12)
+		if _anim:
+			_anim.speed_scale = 1.0
+		if dragged_by == null and not is_on_floor():
+			velocity.y -= _gravity * delta
+			move_and_slide()
+		return
 	if dragged_by:
 		_body.rotation.x = deg_to_rad(84.0)
 		_body.position = Vector3(0, 0.12, 0.9)
@@ -1079,7 +1144,43 @@ func _update_death(delta: float) -> void:
 
 # --- animation ---------------------------------------------------------------------------------
 
+func _animate_model(delta: float) -> void:
+	var spd := Vector2(velocity.x, velocity.z).length()
+	var aiming := state == State.ALERTED and _can_see_player
+	var want := "Idle"
+	if aiming:
+		want = "AimRifle"
+	elif spd > 2.6:
+		want = "Run"
+	elif spd > 0.25:
+		want = "Walk"
+	elif state == State.SEARCH or state == State.CURIOUS:
+		want = "LookAround"
+	_play(want, 0.3)
+	if _anim:
+		if want == "Walk":
+			_anim.speed_scale = clampf(spd / 1.3, 0.6, 1.6)
+		elif want == "Run":
+			_anim.speed_scale = clampf(spd / 4.0, 0.7, 1.4)
+		else:
+			_anim.speed_scale = 1.0
+	# The rifle comes off the shoulder into his hands to aim, and goes back after.
+	if _rifle and is_instance_valid(_rifle):
+		var socket_name := "RifleSocket_Hands" if aiming else "RifleSocket_Shoulder"
+		if _rifle.get_parent() and String(_rifle.get_parent().name) != socket_name:
+			var sock := _model.find_child(socket_name, true, false)
+			if sock:
+				_rifle.reparent(sock, false)
+				_rifle.transform = Transform3D.IDENTITY
+	if _torch_mount:
+		_torch.global_position = _torch_mount.global_position
+	_aim_torch(delta)
+
+
 func _animate(delta: float) -> void:
+	if _model:
+		_animate_model(delta)
+		return
 	var spd := Vector2(velocity.x, velocity.z).length()
 	_walk_phase += spd * delta * 2.4
 	var amt := clampf(spd / 1.3, 0.0, 1.6)
@@ -1103,7 +1204,11 @@ func _animate(delta: float) -> void:
 		_arm_r.rotation.x = lerp_angle(_arm_r.rotation.x, deg_to_rad(-25.0), 1.0 - exp(-6.0 * delta))
 		_rifle.position = _rifle.position.lerp(Vector3(0.2, 1.15, 0.1), 1.0 - exp(-6.0 * delta))
 		_rifle.rotation = _rifle.rotation.lerp(Vector3(deg_to_rad(-8.0), 0.0, deg_to_rad(-6.0)), 1.0 - exp(-6.0 * delta))
-	# The torch points where he's looking, and at you once he's interested.
+	_aim_torch(delta)
+
+
+## The torch points where he's looking, and at you once he's interested.
+func _aim_torch(delta: float) -> void:
 	var torch_target := 0.0
 	if state in [State.CURIOUS, State.SUSPICIOUS, State.ALERTED, State.CHALLENGE, State.INSPECT] and _player:
 		var to_p := _player.global_position + Vector3.UP - _torch.global_position

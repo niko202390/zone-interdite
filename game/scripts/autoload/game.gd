@@ -14,6 +14,8 @@ const CURFEW_END := 5 * 60
 const BUS_WORLD := &"World"
 const BUS_TINNITUS := &"Tinnitus"
 const BUS_MUSIC := &"Music"
+## A wartime wireless: narrow band, a little overdriven. Sends into World, so hearing loss and distance apply.
+const BUS_RADIO := &"Radio"
 
 ## Collision layers.
 const LAYER_WORLD := 1
@@ -113,6 +115,19 @@ func _setup_audio_buses() -> void:
 	var world := _ensure_bus(BUS_WORLD)
 	_ensure_bus(BUS_TINNITUS)
 	_ensure_bus(BUS_MUSIC)
+	var radio := _ensure_bus(BUS_RADIO, BUS_WORLD)
+	if AudioServer.get_bus_effect_count(radio) == 0:
+		var hp := AudioEffectHighPassFilter.new()
+		hp.cutoff_hz = 320.0
+		AudioServer.add_bus_effect(radio, hp, 0)
+		var lp2 := AudioEffectLowPassFilter.new()
+		lp2.cutoff_hz = 3300.0
+		AudioServer.add_bus_effect(radio, lp2, 1)
+		var dist := AudioEffectDistortion.new()
+		dist.mode = AudioEffectDistortion.MODE_OVERDRIVE
+		dist.drive = 0.35
+		dist.post_gain = -4.0
+		AudioServer.add_bus_effect(radio, dist, 2)
 	# World sounds pass through a low-pass filter that the Hearing system closes down after loud exposure.
 	if AudioServer.get_bus_effect_count(world) == 0:
 		var lp := AudioEffectLowPassFilter.new()

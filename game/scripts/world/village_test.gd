@@ -60,6 +60,7 @@ func _ready() -> void:
 	_setup_test_objective()
 	_build_back_lanes()
 	_place_options()
+	_place_wireless()
 	_build_atmosphere()
 	print("LEVEL READY")
 
@@ -90,6 +91,7 @@ func _spawn_guards() -> void:
 	var sentry := Guard.new()
 	sentry.name = "Sentry"
 	sentry.checkpoint = true
+	sentry.model_variant = "feldgendarm"
 	sentry.phone_position = Vector3(3.7, 0.05, 45.2)
 	sentry.challenge_zone = AABB(Vector3(-6.0, -1.0, 33.0), Vector3(12.0, 6.0, 8.0))
 	sentry.patrol_points = PackedVector3Array([Vector3(2.4, 0.05, 46.6)])
@@ -632,6 +634,9 @@ WHAT I KNOW
     Dark out there, but the ground is open.
   - After 22:00 it's curfew. Anyone seen is shot.
   - Never stand against the sky.
+  - Yann's café has a wireless. London speaks
+    at 19:30 and 21:15. If they read "le chat
+    de la voisine", the boat comes tonight.
 
 Pistol: P.38, 8 rounds + 2 spare magazines.
 Every shot carries a long way."""
@@ -853,6 +858,54 @@ func _place_options() -> void:
 		if ib and ib.prompt == "cut the telephone line":
 			_notable(ib.global_position, "A PTT junction box. The checkpoint's telephone line runs through it.",
 				"PTT junction box on a pole, east side of the street: cut it (F) and the sentry can't call for help.", 10.0)
+
+
+## A wireless set inside the café, on whatever counter or table it finds at the right height.
+func _place_wireless() -> void:
+	var cafe := _cafe()
+	if cafe == null:
+		return
+	var fp := footprint(cafe)
+	var origin := cafe.global_position + fp.get_center()
+	var space := get_world_3d().direct_space_state
+	var best := Vector3.INF
+	for i in 9:
+		for j in 9:
+			var p := origin + Vector3((i - 4) / 4.0 * fp.size.x * 0.32, 0.0, (j - 4) / 4.0 * fp.size.z * 0.32)
+			var q := PhysicsRayQueryParameters3D.create(Vector3(p.x, 2.2, p.z), Vector3(p.x, 0.0, p.z), Game.LAYER_WORLD)
+			var hit := space.intersect_ray(q)
+			if hit.is_empty() or (hit.normal as Vector3).y < 0.9:
+				continue
+			var y: float = (hit.position as Vector3).y
+			if y > 0.65 and y < 1.25:
+				best = hit.position
+				break
+		if best != Vector3.INF:
+			break
+	if best == Vector3.INF:
+		# No counter at the right height: stand it on a table from the props kit.
+		best = Vector3(origin.x, 0.13, origin.z)
+		var table_path := "res://assets/models/props/table_bench.glb"
+		if ResourceLoader.exists(table_path):
+			var table := (load(table_path) as PackedScene).instantiate() as Node3D
+			add_child(table)
+			table.global_position = best
+			table.rotation.y = cafe.rotation.y
+			_tag_surface(table, "wood")
+			var tfp := footprint(table)
+			best.y = table.global_position.y + tfp.end.y
+	var w := Wireless.new()
+	w.name = "Wireless"
+	w.player = player
+	add_child(w)
+	w.global_position = best
+	w.rotation.y = cafe.rotation.y
+	w.message_heard.connect(func(_t: String) -> void:
+		player.note("That's it. The boat comes tonight: 02:30, the Anse de Kerlo.", 6.0)
+		player.overlay.add_lead("The BBC read our message. The boat comes at 02:30 to the Anse de Kerlo.")
+		, CONNECT_ONE_SHOT)
+	_notable(best + Vector3.UP * 0.2, "A wireless set, tuned to London by the look of the dial.",
+		"Yann's wireless, inside the café. Turn it on at 19:30 or 21:15 for the BBC.", 6.0)
 
 
 ## Chimney smoke, mist lying in the river valley, and a few far-off farm lights.
