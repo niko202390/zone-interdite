@@ -1,0 +1,1118 @@
+{
+ "generator": "tools/audio/build_audio.py",
+ "sample_rate": 44100,
+ "bit_depth": 16,
+ "notes": "Positional sounds are mono and dry; suggested_gain_db is a mixing hint relative to a 0 dB gunshot. Loops carry a WAV smpl chunk.",
+ "sounds": [
+  {
+   "file": "alarm/dog_bark_distant_01.wav",
+   "category": "alarm",
+   "duration_s": 3.45,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -8,
+   "description": "Large dog barking at a distance (formant synthesis, experimental)"
+  },
+  {
+   "file": "alarm/dog_bark_distant_02.wav",
+   "category": "alarm",
+   "duration_s": 3.0,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -8,
+   "description": "Large dog barking at a distance (formant synthesis, experimental)"
+  },
+  {
+   "file": "alarm/dog_bark_distant_03.wav",
+   "category": "alarm",
+   "duration_s": 3.8,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -8,
+   "description": "Large dog barking at a distance (formant synthesis, experimental)"
+  },
+  {
+   "file": "alarm/dog_bark_distant_04.wav",
+   "category": "alarm",
+   "duration_s": 4.6,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -8,
+   "description": "Large dog barking at a distance (formant synthesis, experimental)"
+  },
+  {
+   "file": "alarm/siren_hand_crank.wav",
+   "category": "alarm",
+   "duration_s": 12.5,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -6,
+   "description": "Hand-cranked siren: wind up, hold, wind down"
+  },
+  {
+   "file": "alarm/whistle_trill_01.wav",
+   "category": "alarm",
+   "duration_s": 1.7,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -6,
+   "description": "Pea whistle, one long trilled blast"
+  },
+  {
+   "file": "alarm/whistle_trill_02.wav",
+   "category": "alarm",
+   "duration_s": 2.24,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -6,
+   "description": "Pea whistle, two short blasts and one long"
+  },
+  {
+   "file": "ambience/church_bell_toll.wav",
+   "category": "ambience",
+   "duration_s": 16.0,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -10,
+   "description": "Single toll of a village church bell, distant, long decay"
+  },
+  {
+   "file": "ambience/distant_engine_pass_01.wav",
+   "category": "ambience",
+   "duration_s": 16.0,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -14,
+   "description": "Air-cooled 4-cylinder vehicle passing at ~55 m (Doppler, air absorption)"
+  },
+  {
+   "file": "ambience/distant_sea_loop.wav",
+   "category": "ambience",
+   "duration_s": 80.004,
+   "channels": 2,
+   "loop": true,
+   "sample_rate": 44100,
+   "suggested_gain_db": -20,
+   "description": "Distant surf below the cliffs, slow wave cycle (stereo loop)"
+  },
+  {
+   "file": "ambience/drips_loop.wav",
+   "category": "ambience",
+   "duration_s": 60.0,
+   "channels": 2,
+   "loop": true,
+   "sample_rate": 44100,
+   "suggested_gain_db": -22,
+   "description": "Eaves and gutters dripping into puddles in a stone street (stereo loop)"
+  },
+  {
+   "file": "ambience/fire_crackle_loop.wav",
+   "category": "ambience",
+   "duration_s": 23.998,
+   "channels": 1,
+   "loop": true,
+   "sample_rate": 44100,
+   "suggested_gain_db": -14,
+   "description": "Small wood fire in an iron brazier drum: low roar, irregular crackles and pops, sap hiss, ember settle (mono loop)"
+  },
+  {
+   "file": "ambience/rain_light_loop.wav",
+   "category": "ambience",
+   "duration_s": 60.0,
+   "channels": 2,
+   "loop": true,
+   "sample_rate": 44100,
+   "suggested_gain_db": -20,
+   "description": "Light drizzle on stone, slate and puddles (stereo loop)"
+  },
+  {
+   "file": "ambience/wind_gusts_loop.wav",
+   "category": "ambience",
+   "duration_s": 80.004,
+   "channels": 2,
+   "loop": true,
+   "sample_rate": 44100,
+   "suggested_gain_db": -18,
+   "description": "Winter coastal wind, slow gusts with faint whistles (stereo loop)"
+  },
+  {
+   "file": "footsteps/cobble_run_01.wav",
+   "category": "footsteps",
+   "duration_s": 0.4,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -11,
+   "description": "Player leather-soled shoe on cobble, running"
+  },
+  {
+   "file": "footsteps/cobble_run_02.wav",
+   "category": "footsteps",
+   "duration_s": 0.4,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -11,
+   "description": "Player leather-soled shoe on cobble, running"
+  },
+  {
+   "file": "footsteps/cobble_run_03.wav",
+   "category": "footsteps",
+   "duration_s": 0.4,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -11,
+   "description": "Player leather-soled shoe on cobble, running"
+  },
+  {
+   "file": "footsteps/cobble_run_04.wav",
+   "category": "footsteps",
+   "duration_s": 0.4,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -11,
+   "description": "Player leather-soled shoe on cobble, running"
+  },
+  {
+   "file": "footsteps/cobble_walk_01.wav",
+   "category": "footsteps",
+   "duration_s": 0.4,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on cobble, walking"
+  },
+  {
+   "file": "footsteps/cobble_walk_02.wav",
+   "category": "footsteps",
+   "duration_s": 0.4,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on cobble, walking"
+  },
+  {
+   "file": "footsteps/cobble_walk_03.wav",
+   "category": "footsteps",
+   "duration_s": 0.4,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on cobble, walking"
+  },
+  {
+   "file": "footsteps/cobble_walk_04.wav",
+   "category": "footsteps",
+   "duration_s": 0.4,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on cobble, walking"
+  },
+  {
+   "file": "footsteps/cobble_walk_05.wav",
+   "category": "footsteps",
+   "duration_s": 0.4,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on cobble, walking"
+  },
+  {
+   "file": "footsteps/cobble_walk_06.wav",
+   "category": "footsteps",
+   "duration_s": 0.4,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on cobble, walking"
+  },
+  {
+   "file": "footsteps/grass_run_01.wav",
+   "category": "footsteps",
+   "duration_s": 0.45,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -11,
+   "description": "Player leather-soled shoe on grass, running"
+  },
+  {
+   "file": "footsteps/grass_run_02.wav",
+   "category": "footsteps",
+   "duration_s": 0.45,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -11,
+   "description": "Player leather-soled shoe on grass, running"
+  },
+  {
+   "file": "footsteps/grass_run_03.wav",
+   "category": "footsteps",
+   "duration_s": 0.45,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -11,
+   "description": "Player leather-soled shoe on grass, running"
+  },
+  {
+   "file": "footsteps/grass_run_04.wav",
+   "category": "footsteps",
+   "duration_s": 0.45,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -11,
+   "description": "Player leather-soled shoe on grass, running"
+  },
+  {
+   "file": "footsteps/grass_walk_01.wav",
+   "category": "footsteps",
+   "duration_s": 0.45,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on grass, walking"
+  },
+  {
+   "file": "footsteps/grass_walk_02.wav",
+   "category": "footsteps",
+   "duration_s": 0.45,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on grass, walking"
+  },
+  {
+   "file": "footsteps/grass_walk_03.wav",
+   "category": "footsteps",
+   "duration_s": 0.45,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on grass, walking"
+  },
+  {
+   "file": "footsteps/grass_walk_04.wav",
+   "category": "footsteps",
+   "duration_s": 0.45,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on grass, walking"
+  },
+  {
+   "file": "footsteps/grass_walk_05.wav",
+   "category": "footsteps",
+   "duration_s": 0.45,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on grass, walking"
+  },
+  {
+   "file": "footsteps/grass_walk_06.wav",
+   "category": "footsteps",
+   "duration_s": 0.45,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on grass, walking"
+  },
+  {
+   "file": "footsteps/gravel_run_01.wav",
+   "category": "footsteps",
+   "duration_s": 0.45,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -11,
+   "description": "Player leather-soled shoe on gravel, running"
+  },
+  {
+   "file": "footsteps/gravel_run_02.wav",
+   "category": "footsteps",
+   "duration_s": 0.45,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -11,
+   "description": "Player leather-soled shoe on gravel, running"
+  },
+  {
+   "file": "footsteps/gravel_run_03.wav",
+   "category": "footsteps",
+   "duration_s": 0.45,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -11,
+   "description": "Player leather-soled shoe on gravel, running"
+  },
+  {
+   "file": "footsteps/gravel_run_04.wav",
+   "category": "footsteps",
+   "duration_s": 0.45,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -11,
+   "description": "Player leather-soled shoe on gravel, running"
+  },
+  {
+   "file": "footsteps/gravel_walk_01.wav",
+   "category": "footsteps",
+   "duration_s": 0.45,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on gravel, walking"
+  },
+  {
+   "file": "footsteps/gravel_walk_02.wav",
+   "category": "footsteps",
+   "duration_s": 0.45,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on gravel, walking"
+  },
+  {
+   "file": "footsteps/gravel_walk_03.wav",
+   "category": "footsteps",
+   "duration_s": 0.45,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on gravel, walking"
+  },
+  {
+   "file": "footsteps/gravel_walk_04.wav",
+   "category": "footsteps",
+   "duration_s": 0.45,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on gravel, walking"
+  },
+  {
+   "file": "footsteps/gravel_walk_05.wav",
+   "category": "footsteps",
+   "duration_s": 0.45,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on gravel, walking"
+  },
+  {
+   "file": "footsteps/gravel_walk_06.wav",
+   "category": "footsteps",
+   "duration_s": 0.45,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on gravel, walking"
+  },
+  {
+   "file": "footsteps/mud_run_01.wav",
+   "category": "footsteps",
+   "duration_s": 0.55,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -11,
+   "description": "Player leather-soled shoe on mud, running"
+  },
+  {
+   "file": "footsteps/mud_run_02.wav",
+   "category": "footsteps",
+   "duration_s": 0.55,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -11,
+   "description": "Player leather-soled shoe on mud, running"
+  },
+  {
+   "file": "footsteps/mud_run_03.wav",
+   "category": "footsteps",
+   "duration_s": 0.55,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -11,
+   "description": "Player leather-soled shoe on mud, running"
+  },
+  {
+   "file": "footsteps/mud_run_04.wav",
+   "category": "footsteps",
+   "duration_s": 0.55,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -11,
+   "description": "Player leather-soled shoe on mud, running"
+  },
+  {
+   "file": "footsteps/mud_walk_01.wav",
+   "category": "footsteps",
+   "duration_s": 0.55,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on mud, walking"
+  },
+  {
+   "file": "footsteps/mud_walk_02.wav",
+   "category": "footsteps",
+   "duration_s": 0.55,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on mud, walking"
+  },
+  {
+   "file": "footsteps/mud_walk_03.wav",
+   "category": "footsteps",
+   "duration_s": 0.55,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on mud, walking"
+  },
+  {
+   "file": "footsteps/mud_walk_04.wav",
+   "category": "footsteps",
+   "duration_s": 0.55,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on mud, walking"
+  },
+  {
+   "file": "footsteps/mud_walk_05.wav",
+   "category": "footsteps",
+   "duration_s": 0.55,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on mud, walking"
+  },
+  {
+   "file": "footsteps/mud_walk_06.wav",
+   "category": "footsteps",
+   "duration_s": 0.55,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on mud, walking"
+  },
+  {
+   "file": "footsteps/npc_hobnail_cobble_01.wav",
+   "category": "footsteps",
+   "duration_s": 0.5,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -12,
+   "description": "German hobnailed jackboot on cobbles: heel iron clack and studs"
+  },
+  {
+   "file": "footsteps/npc_hobnail_cobble_02.wav",
+   "category": "footsteps",
+   "duration_s": 0.5,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -12,
+   "description": "German hobnailed jackboot on cobbles: heel iron clack and studs"
+  },
+  {
+   "file": "footsteps/npc_hobnail_cobble_03.wav",
+   "category": "footsteps",
+   "duration_s": 0.5,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -12,
+   "description": "German hobnailed jackboot on cobbles: heel iron clack and studs"
+  },
+  {
+   "file": "footsteps/npc_hobnail_cobble_04.wav",
+   "category": "footsteps",
+   "duration_s": 0.5,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -12,
+   "description": "German hobnailed jackboot on cobbles: heel iron clack and studs"
+  },
+  {
+   "file": "footsteps/npc_hobnail_cobble_05.wav",
+   "category": "footsteps",
+   "duration_s": 0.5,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -12,
+   "description": "German hobnailed jackboot on cobbles: heel iron clack and studs"
+  },
+  {
+   "file": "footsteps/npc_hobnail_cobble_06.wav",
+   "category": "footsteps",
+   "duration_s": 0.5,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -12,
+   "description": "German hobnailed jackboot on cobbles: heel iron clack and studs"
+  },
+  {
+   "file": "footsteps/wood_run_01.wav",
+   "category": "footsteps",
+   "duration_s": 0.5,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -11,
+   "description": "Player leather-soled shoe on wood, running"
+  },
+  {
+   "file": "footsteps/wood_run_02.wav",
+   "category": "footsteps",
+   "duration_s": 0.5,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -11,
+   "description": "Player leather-soled shoe on wood, running"
+  },
+  {
+   "file": "footsteps/wood_run_03.wav",
+   "category": "footsteps",
+   "duration_s": 0.5,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -11,
+   "description": "Player leather-soled shoe on wood, running"
+  },
+  {
+   "file": "footsteps/wood_run_04.wav",
+   "category": "footsteps",
+   "duration_s": 0.5,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -11,
+   "description": "Player leather-soled shoe on wood, running"
+  },
+  {
+   "file": "footsteps/wood_walk_01.wav",
+   "category": "footsteps",
+   "duration_s": 0.5,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on wood, walking"
+  },
+  {
+   "file": "footsteps/wood_walk_02.wav",
+   "category": "footsteps",
+   "duration_s": 0.5,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on wood, walking"
+  },
+  {
+   "file": "footsteps/wood_walk_03.wav",
+   "category": "footsteps",
+   "duration_s": 0.5,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on wood, walking"
+  },
+  {
+   "file": "footsteps/wood_walk_04.wav",
+   "category": "footsteps",
+   "duration_s": 0.5,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on wood, walking"
+  },
+  {
+   "file": "footsteps/wood_walk_05.wav",
+   "category": "footsteps",
+   "duration_s": 0.5,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Player leather-soled shoe on wood, walking"
+  },
+  {
+   "file": "footsteps/wood_walk_06.wav",
+   "category": "footsteps",
+   "duration_s": 0.85,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Leather sole on floorboards, walking, with board creak"
+  },
+  {
+   "file": "impacts/impact_dirt_01.wav",
+   "category": "impacts",
+   "duration_s": 0.7,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -8,
+   "description": "Bullet strike on earth/mud: thump and spray"
+  },
+  {
+   "file": "impacts/impact_dirt_02.wav",
+   "category": "impacts",
+   "duration_s": 0.7,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -8,
+   "description": "Bullet strike on earth/mud: thump and spray"
+  },
+  {
+   "file": "impacts/impact_dirt_03.wav",
+   "category": "impacts",
+   "duration_s": 0.7,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -8,
+   "description": "Bullet strike on earth/mud: thump and spray"
+  },
+  {
+   "file": "impacts/impact_stone_01.wav",
+   "category": "impacts",
+   "duration_s": 0.8,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -6,
+   "description": "Bullet strike on granite: crack, chips, grit"
+  },
+  {
+   "file": "impacts/impact_stone_02.wav",
+   "category": "impacts",
+   "duration_s": 0.8,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -6,
+   "description": "Bullet strike on granite: crack, chips, grit"
+  },
+  {
+   "file": "impacts/impact_stone_03.wav",
+   "category": "impacts",
+   "duration_s": 0.8,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -6,
+   "description": "Bullet strike on granite: crack, chips, grit"
+  },
+  {
+   "file": "impacts/impact_stone_04.wav",
+   "category": "impacts",
+   "duration_s": 0.8,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -6,
+   "description": "Bullet strike on granite: crack, chips, grit"
+  },
+  {
+   "file": "impacts/impact_wood_01.wav",
+   "category": "impacts",
+   "duration_s": 0.6,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -6,
+   "description": "Bullet strike on wood: thud and splinter"
+  },
+  {
+   "file": "impacts/impact_wood_02.wav",
+   "category": "impacts",
+   "duration_s": 0.6,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -6,
+   "description": "Bullet strike on wood: thud and splinter"
+  },
+  {
+   "file": "impacts/impact_wood_03.wav",
+   "category": "impacts",
+   "duration_s": 0.6,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -6,
+   "description": "Bullet strike on wood: thud and splinter"
+  },
+  {
+   "file": "impacts/ricochet_01.wav",
+   "category": "impacts",
+   "duration_s": 0.843,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -6,
+   "description": "Ricochet off stone: strike then tumbling whine"
+  },
+  {
+   "file": "impacts/ricochet_02.wav",
+   "category": "impacts",
+   "duration_s": 0.925,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -6,
+   "description": "Ricochet off stone: strike then tumbling whine"
+  },
+  {
+   "file": "impacts/ricochet_03.wav",
+   "category": "impacts",
+   "duration_s": 1.044,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -6,
+   "description": "Ricochet off stone: strike then tumbling whine"
+  },
+  {
+   "file": "music/drone_dread_loop.wav",
+   "category": "music",
+   "duration_s": 120.001,
+   "channels": 2,
+   "loop": true,
+   "sample_rate": 44100,
+   "suggested_gain_db": -14,
+   "description": "Low evolving dread drone: dissonant clusters, distant metal scrapes (stereo loop)"
+  },
+  {
+   "file": "music/stinger_terror_01.wav",
+   "category": "music",
+   "duration_s": 7.0,
+   "channels": 2,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -10,
+   "description": "Terror stinger: rising tremolo cluster to a hit, then reverb tail"
+  },
+  {
+   "file": "music/stinger_terror_02.wav",
+   "category": "music",
+   "duration_s": 6.0,
+   "channels": 2,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -10,
+   "description": "Terror stinger: reverse swell into low brass-like slam and diving screech"
+  },
+  {
+   "file": "player/breath_calm_loop.wav",
+   "category": "player",
+   "duration_s": 7.999,
+   "channels": 1,
+   "loop": true,
+   "sample_rate": 44100,
+   "suggested_gain_db": -26,
+   "description": "Calm nasal breathing, 15/min"
+  },
+  {
+   "file": "player/breath_exhausted_loop.wav",
+   "category": "player",
+   "duration_s": 8.406,
+   "channels": 1,
+   "loop": true,
+   "sample_rate": 44100,
+   "suggested_gain_db": -16,
+   "description": "Heavy exhausted mouth breathing after a sprint"
+  },
+  {
+   "file": "player/cloth_wool_move_01.wav",
+   "category": "player",
+   "duration_s": 0.568,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -22,
+   "description": "Heavy wool overcoat rustle"
+  },
+  {
+   "file": "player/cloth_wool_move_02.wav",
+   "category": "player",
+   "duration_s": 0.571,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -22,
+   "description": "Heavy wool overcoat rustle"
+  },
+  {
+   "file": "player/cloth_wool_move_03.wav",
+   "category": "player",
+   "duration_s": 0.885,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -22,
+   "description": "Heavy wool overcoat rustle"
+  },
+  {
+   "file": "player/cloth_wool_move_04.wav",
+   "category": "player",
+   "duration_s": 0.514,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -22,
+   "description": "Heavy wool overcoat rustle"
+  },
+  {
+   "file": "player/heartbeat_loop.wav",
+   "category": "player",
+   "duration_s": 6.002,
+   "channels": 1,
+   "loop": true,
+   "sample_rate": 44100,
+   "suggested_gain_db": -14,
+   "description": "Heartbeat at 80 bpm (scale pitch for rate)"
+  },
+  {
+   "file": "player/tinnitus_loop.wav",
+   "category": "player",
+   "duration_s": 7.999,
+   "channels": 1,
+   "loop": true,
+   "sample_rate": 44100,
+   "suggested_gain_db": -12,
+   "description": "Post-gunshot tinnitus: ~4.7 kHz unsteady ring + narrow noise band"
+  },
+  {
+   "file": "weapons/casing_cobble_01.wav",
+   "category": "weapons",
+   "duration_s": 1.0,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -18,
+   "description": "9 mm brass casing bouncing on cobbles"
+  },
+  {
+   "file": "weapons/casing_cobble_02.wav",
+   "category": "weapons",
+   "duration_s": 1.0,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -18,
+   "description": "9 mm brass casing bouncing on cobbles"
+  },
+  {
+   "file": "weapons/casing_cobble_03.wav",
+   "category": "weapons",
+   "duration_s": 1.0,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -18,
+   "description": "9 mm brass casing bouncing on cobbles"
+  },
+  {
+   "file": "weapons/casing_cobble_04.wav",
+   "category": "weapons",
+   "duration_s": 1.0,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -18,
+   "description": "9 mm brass casing bouncing on cobbles"
+  },
+  {
+   "file": "weapons/p38_decocker.wav",
+   "category": "weapons",
+   "duration_s": 0.32,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -13,
+   "description": "P38 safety/decocker lever: hammer drops safely"
+  },
+  {
+   "file": "weapons/p38_dryfire.wav",
+   "category": "weapons",
+   "duration_s": 0.35,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -12,
+   "description": "P38 trigger pull on an empty chamber: sear click + hammer fall"
+  },
+  {
+   "file": "weapons/p38_mag_in.wav",
+   "category": "weapons",
+   "duration_s": 0.38,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -12,
+   "description": "P38 magazine inserted and seated"
+  },
+  {
+   "file": "weapons/p38_mag_out.wav",
+   "category": "weapons",
+   "duration_s": 0.38,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -14,
+   "description": "P38 heel-release magazine pulled out"
+  },
+  {
+   "file": "weapons/p38_shot_01.wav",
+   "category": "weapons",
+   "duration_s": 0.75,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": 0.0,
+   "description": "Walther P38 9 mm shot as heard by the shooter: blast, body, slide clack (dry)"
+  },
+  {
+   "file": "weapons/p38_shot_02.wav",
+   "category": "weapons",
+   "duration_s": 0.75,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": 0.0,
+   "description": "Walther P38 9 mm shot as heard by the shooter: blast, body, slide clack (dry)"
+  },
+  {
+   "file": "weapons/p38_shot_03.wav",
+   "category": "weapons",
+   "duration_s": 0.75,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": 0.0,
+   "description": "Walther P38 9 mm shot as heard by the shooter: blast, body, slide clack (dry)"
+  },
+  {
+   "file": "weapons/p38_shot_04.wav",
+   "category": "weapons",
+   "duration_s": 0.75,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": 0.0,
+   "description": "Walther P38 9 mm shot as heard by the shooter: blast, body, slide clack (dry)"
+  },
+  {
+   "file": "weapons/p38_slide_back.wav",
+   "category": "weapons",
+   "duration_s": 0.42,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -12,
+   "description": "P38 slide racked back by hand: scrape, hammer cocks, slide stop"
+  },
+  {
+   "file": "weapons/p38_slide_forward.wav",
+   "category": "weapons",
+   "duration_s": 0.42,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -10,
+   "description": "P38 slide released forward: slams into battery"
+  },
+  {
+   "file": "weapons/tail_interior_01.wav",
+   "category": "weapons",
+   "duration_s": 1.8,
+   "channels": 2,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -4.0,
+   "description": "Gunshot tail in a small stone room: dense, boomy reflections (no direct sound)"
+  },
+  {
+   "file": "weapons/tail_street_01.wav",
+   "category": "weapons",
+   "duration_s": 2.4,
+   "channels": 2,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -8.0,
+   "description": "Gunshot tail in a narrow granite street: facade slapbacks, flutter echo, rolling far reflections (no direct sound)"
+  },
+  {
+   "file": "weapons/tail_street_02.wav",
+   "category": "weapons",
+   "duration_s": 2.4,
+   "channels": 2,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -8.0,
+   "description": "Gunshot tail in a narrow granite street: facade slapbacks, flutter echo, rolling far reflections (no direct sound)"
+  }
+ ]
+}
