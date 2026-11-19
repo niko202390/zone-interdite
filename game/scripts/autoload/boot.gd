@@ -18,7 +18,8 @@ var applied: PackedStringArray = PackedStringArray()
 func _init() -> void:
 	base_version = String(ProjectSettings.get_setting("application/config/version", "0.0.0"))
 	version = base_version
-	if not DirAccess.dir_exists_absolute(PATCH_DIR):
+	# Patches are for exported builds. When running from source, the source is newer than any patch.
+	if OS.has_feature("editor") or not DirAccess.dir_exists_absolute(PATCH_DIR):
 		return
 	var patches: Array = []
 	for f in DirAccess.get_files_at(PATCH_DIR):

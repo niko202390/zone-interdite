@@ -274,7 +274,7 @@ void fragment(){ float d=length((UV-vec2(0.5,0.42))*vec2(1.0,1.4)); COLOR=vec4(1
 		_root_doc.add_child(page)
 		_page_nodes.append(page)
 	_root_doc.add_child(lamp)
-	var hint := _label("Click or press Space to turn the page   ·   Esc to skip", _font_type, 15, Color(0.6, 0.56, 0.5))
+	var hint := _label("Click or Space: next page   ·   ←: back   ·   Esc: skip", _font_type, 15, Color(0.6, 0.56, 0.5))
 	hint.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
 	hint.offset_top = -50
 	hint.offset_bottom = -25
