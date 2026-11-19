@@ -1,0 +1,1087 @@
+[
+  {
+    "id": "walther_p38",
+    "name": "Walther P38 (Pistole 38)",
+    "origin": "German",
+    "category": "pistol",
+    "caliber": "9×19mm Parabellum",
+    "capacity": 8,
+    "feed": "8-round detachable single-stack box magazine",
+    "action": "Short recoil with hinged locking piece; double-action/single-action",
+    "rpm": null,
+    "muzzle_velocity_mps": 320,
+    "effective_range_m": 50,
+    "weight_kg": 0.96,
+    "rarity": "common",
+    "variants": [
+      {"name": "Zero series (0-prefix serials)", "notes": "Three prototype/test series; mass production began mid-1940 under Walther code 480."},
+      {"name": "ac (Walther, Zella-Mehlis)", "notes": "Marked ac + year, e.g. ac43. 617,585 made in WWII."},
+      {"name": "byf (Mauser, Oberndorf)", "notes": "Marked byf + year. 372,875 made. Start date not verified."},
+      {"name": "cyq / cvq (Spreewerk, Grottau)", "notes": "No date stamps. 287,220 made. Late-war die broke: about 31,400 marked cvq."},
+      {"name": "svw (Mauser 1945) and postwar 'grey ghost'", "notes": "OUT OF PERIOD. 1945 Mauser code; French occupation assembly 1945-46 marked svw46, parkerized, sheet-metal grips."},
+      {"name": "Grip material", "notes": "Early walnut grips, later Bakelite."},
+      {"name": "7.65mm Parabellum P38", "notes": "Small numbers from 1943."}
+    ],
+    "reliability_notes": "No systemic problem documented in the sources checked. Comment-section claims of cracked slides or frames are unverified. Muzzle velocity figure is flagged as needing a citation on Wikipedia.",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Walther_P38",
+      "https://de.wikipedia.org/wiki/Walther_P38",
+      "https://en.wikipedia.org/wiki/Karabiner_98k",
+      "https://www.forgottenweapons.com/ria-walther-p38-development/",
+      "https://www.forgottenweapons.com/grey-ghost-the-french-occupation-production-p38-pistol/"
+    ],
+    "confidence": "solid"
+  },
+  {
+    "id": "luger_p08",
+    "name": "Luger P08 (Pistole 08 / Parabellum)",
+    "origin": "German",
+    "category": "pistol",
+    "caliber": "9×19mm Parabellum",
+    "capacity": 8,
+    "feed": "8-round detachable box magazine (LP 08: 32-round Trommelmagazin 08 snail drum)",
+    "action": "Toggle-locked short recoil",
+    "rpm": null,
+    "muzzle_velocity_mps": 375,
+    "effective_range_m": 50,
+    "weight_kg": 0.871,
+    "rarity": "common",
+    "variants": [
+      {"name": "P08", "notes": "100 mm barrel. Muzzle velocity 350-400 m/s (range in source; JSON uses midpoint)."},
+      {"name": "LP 08 Artillery", "notes": "200 mm barrel, 8-position tangent sight, shoulder stock, snail drum."},
+      {"name": "Pistole 04 (Navy)", "notes": "150 mm barrel, two-position sight. Relevant to Kriegsmarine bases in Brittany."},
+      {"name": "Krieghoff Luftwaffe contract", "notes": "From 1935; second contract of 15,000 unfinished when Krieghoff stopped in 1944."},
+      {"name": "Mauser production", "notes": "Rust blue and straw-finished small parts dropped in the 1930s; black Bakelite grips on some from 1941; P08 production ended December 1943. Factory codes S/42, 42, byf inferred from the Mauser Oberndorf code list."}
+    ],
+    "reliability_notes": "Sensitive to ammunition: low-pressure loads may not cycle the toggle. Wikipedia describes above-average mud resistance, so the 'jams when dirty' reputation is not supported; poorly assembled or salvaged guns are blamed for much of its bad name.",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Luger_pistol",
+      "https://en.wikipedia.org/wiki/Karabiner_98k"
+    ],
+    "confidence": "solid"
+  },
+  {
+    "id": "walther_pp",
+    "name": "Walther PP",
+    "origin": "German",
+    "category": "pistol",
+    "caliber": "7.65×17mm Browning (.32 ACP)",
+    "capacity": 8,
+    "feed": "8-round detachable box magazine (.32 ACP; 7 in .380)",
+    "action": "Straight blowback, double-action/single-action",
+    "rpm": null,
+    "muzzle_velocity_mps": 320,
+    "effective_range_m": null,
+    "weight_kg": 0.66,
+    "rarity": "uncommon",
+    "variants": [
+      {"name": ".32 ACP", "notes": "Most common service chambering; 320 m/s (Wikipedia flags as needing citation)."},
+      {"name": ".380 ACP / 9mm Kurz", "notes": "7 rounds, 256 m/s, 665 g."},
+      {"name": ".22 LR", "notes": "10 rounds; training and sporting."}
+    ],
+    "reliability_notes": "No problems documented in sources checked. Late-war finish changes not found.",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Walther_PP"
+    ],
+    "confidence": "mixed"
+  },
+  {
+    "id": "walther_ppk",
+    "name": "Walther PPK",
+    "origin": "German",
+    "category": "pistol",
+    "caliber": "7.65×17mm Browning (.32 ACP)",
+    "capacity": 7,
+    "feed": "7-round detachable box magazine (.32 ACP; 6 in .380)",
+    "action": "Straight blowback, double-action/single-action",
+    "rpm": null,
+    "muzzle_velocity_mps": null,
+    "effective_range_m": null,
+    "weight_kg": null,
+    "rarity": "uncommon",
+    "variants": [
+      {"name": ".32 ACP", "notes": "7 rounds."},
+      {"name": ".380 ACP", "notes": "6 rounds."}
+    ],
+    "reliability_notes": "No problems documented. Issued to Ordnungspolizei, Kriminalpolizei detectives, party officials and officers; Gestapo use is an inference, not stated in the source.",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Walther_PP"
+    ],
+    "confidence": "mixed"
+  },
+  {
+    "id": "mauser_hsc",
+    "name": "Mauser HSc",
+    "origin": "German",
+    "category": "pistol",
+    "caliber": "7.65×17mm Browning (.32 ACP)",
+    "capacity": 8,
+    "feed": "8-round detachable box magazine (.380: 7)",
+    "action": "Blowback, double-action",
+    "rpm": null,
+    "muzzle_velocity_mps": 290,
+    "effective_range_m": null,
+    "weight_kg": 0.7,
+    "rarity": "uncommon",
+    "variants": [
+      {"name": "Early Army/Navy pistols", "notes": "Highly polished, richly blued, wood grips. Wartime split 1940-45: Heer 137,121, Polizei 28,300, Kriegsmarine 27,100, commercial 59,467."},
+      {"name": "3rd/4th Army variations", "notes": "Finish declines, rougher polish, sight-channel machining removed."},
+      {"name": "Late (#940,000+)", "notes": "Some black plastic grips; final pistols (about #949,500-952,000) phosphate finish."}
+    ],
+    "reliability_notes": "No problems documented in sources checked.",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Mauser_HSc"
+    ],
+    "confidence": "solid"
+  },
+  {
+    "id": "sauer_38h",
+    "name": "Sauer 38H",
+    "origin": "German",
+    "category": "pistol",
+    "caliber": "7.65×17mm Browning (.32 ACP)",
+    "capacity": 8,
+    "feed": "8-round detachable box magazine",
+    "action": "Straight blowback, double-action with cocking/decocking lever",
+    "rpm": null,
+    "muzzle_velocity_mps": 280,
+    "effective_range_m": null,
+    "weight_kg": 0.715,
+    "rarity": "uncommon",
+    "variants": [
+      {"name": "Standard wartime", "notes": "About 200,000 made 1938-45; mainly Luftwaffe and police."},
+      {"name": "Late-war simplified", "notes": "Rougher finish, simpler markings, no slide safety, some without decocking lever. Final April 1945 guns out of period."}
+    ],
+    "reliability_notes": "Late simplified examples described as still fully functional.",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Sauer_38H"
+    ],
+    "confidence": "mixed"
+  },
+  {
+    "id": "fn_1910_1922",
+    "name": "FN Browning Model 1910 / Model 1922 (German police issue)",
+    "origin": "German (foreign-made)",
+    "category": "pistol",
+    "caliber": "7.65×17mm Browning (.32 ACP) or 9×17mm (.380 ACP)",
+    "capacity": 9,
+    "feed": "Detachable box magazine (M1922: 9 x .32 / 8 x .380; M1910: 7 x .32 / 6 x .380)",
+    "action": "Blowback, striker-fired, grip safety",
+    "rpm": null,
+    "muzzle_velocity_mps": null,
+    "effective_range_m": null,
+    "weight_kg": 0.7,
+    "rarity": "uncommon",
+    "variants": [
+      {"name": "Model 1910", "notes": "About 590 g, 80 mm barrel."},
+      {"name": "Model 1922", "notes": "About 700 g, 113 mm barrel; produced at occupied FN for German police use."}
+    ],
+    "reliability_notes": "No problems documented in sources checked. German designations Pistole 626(b)/641(b) appear in lists but model mapping not confirmed.",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/FN_Model_1910",
+      "https://en.wikipedia.org/wiki/List_of_World_War_II_infantry_weapons"
+    ],
+    "confidence": "mixed"
+  },
+  {
+    "id": "vis_p35p",
+    "name": "Radom Vis wz. 35 (Pistole P 35(p))",
+    "origin": "German (foreign-made)",
+    "category": "pistol",
+    "caliber": "9×19mm Parabellum",
+    "capacity": 8,
+    "feed": "8-round detachable box magazine",
+    "action": "Short recoil, single-action, hammer-fired",
+    "rpm": null,
+    "muzzle_velocity_mps": 345,
+    "effective_range_m": null,
+    "weight_kg": 0.95,
+    "rarity": "rare",
+    "variants": [
+      {"name": "Polish pre-war", "notes": "High quality; about 49,400 delivered before September 1939."},
+      {"name": "German series 1-4", "notes": "About 375,000 for the Heer (Hogg estimate); progressively simplified; final series marked only bnz (Steyr). All-Steyr production from late 1944 is out of period."}
+    ],
+    "reliability_notes": "German wartime pistols described as 'much lower quality' than Polish originals, declining further late in the war.",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Vis_pistol"
+    ],
+    "confidence": "mixed"
+  },
+  {
+    "id": "cz27_p27t",
+    "name": "CZ vz. 27 (Pistole 27(t))",
+    "origin": "German (foreign-made)",
+    "category": "pistol",
+    "caliber": "7.65×17mm Browning (.32 ACP)",
+    "capacity": 9,
+    "feed": "9-round detachable box magazine",
+    "action": "Simple blowback",
+    "rpm": null,
+    "muzzle_velocity_mps": 280,
+    "effective_range_m": null,
+    "weight_kg": 0.709,
+    "rarity": "rare",
+    "variants": [
+      {"name": "Occupation production (fnh)", "notes": "Slide marked fnh, German code for Ceska Zbrojovka Strakonice; Heer issue."}
+    ],
+    "reliability_notes": "No problems documented; late-war quality changes not found.",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/CZ_vz._27"
+    ],
+    "confidence": "uncertain"
+  },
+  {
+    "id": "browning_hp_p640b",
+    "name": "Browning Hi-Power (Pistole 640(b))",
+    "origin": "German (foreign-made)",
+    "category": "pistol",
+    "caliber": "9×19mm Parabellum",
+    "capacity": 13,
+    "feed": "13-round double-stack detachable box magazine",
+    "action": "Short recoil, tilting barrel, single-action",
+    "rpm": null,
+    "muzzle_velocity_mps": 335,
+    "effective_range_m": null,
+    "weight_kg": 0.915,
+    "rarity": "rare",
+    "variants": [
+      {"name": "FN under German occupation", "notes": "Over 300,000 for the Wehrmacht, German acceptance marks (e.g. WaA613); mainly Waffen-SS and Fallschirmjäger."},
+      {"name": "Inglis (Canada)", "notes": "OUT OF PERIOD: Allied production began late 1944."}
+    ],
+    "reliability_notes": "Stories of Belgian worker sabotage and degraded wartime quality were not confirmed in sources checked.",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Browning_Hi-Power"
+    ],
+    "confidence": "mixed"
+  },
+  {
+    "id": "mauser_c96",
+    "name": "Mauser C96 (and M712 Schnellfeuer)",
+    "origin": "German",
+    "category": "pistol",
+    "caliber": "7.63×25mm Mauser (some 9×19mm)",
+    "capacity": 10,
+    "feed": "10-round fixed internal magazine loaded by stripper clip (M712: 10/20-round detachable box)",
+    "action": "Short recoil, semi-automatic (M712 select-fire)",
+    "rpm": null,
+    "muzzle_velocity_mps": 425,
+    "effective_range_m": 175,
+    "weight_kg": 1.13,
+    "rarity": "rare",
+    "variants": [
+      {"name": "C96 / M1930", "notes": "Semi-auto; Heer received 19,000 in 1942, Luftwaffe about 7,800-8,000. Effective range 150-200 m (JSON midpoint). 9mm version 350 m/s."},
+      {"name": "M712 Schnellfeuer (M1932)", "notes": "Fully automatic, 900-1,000 rpm; small numbers to the Wehrmacht."},
+      {"name": "Stock holster", "notes": "Wooden holster attaches as a shoulder stock."}
+    ],
+    "reliability_notes": "No specific problems documented in sources checked. Automatic M712 is very hard to control (inferred from rate of fire).",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Mauser_C96"
+    ],
+    "confidence": "mixed"
+  },
+  {
+    "id": "kar98k",
+    "name": "Karabiner 98k",
+    "origin": "German",
+    "category": "rifle",
+    "caliber": "7.92×57mm Mauser",
+    "capacity": 5,
+    "feed": "Internal 5-round box; 5-round stripper clip or single rounds",
+    "action": "Bolt action (Mauser turn-bolt)",
+    "rpm": null,
+    "muzzle_velocity_mps": 760,
+    "effective_range_m": 500,
+    "weight_kg": 3.9,
+    "rarity": "common",
+    "variants": [
+      {"name": "Pre-1937 numeric codes", "notes": "27 Erma, 42 Mauser Oberndorf (S/42), 147 Sauer, 237 BLM, 243 Mauser Borsigwalde, 337 Gustloff, 660 Steyr, 945 Brno."},
+      {"name": "Letter codes from 1937", "notes": "ar Mauser Borsigwalde, ax Erma, bcd Gustloff, bnz Steyr, byf Mauser Oberndorf, ce Sauer, dot Brno, dou Bystrica, duv BLM. svw45/swp45 are 1945, out of period."},
+      {"name": "Stock and finish", "notes": "Laminated stocks from 1937 (stronger, resist warping); phosphate finish from 1944."},
+      {"name": "Kriegsmodell", "notes": "OUT OF PERIOD: from late 1944; no bayonet lug, cleaning rod or stock disc; stamped bands."},
+      {"name": "Sniper (ZF39 4x / ZF41 1.5x)", "notes": "About 132,000 sniper rifles; ZF39 for head/chest shots to 400 m; ZF41 from 1941 (100,000+). Scoped effective range 800-1,000 m."},
+      {"name": "Schiessbecher grenade launcher", "notes": "30 mm cup launcher from 1942, effective to 280 m; 1,450,113 made."}
+    ],
+    "reliability_notes": "No systemic problems documented. Weight 3.7-4.1 kg in source (JSON midpoint).",
+    "suppressed": false,
+    "peak_db": 167,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Karabiner_98k",
+      "https://en.wikipedia.org/wiki/7.92%C3%9757mm_Mauser"
+    ],
+    "confidence": "solid"
+  },
+  {
+    "id": "g43",
+    "name": "Gewehr 43 (G43)",
+    "origin": "German",
+    "category": "rifle",
+    "caliber": "7.92×57mm Mauser",
+    "capacity": 10,
+    "feed": "10-round detachable box magazine; can be topped up with 5-round stripper clips",
+    "action": "Gas-operated short-stroke piston, flapper locking, semi-automatic",
+    "rpm": null,
+    "muzzle_velocity_mps": 761,
+    "effective_range_m": 500,
+    "weight_kg": 4.4,
+    "rarity": "rare",
+    "variants": [
+      {"name": "G43", "notes": "Production began October 1943. Muzzle velocity 746-776 m/s depending on source (JSON midpoint)."},
+      {"name": "K43", "notes": "OUT OF PERIOD as a name: renamed April 1944."},
+      {"name": "ZF4 scoped", "notes": "About 50,000-53,435 sniper rifles; 4x, range drum 100-800 m; effective 800 m."},
+      {"name": "Maker codes", "notes": "ac Walther, duv then qve BLM, bcd Gustloff."}
+    ],
+    "reliability_notes": "More reliable than the fouling-prone G41. Planned issue of 19 per company was never achieved; with production only from October 1943, it is near-absent in Brittany in winter 1943-44.",
+    "suppressed": false,
+    "peak_db": 167,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Gewehr_43"
+    ],
+    "confidence": "uncertain"
+  },
+  {
+    "id": "mp40",
+    "name": "MP 40 (and MP 38)",
+    "origin": "German",
+    "category": "smg",
+    "caliber": "9×19mm Parabellum",
+    "capacity": 32,
+    "feed": "32-round double-column single-feed detachable box magazine (service practice: 28 rounds)",
+    "action": "Open-bolt straight blowback, fully automatic only",
+    "rpm": 525,
+    "muzzle_velocity_mps": 400,
+    "effective_range_m": 150,
+    "weight_kg": 3.97,
+    "rarity": "uncommon",
+    "variants": [
+      {"name": "MP 38", "notes": "Machined receiver with grooves, round hole in magazine housing, 4.2 kg. Early guns could not lock the bolt."},
+      {"name": "MP 38/40 conversion", "notes": "Bolt-locking safety notch standard from 1941 and retrofitted."},
+      {"name": "MP 40", "notes": "Stamped and spot-welded; ribbed magazine housing; ribbed magazines from 1941. About 1.05-1.1 million made by Erma, Haenel and Steyr (bnz). Codes ayf (Erma) and fxo (Haenel) are commonly cited but unverified."},
+      {"name": "MP 40/I", "notes": "Experimental dual-magazine version, late 1942; very rare."}
+    ],
+    "reliability_notes": "Magazine is the weak point: friction where the columns merge, dirt, and gripping the magazine misaligns it. Folding stock not always durable. Early MP 38s could fire if knocked. Rate 500-550 rpm, effective range 100-200 m (JSON midpoints).",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/MP_40",
+      "https://de.wikipedia.org/wiki/MP_40",
+      "https://en.wikipedia.org/wiki/Karabiner_98k"
+    ],
+    "confidence": "solid"
+  },
+  {
+    "id": "mg34",
+    "name": "MG 34 (enemy emplacement)",
+    "origin": "German",
+    "category": "mg",
+    "caliber": "7.92×57mm Mauser",
+    "capacity": 50,
+    "feed": "50-round belts (linkable to 250), 50-round Gurttrommel belt drum, or rare 75-round saddle drum",
+    "action": "Recoil-operated, open bolt, rotating bolt, muzzle booster",
+    "rpm": 850,
+    "muzzle_velocity_mps": 765,
+    "effective_range_m": 1100,
+    "weight_kg": 12.1,
+    "rarity": "uncommon",
+    "variants": [
+      {"name": "Standard", "notes": "800-900 rpm (JSON midpoint); 32 kg on tripod. Effective 200-2,000 m with sight adjustments (JSON midpoint); 3,500 m on tripod with optic."},
+      {"name": "MG 34S / MG 34/41", "notes": "Higher-rate experimental/limited variants (1,500 and about 1,200 rpm)."},
+      {"name": "Panzerlauf", "notes": "Armoured barrel jacket for vehicles; about 50,000 made."}
+    ],
+    "reliability_notes": "Sensitive to extreme weather, dirt and mud; tight tolerances. Recommend enemy-only (weight, belts).",
+    "suppressed": false,
+    "peak_db": 167,
+    "sources": [
+      "https://en.wikipedia.org/wiki/MG_34"
+    ],
+    "confidence": "solid"
+  },
+  {
+    "id": "mg42",
+    "name": "MG 42 (enemy emplacement)",
+    "origin": "German",
+    "category": "mg",
+    "caliber": "7.92×57mm Mauser",
+    "capacity": 50,
+    "feed": "50/250-round belts or 50-round belt drum",
+    "action": "Recoil-operated, roller-locked",
+    "rpm": 1200,
+    "muzzle_velocity_mps": 740,
+    "effective_range_m": 1100,
+    "weight_kg": 11.6,
+    "rarity": "uncommon",
+    "variants": [
+      {"name": "Standard", "notes": "About 1,200 rpm cyclic (900-1,500 with different bolts); barrel change in under 10 s. First combat May 1942; 116,725 made in 1943. Effective 200-2,000 m (JSON midpoint)."}
+    ],
+    "reliability_notes": "No specific issues documented. Static coastal divisions likely held more MG 34s and captured MGs than MG 42s (inference). Recommend enemy-only.",
+    "suppressed": false,
+    "peak_db": 167,
+    "sources": [
+      "https://en.wikipedia.org/wiki/MG_42"
+    ],
+    "confidence": "solid"
+  },
+  {
+    "id": "leuchtpistole",
+    "name": "Leuchtpistole 34 / Leuchtpistole 42 (flare pistol)",
+    "origin": "German",
+    "category": "flare",
+    "caliber": "26.6 mm signal (international Kaliber 4 = 26.5 mm)",
+    "capacity": 1,
+    "feed": "Single cartridge; break-open, manually loaded",
+    "action": "Single-shot break action, smoothbore",
+    "rpm": null,
+    "muzzle_velocity_mps": null,
+    "effective_range_m": null,
+    "weight_kg": 0.73,
+    "rarity": "uncommon",
+    "variants": [
+      {"name": "Leuchtpistole 34", "notes": "Walther (also Erma, Berhauss); duralumin frame, steel barrel, Bakelite grips; 245 mm; introduced 1934."},
+      {"name": "Leuchtpistole 42", "notes": "Stamped galvanised mild steel; introduced 1943 per German Wikipedia."},
+      {"name": "Kampfpistole / Sturmpistole", "notes": "Rifled 'Z' version firing grenades: Panzerwurfkörper 42 HEAT (69 m, 80 mm penetration), Wurfgranate 326, Wurfkörper 361."},
+      {"name": "Ammunition", "notes": "Single and multi-star signals, parachute illumination, smoke."}
+    ],
+    "reliability_notes": "No issues documented. Firing a flare should reveal the player to every patrol in sight.",
+    "suppressed": false,
+    "peak_db": null,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Leuchtpistole_34",
+      "https://de.wikipedia.org/wiki/Leuchtpistole",
+      "https://en.wikipedia.org/wiki/Flare_gun"
+    ],
+    "confidence": "solid"
+  },
+  {
+    "id": "mas36",
+    "name": "MAS-36 (German Gewehr 242(f))",
+    "origin": "French",
+    "category": "rifle",
+    "caliber": "7.5×54mm French",
+    "capacity": 5,
+    "feed": "Internal 5-round box loaded by 5-round stripper clips",
+    "action": "Bolt action",
+    "rpm": null,
+    "muzzle_velocity_mps": 850,
+    "effective_range_m": 400,
+    "weight_kg": 3.72,
+    "rarity": "uncommon",
+    "variants": [
+      {"name": "French Army", "notes": "Made from late 1937; only 250,000 available in 1940. Spike bayonet stored reversed under barrel."},
+      {"name": "Gewehr 242(f)", "notes": "Captured rifles issued to German occupation units in France."}
+    ],
+    "reliability_notes": "No manual safety (typical of French rifles of the period).",
+    "suppressed": false,
+    "peak_db": 167,
+    "sources": [
+      "https://en.wikipedia.org/wiki/MAS-36_rifle",
+      "https://en.wikipedia.org/wiki/7.5%C3%9754mm_French"
+    ],
+    "confidence": "solid"
+  },
+  {
+    "id": "lebel_1886",
+    "name": "Lebel Mle 1886/M93 (German Gewehr 301(f))",
+    "origin": "French",
+    "category": "rifle",
+    "caliber": "8×50mmR Lebel",
+    "capacity": 8,
+    "feed": "8-round tube magazine under the barrel, loaded one round at a time (+1 on elevator, +1 in chamber = 10 total)",
+    "action": "Bolt action, two front locking lugs",
+    "rpm": null,
+    "muzzle_velocity_mps": 655,
+    "effective_range_m": 400,
+    "weight_kg": 4.18,
+    "rarity": "uncommon",
+    "variants": [
+      {"name": "Mle 1886/M93", "notes": "1893 bolt-head change vents burst-case gas away from the face. Muzzle velocity 610-700 m/s (JSON midpoint); Balle D 730 m/s per cartridge article."},
+      {"name": "M93-R35 carbine", "notes": "About 45 cm barrel, 3-round tube; about 50,000 assembled from 1937."},
+      {"name": "Gewehr 301(f)", "notes": "Issued in limited numbers to occupation troops in 1944."}
+    ],
+    "reliability_notes": "Slow tube-magazine reload is its 'worst handicap'. No safety, so carrying chambered is unsafe. Primer groove and cap stop spitzer tips setting off rounds in the tube.",
+    "suppressed": false,
+    "peak_db": 167,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Lebel_Model_1886_rifle",
+      "https://en.wikipedia.org/wiki/8%C3%9750mmR_Lebel"
+    ],
+    "confidence": "solid"
+  },
+  {
+    "id": "berthier",
+    "name": "Berthier Mousqueton Mle 1892/M16 and Fusil 1907/15 (German K 553(f) / G 304(f) / G 241(f))",
+    "origin": "French",
+    "category": "rifle",
+    "caliber": "8×50mmR Lebel (M34 conversion: 7.5×54mm French)",
+    "capacity": 5,
+    "feed": "Mannlicher-type en-bloc clip (3-round early, 5-round M16); empty clip drops out of the bottom",
+    "action": "Bolt action",
+    "rpm": null,
+    "muzzle_velocity_mps": 701,
+    "effective_range_m": null,
+    "weight_kg": 3.25,
+    "rarity": "uncommon",
+    "variants": [
+      {"name": "Mousqueton Mle 1892/M16", "notes": "5-round carbine, 3.25 kg, 637 m/s. German Karabiner 553(f); captured carbines issued to Atlantic Wall units."},
+      {"name": "Fusil Mle 1907/15", "notes": "3-round, 3.81 kg; 435,000 made."},
+      {"name": "Fusil Mle 1907/15-M16", "notes": "5-round, 4.195 kg; German Gewehr 304(f)."},
+      {"name": "Mle 1907/15-M34", "notes": "7.5×54mm, 850 m/s, 3.7 kg; about 80,000 converted; German Gewehr 241(f)."}
+    ],
+    "reliability_notes": "No mechanical safety. M16 guns have a spring trapdoor to keep mud out of the clip opening. Topping off with loose rounds is not documented; suggest a clips-only reload rule.",
+    "suppressed": false,
+    "peak_db": 167,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Berthier_rifle"
+    ],
+    "confidence": "mixed"
+  },
+  {
+    "id": "mas_1935a",
+    "name": "Pistolet automatique Modèle 1935A (German Pistole 625(f))",
+    "origin": "French",
+    "category": "pistol",
+    "caliber": "7.65×20mm Longue",
+    "capacity": 8,
+    "feed": "8-round detachable box magazine",
+    "action": "Short recoil",
+    "rpm": null,
+    "muzzle_velocity_mps": 345,
+    "effective_range_m": null,
+    "weight_kg": 0.73,
+    "rarity": "uncommon",
+    "variants": [
+      {"name": "French pre-occupation", "notes": "About 10,700 made by SACM before summer 1940."},
+      {"name": "Pistole 625(f)", "notes": "About 23,850 made for German forces under occupation."}
+    ],
+    "reliability_notes": "7.65 Longue is a weak cartridge; surplus French ammo is described today as scarce, corrosive and unreliable.",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Pistolet_automatique_mod%C3%A8le_1935A",
+      "https://en.wikipedia.org/wiki/7.65%C3%9720mm_Longue",
+      "https://www.forgottenweapons.com/testing-7-65mm-french-long-ammo-reeds-and-buffalo-arms/"
+    ],
+    "confidence": "solid"
+  },
+  {
+    "id": "mas_1935s",
+    "name": "Pistolet automatique Modèle 1935S",
+    "origin": "French",
+    "category": "pistol",
+    "caliber": "7.65×20mm Longue",
+    "capacity": 8,
+    "feed": "8-round detachable box magazine",
+    "action": "Short recoil",
+    "rpm": null,
+    "muzzle_velocity_mps": 345,
+    "effective_range_m": null,
+    "weight_kg": 0.72,
+    "rarity": "rare",
+    "variants": [
+      {"name": "MAS 1940", "notes": "Only about 1,404 made when Saint-Étienne was occupied. Source also gives MAS 6,686 cumulative by late 1944, which conflicts with 'not produced during the occupation'."},
+      {"name": "ManuFrance / SAGEM / MAC", "notes": "1944-56 production, mostly out of period."}
+    ],
+    "reliability_notes": "Same weak 7.65 Longue cartridge as the 1935A.",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Pistolet_automatique_mod%C3%A8le_1935S"
+    ],
+    "confidence": "mixed"
+  },
+  {
+    "id": "mab_d",
+    "name": "MAB Model D",
+    "origin": "French",
+    "category": "pistol",
+    "caliber": "7.65×17mm Browning (.32 ACP)",
+    "capacity": 9,
+    "feed": "9-round detachable box magazine (.380: 7)",
+    "action": "Blowback",
+    "rpm": null,
+    "muzzle_velocity_mps": 213,
+    "effective_range_m": null,
+    "weight_kg": 0.76,
+    "rarity": "uncommon",
+    "variants": [
+      {"name": "Civil / French", "notes": "Made from 1933."},
+      {"name": "German-accepted", "notes": "Adopted by the Wehrmacht during the occupation; German acceptance marks (fakes common on collector pieces)."}
+    ],
+    "reliability_notes": "No problems documented. Muzzle velocity as published (low for .32 ACP).",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/MAB_Model_D"
+    ],
+    "confidence": "mixed"
+  },
+  {
+    "id": "ruby",
+    "name": "Ruby-type 'Eibar' pistol (German Pistole 624(f))",
+    "origin": "French",
+    "category": "pistol",
+    "caliber": "7.65×17mm Browning (.32 ACP)",
+    "capacity": 9,
+    "feed": "9-round detachable box magazine (often not interchangeable between makers)",
+    "action": "Blowback",
+    "rpm": null,
+    "muzzle_velocity_mps": null,
+    "effective_range_m": null,
+    "weight_kg": 0.85,
+    "rarity": "uncommon",
+    "variants": [
+      {"name": "Gabilondo Ruby", "notes": "250,000-300,000 of the original maker."},
+      {"name": "Subcontractor Ruby-types", "notes": "France accepted about 710,000 from all sources; about 580,000 still in army stores in 1920. Quality varies widely."},
+      {"name": "Pistole 624(f)", "notes": "German designation; Germans also continued an external-hammer version."}
+    ],
+    "reliability_notes": "Poor finish and incorrectly hardened steel on many could cause a dangerous 'runaway gun'; some had faulty safeties. Magazines rarely interchange, so French magazine bases were marked. Good examples reliable and accurate.",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Ruby_pistol"
+    ],
+    "confidence": "mixed"
+  },
+  {
+    "id": "mle1892_revolver",
+    "name": "Modèle 1892 revolver ('Lebel revolver')",
+    "origin": "French",
+    "category": "revolver",
+    "caliber": "8mm French Ordnance (8×27mmR)",
+    "capacity": 6,
+    "feed": "6-shot cylinder swinging out to the right; loaded one round at a time",
+    "action": "Double-action/single-action, solid frame",
+    "rpm": null,
+    "muzzle_velocity_mps": 225,
+    "effective_range_m": null,
+    "weight_kg": 0.85,
+    "rarity": "common",
+    "variants": [
+      {"name": "Mle 1892", "notes": "Over 350,000 made 1892-1924; police until mid-1960s and Gendarmerie."}
+    ],
+    "reliability_notes": "No problems documented. Its cartridge is unique in the roster (no other gun takes it).",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Mod%C3%A8le_1892_revolver"
+    ],
+    "confidence": "solid"
+  },
+  {
+    "id": "mas38",
+    "name": "MAS-38 (German MP 722(f))",
+    "origin": "French",
+    "category": "smg",
+    "caliber": "7.65×20mm Longue",
+    "capacity": 32,
+    "feed": "32-round detachable box magazine",
+    "action": "Blowback, bolt travelling at an angle to the bore, automatic",
+    "rpm": 650,
+    "muzzle_velocity_mps": 350,
+    "effective_range_m": 100,
+    "weight_kg": 2.87,
+    "rarity": "rare",
+    "variants": [
+      {"name": "French 1939-40", "notes": "Fewer than 1,000 delivered by June 1940 (Forgotten Weapons) or 1,958 made before occupation (Wikipedia)."},
+      {"name": "MP 722(f)", "notes": "20-30 thousand made under German control (Forgotten Weapons); some to Vichy forces."}
+    ],
+    "reliability_notes": "High-quality, machined from solid steel, controllable; weak cartridge (roughly 9×18mm Makarov class). Rate 600-700 rpm (JSON midpoint). Safety locks the bolt when the trigger is pushed forward.",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/MAS-38",
+      "https://www.forgottenweapons.com/the-french-mas-38-smg/",
+      "https://www.forgottenweapons.com/submachine-guns/mas-38/"
+    ],
+    "confidence": "mixed"
+  },
+  {
+    "id": "manufrance_robust",
+    "name": "Manufrance Robust (double-barrel hunting shotgun)",
+    "origin": "French",
+    "category": "shotgun",
+    "caliber": "12 or 16 gauge",
+    "capacity": 2,
+    "feed": "Break-open, two barrels, shells loaded singly (paper hulls in period)",
+    "action": "Anson & Deeley boxlock, two triggers, top lever, cocked on opening",
+    "rpm": null,
+    "muzzle_velocity_mps": null,
+    "effective_range_m": 28,
+    "weight_kg": 3.0,
+    "rarity": "common",
+    "variants": [
+      {"name": "Robust (1913)", "notes": "12 and 16 gauge; 70-80 cm barrels; nearly 900,000 made overall; the reference French shotgun, used by FFI and FTP. Weight 2.8-3.2 kg from later variants (JSON midpoint)."},
+      {"name": "Manufrance Idéal (1887)", "notes": "Earlier double-barrel hunting gun."},
+      {"name": "Manufrance Simplex (1908)", "notes": "Introduced 1908; details not found."},
+      {"name": "Out of period", "notes": "Rapid pump (1958) and Perfex semi-auto (1962)."}
+    ],
+    "reliability_notes": "Effective range with lead shot depends on choke: 18 m cylinder to 37 m full (JSON midpoint); slugs about 100 m. Hunting arms banned by German ordinance of 5 March 1942, so every one is hidden. Paper-shell swelling in damp is plausible but unsourced.",
+    "suppressed": false,
+    "peak_db": 161,
+    "sources": [
+      "https://fr.wikipedia.org/wiki/Robust_(fusil)",
+      "https://fr.wikipedia.org/wiki/Manufrance",
+      "https://en.wikipedia.org/wiki/Shotgun",
+      "https://en.wikipedia.org/wiki/Shotgun_shell",
+      "https://fr.wikipedia.org/wiki/Contr%C3%B4le_des_armes_%C3%A0_feu_en_France"
+    ],
+    "confidence": "mixed"
+  },
+  {
+    "id": "sten_mk2",
+    "name": "Sten Mk II (and Mk I/Mk III family)",
+    "origin": "British/SOE",
+    "category": "smg",
+    "caliber": "9×19mm Parabellum",
+    "capacity": 32,
+    "feed": "32-round double-column single-feed side-mounted box magazine (loading tool issued; interchangeable with Lanchester magazines)",
+    "action": "Open-bolt blowback, select fire",
+    "rpm": 550,
+    "muzzle_velocity_mps": 365,
+    "effective_range_m": 60,
+    "weight_kg": 3.2,
+    "rarity": "uncommon",
+    "variants": [
+      {"name": "Mk I / Mk I*", "notes": "About 100,000; wooden furniture, flash hider on Mk I."},
+      {"name": "Mk II", "notes": "Contracts August 1941; removable barrel, rotating magazine housing; about 2-2.6 million made. Breaks into four parts for hiding."},
+      {"name": "Mk II (Canadian, Long Branch)", "notes": "Skeleton stock, 3.8 kg."},
+      {"name": "Mk III", "notes": "Lines Bros only, 876,794 by September 1943; fixed barrel; Mk II judged superior. Reader claim of loose barrel shifting point of impact unverified."},
+      {"name": "Mk V", "notes": "OUT OF PERIOD: designed 1943, first combat June 1944."}
+    ],
+    "reliability_notes": "Bent magazine lips (precise 8-degree feed angle) and dirt in the magazine taper cause misfeeds; gripping the magazine causes stoppages. A loaded Sten could fire by accident if dropped or knocked butt-first on the ground (the bolt can pick up and fire a round). Quality varied by maker. Heavy carbon can stop the firing pin. Rate 500-600 rpm (JSON midpoint). Does NOT take MP 40 magazines (unsupported claim).",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Sten",
+      "https://de.wikipedia.org/wiki/Sten_Gun",
+      "https://www.forgottenweapons.com/sten-mkii-just-when-you-thought-it-couldnt-get-simpler/",
+      "https://www.forgottenweapons.com/sten-mkiii-a-childrens-toy-company-makes-smgs/",
+      "https://www.forgottenweapons.com/sten-mk5-the-cadillac-of-the-sten-family/",
+      "https://en.wikipedia.org/wiki/Lanchester_submachine_gun",
+      "https://fr.wikipedia.org/wiki/SOE_en_France"
+    ],
+    "confidence": "solid"
+  },
+  {
+    "id": "sten_mk2s",
+    "name": "Sten Mk II(S) (suppressed)",
+    "origin": "British/SOE",
+    "category": "smg",
+    "caliber": "9×19mm Parabellum",
+    "capacity": 32,
+    "feed": "32-round double-column single-feed side-mounted box magazine",
+    "action": "Open-bolt blowback, select fire (instructions: single shots only)",
+    "rpm": null,
+    "muzzle_velocity_mps": 305,
+    "effective_range_m": 100,
+    "weight_kg": null,
+    "rarity": "rare",
+    "variants": [
+      {"name": "Mk II(S)", "notes": "Requested 1942, trials November 1942, production pattern adopted February 1944; 5,776 made. 3.75 in ported barrel, about 12 in integral suppressor with expansion chamber and 18 baffles; bolt lightened about 15%."}
+    ],
+    "reliability_notes": "Automatic fire could compress and damage the baffles (Forgotten Weapons); Wikipedia says it overheats fast, so it was fired in short bursts or singles, with a canvas cover for the hand, and some were converted to semi-only. Open-bolt clatter is unsuppressed; reader reports of occasional sonic crack. Rate of fire and weight not found. Effective range up to 100 m (German Wikipedia).",
+    "suppressed": true,
+    "peak_db": null,
+    "sources": [
+      "https://www.forgottenweapons.com/a-covert-weapons-for-special-operations-the-sten-mkiis/",
+      "https://www.forgottenweapons.com/the-sneaky-silent-sten-mkiis-at-the-range/",
+      "https://www.forgottenweapons.com/shooting-a-suppressed-sten-gun/",
+      "https://en.wikipedia.org/wiki/Sten",
+      "https://de.wikipedia.org/wiki/Sten_Gun"
+    ],
+    "confidence": "mixed"
+  },
+  {
+    "id": "welrod",
+    "name": "Welrod Mk II / Mk IIA (and 9mm Mk I)",
+    "origin": "British/SOE",
+    "category": "pistol",
+    "caliber": ".32 ACP (7.65×17mm) for Mk II/IIA; 9×19mm for 9mm Mk I",
+    "capacity": 8,
+    "feed": "Detachable magazine forming the grip (8 x .32 / 6 x 9mm per English Wikipedia; 5 per German Wikipedia)",
+    "action": "Manually operated rotating bolt (turn rear knob, pull, push, lock)",
+    "rpm": null,
+    "muzzle_velocity_mps": null,
+    "effective_range_m": 23,
+    "weight_kg": 0.91,
+    "rarity": "rare",
+    "variants": [
+      {"name": "Mk I prototype (.32)", "notes": "Concept January 1943, samples April 1943; fixed 5-round magazine, thumb trigger; 'rather awkward'."},
+      {"name": "Mk II / Mk IIA (.32 ACP)", "notes": "Developed June 1943, adopted after trials; the main wartime model. About 2,800 Welrods made in wartime."},
+      {"name": "9mm Mk I", "notes": "Developed after poor field results with .32; has a trigger guard."}
+    ],
+    "reliability_notes": "Rubber wipes degrade fast: about 15 shots before performance declines quickly; in a 2024 test it went from a muffled thump to a gunshot-like crack over about 8 shots after the front wipe holed. Effective range 23 m by day, 6-7 m at night (12-15 m per German Wikipedia). Documented use mostly Danish; German Wikipedia names France among countries of use.",
+    "suppressed": true,
+    "peak_db": 122.8,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Welrod",
+      "https://de.wikipedia.org/wiki/Welrod",
+      "https://www.forgottenweapons.com/the-experimental-soe-welrod-mki-prototype/",
+      "https://www.forgottenweapons.com/welrod-32-at-the-range-british-soes-silent-assassins-pistol/",
+      "https://www.forgottenweapons.com/other-handguns/welrod-pistol/"
+    ],
+    "confidence": "mixed"
+  },
+  {
+    "id": "colt_m1911a1",
+    "name": "Colt M1911 / M1911A1",
+    "origin": "US/SOE",
+    "category": "pistol",
+    "caliber": ".45 ACP",
+    "capacity": 7,
+    "feed": "7-round detachable single-stack box magazine",
+    "action": "Short recoil, single-action",
+    "rpm": null,
+    "muzzle_velocity_mps": 253,
+    "effective_range_m": 50,
+    "weight_kg": 1.1,
+    "rarity": "rare",
+    "variants": [
+      {"name": "M1911", "notes": "Adopted 1911."},
+      {"name": "M1911A1", "notes": "Changes completed 1924, designated 1926: shorter trigger, arched mainspring housing, longer grip-safety spur, wider front sight. WWII makers Remington Rand, Colt, Ithaca, Union Switch & Signal, Singer (about 1.9 million)."}
+    ],
+    "reliability_notes": "No problems documented. Wikipedia says SOE 'prized' the M1911A1, and SOE used US pistols from 1941; no France-specific numbers found.",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/M1911_pistol",
+      "https://en.wikipedia.org/wiki/Special_Operations_Executive"
+    ],
+    "confidence": "mixed"
+  },
+  {
+    "id": "colt_1903",
+    "name": "Colt Model 1903 Pocket Hammerless",
+    "origin": "US/SOE",
+    "category": "pistol",
+    "caliber": ".32 ACP (7.65×17mm)",
+    "capacity": 8,
+    "feed": "8-round detachable box magazine",
+    "action": "Blowback, single-action",
+    "rpm": null,
+    "muzzle_velocity_mps": null,
+    "effective_range_m": null,
+    "weight_kg": 0.68,
+    "rarity": "rare",
+    "variants": [
+      {"name": "M1903 (.32)", "notes": "Thousands to Britain via Lend-Lease; 20,000 M1903/1908 issued to US specialist personnel including OSS."},
+      {"name": "SOE remote-fire conversion", "notes": "Strapped to the waist and fired by remote trigger (Forgotten Weapons book review)."}
+    ],
+    "reliability_notes": "The popular claim that SOE agents routinely carried Colt .32s was not confirmed in sources checked.",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Colt_Model_1903_Pocket_Hammerless",
+      "https://www.forgottenweapons.com/book-review-soe-equipment-air-dropped-in-europe-1940-1945/"
+    ],
+    "confidence": "uncertain"
+  },
+  {
+    "id": "webley_mk4",
+    "name": "Webley Mk IV (.38/200)",
+    "origin": "British/SOE",
+    "category": "revolver",
+    "caliber": ".38/200 (.380 Revolver Mk I / Mk IIz)",
+    "capacity": 6,
+    "feed": "6-shot cylinder; top-break with simultaneous extraction of all cases",
+    "action": "Double-action/single-action",
+    "rpm": null,
+    "muzzle_velocity_mps": 190,
+    "effective_range_m": 46,
+    "weight_kg": 0.995,
+    "rarity": "uncommon",
+    "variants": [
+      {"name": "Mk IV .38/200", "notes": "About 500,000 made; widely issued in WWII because Enfield could not make enough No. 2s."},
+      {"name": "Mk VI .455", "notes": "WWI revolver, 1.1 kg, 190 m/s, still widely used in WWII."}
+    ],
+    "reliability_notes": "No problems documented. SOE issue not stated in source; presence in drops inferred from 57,849 pistols of unknown types delivered to France.",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Webley_Revolver",
+      "https://en.wikipedia.org/wiki/.38/200",
+      "https://fr.wikipedia.org/wiki/SOE_en_France"
+    ],
+    "confidence": "uncertain"
+  },
+  {
+    "id": "enfield_no2",
+    "name": "Enfield No. 2 Mk I / Mk I* / Mk I**",
+    "origin": "British/SOE",
+    "category": "revolver",
+    "caliber": ".38/200 (.380 Revolver Mk I / Mk IIz)",
+    "capacity": 6,
+    "feed": "6-shot cylinder; top-break with automatic ejection of all cases",
+    "action": "Mk I double/single action; Mk I* and Mk I** double-action only",
+    "rpm": null,
+    "muzzle_velocity_mps": 189,
+    "effective_range_m": 14,
+    "weight_kg": 0.765,
+    "rarity": "uncommon",
+    "variants": [
+      {"name": "Mk I", "notes": "Adopted 1931; about 55,000."},
+      {"name": "Mk I*", "notes": "1938; spurless hammer, double-action only, lighter pull."},
+      {"name": "Mk I**", "notes": "1942 simplified wartime version, soon discontinued. Mk I*/** together about 270,000."}
+    ],
+    "reliability_notes": "Double-action-only pull limits accuracy beyond about 15 yd (13.7 m). Very fast to reload.",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Enfield_No._2"
+    ],
+    "confidence": "uncertain"
+  },
+  {
+    "id": "sw_38_200",
+    "name": "Smith & Wesson .38/200 British Service Revolver / Victory Model",
+    "origin": "US/SOE",
+    "category": "revolver",
+    "caliber": ".38/200",
+    "capacity": 6,
+    "feed": "6-shot swing-out cylinder, single-round loading",
+    "action": "Double-action/single-action",
+    "rpm": null,
+    "muzzle_velocity_mps": 209,
+    "effective_range_m": null,
+    "weight_kg": 0.96,
+    "rarity": "rare",
+    "variants": [
+      {"name": "British Service Revolver", "notes": "Mostly 4 or 5 in barrels to Britain; 5 in standard after 4 April 1942."},
+      {"name": "Victory Model", "notes": "V-prefix serials, sandblasted and parkerized, 1942-44; 590,305 to the Commonwealth in .38/200."}
+    ],
+    "reliability_notes": "No problems documented. OSS supplied thousands to resistance forces (timing and France not specified).",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Smith_%26_Wesson_Model_10"
+    ],
+    "confidence": "uncertain"
+  },
+  {
+    "id": "lee_enfield",
+    "name": "Lee-Enfield (SMLE No. 1 Mk III/III*, Rifle No. 4 Mk I)",
+    "origin": "British/SOE",
+    "category": "rifle",
+    "caliber": ".303 British",
+    "capacity": 10,
+    "feed": "10-round detachable box magazine, loaded from 5-round chargers",
+    "action": "Bolt action (rear-locking Lee)",
+    "rpm": null,
+    "muzzle_velocity_mps": 744,
+    "effective_range_m": 503,
+    "weight_kg": 3.96,
+    "rarity": "uncommon",
+    "variants": [
+      {"name": "SMLE No. 1 Mk III / Mk III*", "notes": "Mk III 1907, Mk III* late 1915; 3.96 kg."},
+      {"name": "Rifle No. 4 Mk I / Mk I*", "notes": "Adopted 1941; 4.11 kg; Mk I* made by Long Branch (Canada) and Stevens-Savage (US)."}
+    ],
+    "reliability_notes": "No problems documented. 127,330 rifles of unspecified type were delivered to France in SOE containers over the whole war.",
+    "suppressed": false,
+    "peak_db": 167,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Lee%E2%80%93Enfield",
+      "https://en.wikipedia.org/wiki/.303_British",
+      "https://fr.wikipedia.org/wiki/SOE_en_France",
+      "https://en.wikipedia.org/wiki/Royal_Air_Force_Special_Duties_Service"
+    ],
+    "confidence": "mixed"
+  },
+  {
+    "id": "bren",
+    "name": "Bren Mk I / Mk II",
+    "origin": "British/SOE",
+    "category": "mg",
+    "caliber": ".303 British",
+    "capacity": 30,
+    "feed": "30-round top-mounted curved box (loaded with 27-28 to avoid jams; 20 if stored loaded long-term); 100-round pan available",
+    "action": "Gas-operated, tilting bolt, select fire",
+    "rpm": 510,
+    "muzzle_velocity_mps": 744,
+    "effective_range_m": 550,
+    "weight_kg": 10.3,
+    "rarity": "rare",
+    "variants": [
+      {"name": "Mk I", "notes": "Drum rear sight, buttstrap, rear grip, telescoping bipod."},
+      {"name": "Mk II (1941)", "notes": "Simplified, 20-25% cheaper; leaf sight, fixed bipod, slightly higher rate. Inglis (Canada) built 186,000 of all variants."}
+    ],
+    "reliability_notes": "'By general consent the finest light machine gun... of its period'; the maquis begged for more. 20,518 delivered to France over the war, mostly after D-Day. Rate 500-520 rpm (JSON midpoint).",
+    "suppressed": false,
+    "peak_db": 167,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Bren_light_machine_gun",
+      "https://fr.wikipedia.org/wiki/SOE_en_France"
+    ],
+    "confidence": "mixed"
+  },
+  {
+    "id": "thompson",
+    "name": "Thompson M1928A1 / M1 / M1A1",
+    "origin": "US/SOE",
+    "category": "smg",
+    "caliber": ".45 ACP",
+    "capacity": 20,
+    "feed": "20- or 30-round box magazine; 50-round L drum (M1928A1 only)",
+    "action": "Select fire (M1928A1 delayed blowback; M1/M1A1 straight blowback)",
+    "rpm": 663,
+    "muzzle_velocity_mps": 285,
+    "effective_range_m": 150,
+    "weight_kg": 4.9,
+    "rarity": "rare",
+    "variants": [
+      {"name": "M1928A1", "notes": "Takes drums; 600-725 rpm (JSON midpoint); 4.9 kg; 562,511 made. France had some in 1940 as 'PM 11mm43 M.28 A1'."},
+      {"name": "M1 / M1A1", "notes": "1942; box magazines only; M1A1 700-800 rpm, 4.5 kg."}
+    ],
+    "reliability_notes": "British found the drum heavy and noisy. Drops to France not documented in sources checked; a hidden 1940 French gun is the most defensible way in.",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/Thompson_submachine_gun"
+    ],
+    "confidence": "uncertain"
+  },
+  {
+    "id": "liberator_fp45",
+    "name": "FP-45 Liberator",
+    "origin": "US/SOE",
+    "category": "pistol",
+    "caliber": ".45 ACP",
+    "capacity": 1,
+    "feed": "Single shot, loaded by hand; empty case knocked out with the supplied wooden dowel; 10 spare rounds stored in the grip",
+    "action": "Single-shot, manually operated",
+    "rpm": null,
+    "muzzle_velocity_mps": 250,
+    "effective_range_m": 7.5,
+    "weight_kg": 0.45,
+    "rarity": "rare",
+    "variants": [
+      {"name": "FP-45", "notes": "1,000,000 made June-August 1942 by GM Guide Lamp; shipped with 10 rounds and a wordless comic-strip instruction sheet."}
+    ],
+    "reliability_notes": "Crude, smoothbore-class accuracy; effective range 7.3-7.6 m (two figures in source; JSON midpoint). French use undocumented: one German policeman claimed thousands circulated in France; fewer than 25,000 of about 500,000 shipped to Britain were authorised for distribution. Arguably absent.",
+    "suppressed": false,
+    "peak_db": 160,
+    "sources": [
+      "https://en.wikipedia.org/wiki/FP-45_Liberator"
+    ],
+    "confidence": "uncertain"
+  }
+]

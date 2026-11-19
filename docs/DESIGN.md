@@ -21,8 +21,8 @@ The game is a slow, hard, quasi-horror stealth/survival FPS. Its tension comes f
 ## Setting
 
 - **Place:** the north coast of Brittany in the Côtes-du-Nord département, as it was called then. It's granite villages, slate roofs, sunken lanes between banked hedgerows, gorse heath and cliffs over the Channel. The towns and the map are fictional but modelled on the real area.
-- **Time:** winter 1943–44. Sunset is early, so dusk turns into a long night. Curfew falls during the mission. The coastal strip needs a special pass and is fortified, mined and patrolled.
-- **Model for the extraction:** the real 1944 Royal Navy Motor Gun Boat pickups from beaches below the Breton cliffs, which happened on moonless nights with light signals from the shore.
+- **Time:** February 1944, on a moonless night. Sunset is early, so dusk turns into a long night. Curfew falls during the mission. The coastal strip needs a special pass and is fortified, mined and patrolled.
+- **Model for the extraction:** the Shelburne escape line. From late January 1944, Royal Navy Motor Gun Boats picked people up from Plage Bonaparte below the cliffs at Plouha. The line was run by two French-Canadians, Lucien Dumais and Raymond LaBrosse. Pickups happened on moonless nights after a BBC code phrase, down a mined cliff path, and evaders walked in streams to throw off dogs. Our network and contacts are fictional analogues; real people aren't depicted.
 
 ## Core systems
 
@@ -43,7 +43,7 @@ The game is a slow, hard, quasi-horror stealth/survival FPS. Its tension comes f
 ### Stealth and perception
 - AI vision depends on light level, distance, movement, silhouette, clothing and posture. AI hearing uses sound propagation and occlusion.
 - Suspicion builds through stages: *curious*, *suspicious*, *searching*, *alerted*.
-- Social stealth: your cover identity, papers checks, curfew, behaviour that's out of place, and a Québécois accent as a risk under scrutiny.
+- Social stealth: your cover identity, papers checks, curfew, behaviour that's out of place, and French that may not hold up under scrutiny. In a documented case from June 1943, Germans at a checkpoint grew suspicious of two Canadian agents whose French was "not of native speaker quality".
 - AI notices evidence, such as bodies, blood, open doors, cut wires and missing sentries.
 
 ### The alert network (our "wanted level")
@@ -53,6 +53,9 @@ The game is a slow, hard, quasi-horror stealth/survival FPS. Its tension comes f
   - radio
   - dispatch riders
 - Responses escalate from patrols, to search parties with dogs, to cordons and roadblocks, then posters with your description and tighter curfew, and finally radio direction-finding if you transmit.
+- **Checkpoints are linked.** Getting past one doesn't mean you're clear. Two agents who escaped a checkpoint at Dhuizon in June 1943 were caught at the next one, about 10 km on.
+- **Radio direction-finding comes in three stages.** Fixed stations narrow the area to about 16 km within minutes. Disguised vans sweep that area. Then a man with a detector under his coat walks the last 400 m. The detector can't tell front from back, so he can start off the wrong way, which gives you a window.
+- **Curfew is a punishment lever.** In September 1941, Brest's curfew was moved from 23:00–05:00 to 20:00–06:00 over the residents' "rebellious attitude". Loud play makes the night shorter and more dangerous.
 - You fight back by cutting wires, silencing the messenger, changing your appearance or going to ground. Heat decays over time but leaves long-term changes (more patrols, warier civilians).
 
 ### Civilians
@@ -69,7 +72,8 @@ The game is a slow, hard, quasi-horror stealth/survival FPS. Its tension comes f
   - a diversion such as a cut phone line or a power failure
   - intercepting the courier who carries the key sheets
   - turning or blackmailing a clerk
-- The outcomes are graded. The best is **"they never knew"**: the material is photographed or swapped, so the Germans don't change their keys. Worse is "stolen but covered up", then "stolen and they know".
+- **The target is the key sheet, not just the machine.** Each day's strip was cut off and destroyed after use. Kriegsmarine keys were printed in red water-soluble ink on pink paper, so a swim through the surf can ruin your prize.
+- The outcomes are graded. The best is **"they never knew"**: the material is photographed or swapped, so the Germans don't change their keys. Worse is "stolen but covered up", then "stolen and they know". The Allies really did go to great lengths to hide their captures; *Lauenburg* and *U-110* were both sunk afterwards so the Germans wouldn't find out.
 - The escape runs through the countryside and into the coastal zone, ending in a pickup on a moonless night at the cliffs.
 
 ### Audio and voice
@@ -88,6 +92,16 @@ The game is a slow, hard, quasi-horror stealth/survival FPS. Its tension comes f
 | M6 | Body & Camp | Wounds, cold and wet, hunger, hide-outs, fire and contacts. |
 | M7 | Voices | VO, civilian dialogue, horror music system and dogs. |
 | M8 | Art & polish | Art pass, performance, settings menu, difficulty tuning. |
+
+## History and the liberties we take
+
+Details are in `docs/research/german-security-and-enigma.md`, including a scorecard of what the research confirmed and what it didn't.
+
+- **The heist is fiction.** No documented case was found of agents taking Enigma material on land in France. Our mission is a plausible "what if" built on real procedure.
+- **Germans cutting mains power block by block to locate a transmitter:** unverified. If we use it, it's a deliberate liberty.
+- **Dropped:** Fieseler Storch spotter planes hunting fugitives. That was mostly an Eastern Front practice.
+- **The Milice** only extended into the north on 27 January 1944, and its presence in Brittany is thin until summer. Use the Feldgendarmerie, Geheime Feldpolizei, SD and Vichy gendarmes instead. Use the Breton SD auxiliaries (Bezen Perrot) sparingly and carefully, if at all.
+- **Plan Violet**, the mass cutting of telephone lines, came in June 1944, after our window. In February 1944, line cutting is individual sabotage, and the PTT Resistance mostly tapped lines.
 
 ## Open questions
 

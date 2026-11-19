@@ -12,4 +12,4 @@ magazine_capacity = 8
 min_shot_interval = 0.12
 damage = 34.0
 range_m = 150.0
-loudness_db = 157.0
+loudness_db = 160.0
