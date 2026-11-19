@@ -411,12 +411,16 @@ def set_action(arm, act, frame):
     bpy.context.scene.frame_set(int(frame))
 
 
-def anim_sheet(tag, arm, acts, body):
+def anim_sheet(tag, arm, acts, body, E=None, rifle=()):
     files = []
     rows = [("Idle", [0, 30, 60, 90], (2.6, -3.4, 1.3)), ("Walk", [0, 7, 15, 22], (3.6, -0.6, 1.1)),
             ("Run", [0, 5, 11, 16], (3.6, -0.6, 1.1)), ("LookAround", [0, 50, 80, 140], (1.2, -3.6, 1.4)),
             ("AimRifle", [0, 45, 0, 0], (2.0, -2.6, 1.5)), ("Death", [8, 20, 30, 70], (3.8, -1.2, 1.2))]
     for nm, fs, cam in rows:
+        for o in rifle:
+            o.parent = E["RifleSocket_Hands" if nm == "AimRifle" else "RifleSocket_Shoulder"]
+            o.matrix_parent_inverse = Matrix.Identity(4)
+            o.hide_render = (nm == "Death")
         for k, f in enumerate(fs):
             set_action(arm, acts[nm], f)
             c = cam
@@ -426,7 +430,7 @@ def anim_sheet(tag, arm, acts, body):
                 c = (0.25, -2.6, 1.6)
             p = os.path.join(PREV, f"_tmp_{nm}_{k}.png")
             cpreview.render_workbench(p, c, (0, 0.15 if nm == "Death" else 0, 0.9 if nm != "Death" else 0.35),
-                                      (360, 450), 40, color='TEXTURE' if BAKE else 'MATERIAL')
+                                      (360, 450), 40, color='MATERIAL')
             files.append(p)
     cpreview.contact_sheet(os.path.join(PREV, f"{tag}_anim_sheet.png"), 4, files, 360, 450)
 
@@ -502,6 +506,7 @@ def build_soldier(variant):
                                 TEX, ao_samples=48, force_cpu=CPU)
         cmats.combine_ao(imgs['color'], imgs['ao'], 0.7)
         fm = cmats.final_material(f"Soldier_{variant}", imgs)
+        fm.diffuse_color = (0.30, 0.32, 0.27, 1.0)
         cmats.replace_materials([body], fm)
         for a in ("edge_d", "rim", "sk_th"):
             if a in body.data.attributes:
@@ -534,7 +539,7 @@ def build_soldier(variant):
         set_action(arm, acts["Idle"], 0)
         if not QUICK:
             render_beauty(variant, E, rifle_objs, arm, acts)
-        anim_sheet(variant, arm, acts, body)
+        anim_sheet(variant, arm, acts, body, E, rifle_objs)
     log(f"=== {variant} done")
 
 

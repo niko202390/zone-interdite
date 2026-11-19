@@ -392,8 +392,11 @@ func _setup_interior(house: Node3D) -> void:
 			state["open"] = not state["open"]
 			it.prompt = "close the door" if state["open"] else "open the door"
 			var tw := create_tween()
-			tw.tween_property(door, "rotation:y", closed_y + (deg_to_rad(-100.0) if state["open"] else 0.0), 0.9) 				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+			tw.tween_property(door, "rotation:y", closed_y + (deg_to_rad(90.0) if state["open"] else 0.0), 0.9) 				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 			SoundLib.play_3d("impacts/impact_wood", door.global_position + Vector3.UP, -14.0, 25.0, 0.2, 2.0)
+	# Lamp bodies mustn't shadow their own flames.
+	for lamp in house.find_children("Lamp_*", "MeshInstance3D", true, false):
+		(lamp as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	for n in house.find_children("LightSpot_*", "Node3D", true, false):
 		var l := OmniLight3D.new()
 		l.light_color = Color(1.0, 0.62, 0.32)

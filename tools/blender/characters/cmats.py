@@ -203,9 +203,14 @@ def mat_wool(name, base_a, base_b, mud=True, inner=False, knit=False):
     base = nb.mix(nb.math('MULTIPLY', nb.maprange(fuzz, 0.55, 0.75), 0.35), base,
                   nb.rgb(tuple(c * 0.6 for c in base_a)))
     # wear: convex edges a touch lighter and smoother (pilled, rubbed)
+    # mottled fading and grime blotches (long service, rain, campfire smoke)
+    mott = nb.maprange(n_mid, 0.30, 0.70)
+    base = nb.mix(nb.math('MULTIPLY', mott, 0.55), base, nb.rgb(tuple(c * 1.30 for c in base_b)))
+    grime = nb.maprange(nb.noise(tc, 7.0, 6.0, 0.65, dist=0.6), 0.55, 0.72)
+    base = nb.mix(nb.math('MULTIPLY', grime, 0.6), base, nb.rgb(tuple(c * 0.55 for c in base_a)))
     convex = nb.maprange(geo.outputs['Pointiness'], 0.52, 0.6, smooth=True)
     worn = nb.math('MULTIPLY', convex, nb.maprange(n_mid, 0.4, 0.65, 0.2, 1.0))
-    col = nb.mix(nb.math('MULTIPLY', worn, 0.5), base, nb.rgb(tuple(c * 1.35 + 0.01 for c in base_b)))
+    col = nb.mix(nb.math('MULTIPLY', worn, 0.6), base, nb.rgb(tuple(c * 1.5 + 0.012 for c in base_b)))
     rough = nb.math('ADD', 0.88, nb.math('MULTIPLY', fuzz, 0.08))
     edge_d = nb.attr("edge_d")
     if not inner and not knit:
@@ -221,12 +226,16 @@ def mat_wool(name, base_a, base_b, mud=True, inner=False, knit=False):
         col = nb.mix(nb.math('MULTIPLY', damp, 0.45), col, nb.rgb(tuple(c * 0.55 for c in base_a)))
     if inner:
         col = nb.mix(0.0, nb.rgb(tuple(c * 0.55 for c in base_a)), col)
+    felt = nb.noise(tc, 3200.0, 3.0, 0.7)
     h = nb.math('ADD', nb.math('MULTIPLY', fuzz, 0.5), nb.math('MULTIPLY', heather, 0.3))
-    h = nb.math('ADD', h, nb.math('MULTIPLY', nb.noise(nb.mapping(tc, (1, 1, 0.25)), 9.0, 3.0, 0.5), 1.4))
+    h = nb.math('ADD', h, nb.math('MULTIPLY', felt, 0.35))
+    # soft creases (stretched noise, mostly vertical on the coat)
+    cr = nb.noise(nb.mapping(tc, (1, 1, 0.22)), 7.0, 4.0, 0.55, dist=0.4)
+    h = nb.math('ADD', h, nb.math('MULTIPLY', nb.maprange(cr, 0.3, 0.7), 3.0))
     if knit:
         rib = nb.wave(tc, 260.0, 'BANDS', 'Z', dist=1.5, detail=1.0)
         h = nb.math('ADD', h, nb.math('MULTIPLY', rib, 0.9))
-    nrm = nb.bump(h, 0.0006, 0.6)
+    nrm = nb.bump(h, 0.0007, 0.75)
     return finish(mat, nb, col, rough, 0.0, nrm)
 
 
@@ -484,6 +493,8 @@ def bake_atlas(objs, infos, prefix, res, channels, tex_dir, ao_samples=48, force
         btype = {'color': 'EMIT', 'rough': 'EMIT', 'metal': 'EMIT', 'normal': 'NORMAL', 'ao': 'AO'}[ch]
         sc.cycles.samples = ao_samples if ch == 'ao' else (4 if ch == 'normal' else 2)
         sc.cycles.use_denoising = False
+        if sc.world:
+            sc.world.light_settings.distance = 0.035   # local crevice AO only (limbs move)
         select_only(objs)
         t = time.time()
         bpy.ops.object.bake(type=btype, margin=16, use_clear=True)

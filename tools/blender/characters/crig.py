@@ -575,14 +575,14 @@ def skirt_solve(P, flare=0.0, ground=True):
             X = Vector((Mb[0][0], Mb[1][0], Mb[2][0]))
             h = Mb.translation
             for (hip, knee, ank) in legs:
-                for q, r in ((hip.lerp(knee, 0.5), 0.095), (knee, 0.085), (knee.lerp(ank, 0.3), 0.075),
-                             (knee.lerp(ank, 0.6), 0.07)):
+                for q, r in ((hip.lerp(knee, 0.5), 0.105), (hip.lerp(knee, 0.8), 0.098), (knee, 0.095),
+                             (knee.lerp(ank, 0.3), 0.085), (knee.lerp(ank, 0.6), 0.078)):
                     d = q - h
                     along = d.dot(Y)
                     if along < -0.02 or along > L + 0.05:
                         continue
                     tang = abs(d.dot(X))
-                    k = max(0.0, 1.0 - tang / 0.16)
+                    k = max(0.0, 1.0 - tang / 0.21)
                     if k <= 0:
                         continue
                     need = -r * k            # leg point must be at least r inside the skirt line

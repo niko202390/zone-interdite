@@ -43,7 +43,7 @@ def stand_feet():
     return out
 
 
-def hang_hand(side, swing=0.0, out=0.035, down=0.50, fwd=0.0, bend=0.0):
+def hang_hand(side, swing=0.0, out=0.035, down=0.532, fwd=0.0, bend=0.0):
     """Hand hanging beside the thigh, relative to the posed shoulder joint and chest."""
     s = 1 if side == "L" else -1
     Side = "Left" if side == "L" else "Right"
@@ -321,13 +321,13 @@ def make_death(rig):
         dict(t=0.85, hp=(0.02, 0.36, -0.50), hr=(0.12, -0.95, 0.12), sp=-0.08, hd=(0.25, 0.10), fy=(-0.18, -0.12), fp=0.35, fz=0.0,
              hl=(0.60, 0.45, 0.75), hrr=(-0.55, 0.45, 0.70)),
         dict(t=1.10, hp=(0.03, 0.52, -0.70), hr=(0.14, -1.55, 0.26), sp=0.0, hd=(0.15, 0.30), fy=(-0.36, -0.30), fp=1.05, fz=0.0,
-             hl=(0.62, 1.05, 0.10), hrr=(-0.62, 0.78, 0.10)),
+             hl=(0.55, 0.98, 0.08), hrr=(-0.56, 0.74, 0.08)),
         dict(t=1.28, hp=(0.03, 0.53, -0.67), hr=(0.14, -1.49, 0.26), sp=-0.03, hd=(0.05, 0.38), fy=(-0.37, -0.31), fp=1.1, fz=0.0,
-             hl=(0.64, 1.06, 0.12), hrr=(-0.64, 0.80, 0.12)),
+             hl=(0.56, 0.99, 0.10), hrr=(-0.57, 0.75, 0.10)),
         dict(t=1.62, hp=(0.03, 0.53, -0.70), hr=(0.14, -1.555, 0.28), sp=0.0, hd=(0.10, 0.45), fy=(-0.37, -0.31), fp=1.15, fz=0.0,
-             hl=(0.64, 1.06, 0.05), hrr=(-0.64, 0.80, 0.05)),
+             hl=(0.56, 0.99, 0.06), hrr=(-0.57, 0.75, 0.06)),
         dict(t=2.40, hp=(0.03, 0.53, -0.70), hr=(0.14, -1.555, 0.28), sp=0.0, hd=(0.10, 0.45), fy=(-0.37, -0.31), fp=1.15, fz=0.0,
-             hl=(0.64, 1.06, 0.05), hrr=(-0.64, 0.80, 0.05)),
+             hl=(0.56, 0.99, 0.06), hrr=(-0.57, 0.75, 0.06)),
     ]
     idle0 = idle_spec(0.0)
 
@@ -401,9 +401,12 @@ def world_hand(tgt, side):
 
     def f(P):
         sh = P.head(Side + "UpperArm")
-        hd = (tgt - sh).normalized()
+        hd = (tgt - sh)
+        if tgt.z < 0.3:
+            hd.z = -0.05 * hd.length      # lying: hand flat on the ground
+        hd = hd.normalized()
         C = drot(P, "UpperChest")
-        palm = C @ V(0, 0.3, 1.0) if tgt.z < 0.3 else C @ V(-s, 0.0, 0.0)
+        palm = V(0.0, 0.0, 1.0) if tgt.z < 0.3 else C @ V(-s, 0.0, 0.0)
         palm = (palm - hd * palm.dot(hd)).normalized()
         pole = (C @ V(s * 0.5, 1.0, -0.3)).normalized()
         return tgt, hd, palm, pole
