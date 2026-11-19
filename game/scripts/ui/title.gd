@@ -91,7 +91,8 @@ var _press: Label
 var _page_nodes: Array[Control] = []
 var _wind: AudioStreamPlayer
 var _updater: Updater
-var _logo: LogoAnimation
+## The title animation: the photoreal film if it's been rendered, otherwise the 2D ink-and-lighter version.
+var _logo: Node
 var _title_extras: Array = []
 var _update_label: Label
 
@@ -198,8 +199,18 @@ void fragment(){
 	var sign := _label("ACHTUNG  ·  SPERRGEBIET  ·  ZONE INTERDITE", _font_type, 18, Color(0.75, 0.2, 0.15))
 	sign.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(sign)
-	_logo = LogoAnimation.new(_font_logo)
-	col.add_child(_logo)
+	if FilmIntro.available():
+		# The film carries the logo itself (the scorched words). The text sits in the lower third over it.
+		_logo = FilmIntro.new()
+		_root_title.add_child(_logo)
+		_root_title.move_child(col, -1)
+		col.offset_top = 170
+		col.offset_bottom = 470
+		col.alignment = BoxContainer.ALIGNMENT_END
+	else:
+		_logo = LogoAnimation.new(_font_logo)
+		col.add_child(_logo)
+		col.move_child(_logo, 1)
 	_logo.finished.connect(_on_logo_finished)
 	var wire := BarbedWire.new()
 	wire.custom_minimum_size = Vector2(1100, 36)
