@@ -58,6 +58,9 @@ func _ready() -> void:
 	_build_navigation()
 	_spawn_guards()
 	_setup_test_objective()
+	_build_back_lanes()
+	_place_options()
+	_build_atmosphere()
 	print("LEVEL READY")
 
 
@@ -607,6 +610,295 @@ func _setup_test_objective() -> void:
 TO DO (next build)"))
 	get_tree().create_timer(2.5, false).timeout.connect(func() -> void:
 		player.note("Plouzennec, 17:40. Press J for your notebook.", 6.0))
+
+
+func _notable(pos: Vector3, thought: String, lead := "", radius := 12.0) -> Notable:
+	var n := Notable.new()
+	n.thought = thought
+	n.lead = lead
+	n.radius = radius
+	add_child(n)
+	n.global_position = pos
+	return n
+
+
+func _cafe() -> Node3D:
+	for h in _houses:
+		if String(h.name).to_lower().contains("cafe"):
+			return h
+	return null
+
+
+## Low garden walls behind both rows of houses, broken by gaps, with a lane beyond. You can climb them (Space).
+func _build_back_lanes() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 77
+	for side: float in [-1.0, 1.0]:
+		var z := -58.0
+		while z < 46.0:
+			if rng.randf() > 0.22:
+				spawn("stone_wall_low_4m", Vector3(side * 19.5, 0.0, z + 2.0), -90.0, "stone", Vector3(4.0, 1.1, 0.6))
+			z += 4.0
+		# Sheds, woodpiles and clutter in the gardens.
+		for k in 7:
+			var gz := rng.randf_range(-55.0, 40.0)
+			var gx := side * rng.randf_range(13.0, 18.0)
+			if rng.randf() < 0.5:
+				spawn("crate_wood", Vector3(gx, 0, gz), rng.randf() * 360.0, "wood", Vector3(0.8, 0.6, 0.6))
+			else:
+				spawn("barrel_wood", Vector3(gx, 0, gz), rng.randf() * 360.0, "wood", Vector3(0.6, 0.9, 0.6))
+	_notable(Vector3(-8.0, 1.0, -28.0), "An alley between the houses, toward the back gardens.",
+		"Back lanes run behind both rows of houses: low walls, easy to climb (Space).", 14.0)
+
+
+## The concrete ways past the checkpoint in this test level, each discoverable in the world.
+func _place_options() -> void:
+	# 1. The harbour master's satchel behind the café: a stamped zone pass.
+	var cafe := _cafe()
+	if cafe:
+		var fp := footprint(cafe)
+		var back_x := cafe.global_position.x + fp.position.x - 1.4
+		var bz := cafe.global_position.z + fp.get_center().z
+		spawn("crate_wood", Vector3(back_x, 0, bz), 15.0, "wood", Vector3(0.8, 0.6, 0.6))
+		var satchel := MeshInstance3D.new()
+		var sm := BoxMesh.new()
+		sm.size = Vector3(0.38, 0.26, 0.12)
+		var leather := StandardMaterial3D.new()
+		leather.albedo_color = Color(0.22, 0.12, 0.06)
+		leather.roughness = 0.55
+		sm.material = leather
+		satchel.mesh = sm
+		add_child(satchel)
+		satchel.global_position = Vector3(back_x, 0.75, bz)
+		satchel.rotation_degrees.y = 30.0
+		var it := Interactable.new()
+		it.prompt = "search the satchel"
+		it.busy_time = 2.0
+		add_child(it)
+		it.global_position = satchel.global_position
+		it.on_use = func(_p: Node3D) -> void:
+			player.papers["zone_pass"] = true
+			it.enabled = false
+			satchel.queue_free()
+			player.note("Guégan's satchel: invoices, a bottle, and a stamped zone pass made out to his clerk. Close enough, in the dark.", 6.0)
+			player.overlay.add_lead("I have a zone pass now (the clerk's). The sentry should let me through.")
+		_notable(satchel.global_position, "A leather satchel left on a crate behind the café.",
+			"The harbour master drinks at the café. His satchel is behind it.", 8.0)
+		# Empty bottles by the café's back door.
+		for k in 3:
+			var bpos := Vector3(back_x + 0.9, 0.12, bz + 1.2 + k * 0.35)
+			var b := MeshInstance3D.new()
+			var bm := CylinderMesh.new()
+			bm.top_radius = 0.012
+			bm.bottom_radius = 0.035
+			bm.height = 0.28
+			var g := StandardMaterial3D.new()
+			g.albedo_color = Color(0.08, 0.16, 0.08)
+			g.roughness = 0.08
+			bm.material = g
+			b.mesh = bm
+			add_child(b)
+			b.global_position = bpos
+			var bi := Interactable.new()
+			bi.prompt = "take an empty bottle"
+			bi.radius = 1.0
+			add_child(bi)
+			bi.global_position = bpos
+			bi.on_use = func(_p: Node3D) -> void:
+				player.items["bottle"] = int(player.items.get("bottle", 0)) + 1
+				bi.enabled = false
+				b.queue_free()
+				player.note("An empty bottle. Thrown (G), it'll make a racket where it lands.", 3.5)
+		_notable(Vector3(back_x + 0.9, 0.3, bz + 1.5), "Empty bottles by the back door.",
+			"Bottles behind the café: throw one (G) to draw a guard away. A stone from the road works too, quieter.", 8.0)
+
+	# 2. A Kriegsmarine greatcoat drying on a line in a back garden on the east side.
+	var line_a := Vector3(14.0, 0.0, -14.0)
+	var line_b := Vector3(14.0, 0.0, -8.0)
+	for p in [line_a, line_b]:
+		var post := MeshInstance3D.new()
+		var pm := CylinderMesh.new()
+		pm.top_radius = 0.04
+		pm.bottom_radius = 0.05
+		pm.height = 2.1
+		var wood := StandardMaterial3D.new()
+		wood.albedo_color = Color(0.25, 0.2, 0.15)
+		pm.material = wood
+		post.mesh = pm
+		add_child(post)
+		post.global_position = p + Vector3.UP * 1.05
+	add_child(WireSpan.build(line_a + Vector3.UP * 2.0, line_b + Vector3.UP * 2.0, 0.12, 0.003))
+	var cloth := StandardMaterial3D.new()
+	cloth.albedo_color = Color(0.72, 0.7, 0.64)
+	cloth.roughness = 0.9
+	cloth.cull_mode = BaseMaterial3D.CULL_DISABLED
+	for k in 3:
+		var sheet := MeshInstance3D.new()
+		var q := QuadMesh.new()
+		q.size = Vector2(1.1, 1.2)
+		q.material = cloth
+		sheet.mesh = q
+		add_child(sheet)
+		sheet.global_position = line_a.lerp(line_b, 0.15 + k * 0.22) + Vector3.UP * 1.35
+		sheet.rotation_degrees.y = 90.0
+	var coat := MeshInstance3D.new()
+	var cm := BoxMesh.new()
+	cm.size = Vector3(0.06, 1.15, 0.62)
+	var navy := StandardMaterial3D.new()
+	navy.albedo_color = Color(0.05, 0.06, 0.11)
+	navy.roughness = 0.95
+	cm.material = navy
+	coat.mesh = cm
+	add_child(coat)
+	coat.global_position = line_a.lerp(line_b, 0.82) + Vector3.UP * 1.38
+	var ci := Interactable.new()
+	ci.prompt = "take the navy greatcoat"
+	ci.busy_time = 3.0
+	ci.noise_db = 40.0
+	add_child(ci)
+	ci.global_position = coat.global_position + Vector3.DOWN * 0.6
+	ci.on_use = func(_p: Node3D) -> void:
+		player.disguise = "kriegsmarine"
+		ci.enabled = false
+		coat.queue_free()
+		player.note("A Kriegsmarine greatcoat, still damp. At a distance you're one of them. Up close, in the light, your shoes and face will give you away.", 7.0)
+		player.overlay.add_lead("Wearing the navy greatcoat. Keep out of the light and don't let anyone look closely.")
+	_notable(coat.global_position, "Washing on a line. Among the sheets, a navy greatcoat.",
+		"A navy greatcoat on a washing line behind the east houses. A disguise, from a distance.", 14.0)
+
+	# 3. A ford across the river: stepping stones, and nobody watching.
+	var fz := 24.0
+	var fx := Terrain.river_center_x(fz)
+	var stone_mat := StandardMaterial3D.new()
+	stone_mat.albedo_color = Color(0.32, 0.31, 0.29)
+	stone_mat.roughness = 0.7
+	for k in 9:
+		var sx := fx - 10.0 + k * 2.5
+		var body := StaticBody3D.new()
+		body.set_meta("surface", "stone")
+		var mi := MeshInstance3D.new()
+		var sm2 := CylinderMesh.new()
+		sm2.top_radius = 0.45
+		sm2.bottom_radius = 0.6
+		sm2.height = 1.4
+		sm2.material = stone_mat
+		mi.mesh = sm2
+		body.add_child(mi)
+		var cs := CollisionShape3D.new()
+		var cyl := CylinderShape3D.new()
+		cyl.radius = 0.55
+		cyl.height = 1.4
+		cs.shape = cyl
+		body.add_child(cs)
+		add_child(body)
+		var ground := Terrain.height(sx, fz)
+		body.global_position = Vector3(sx, maxf(ground, -1.3) - 0.45 + 0.25, fz + sin(k * 1.7) * 0.4)
+	_notable(Vector3(fx, -0.8, fz), "Stepping stones across the stream. Nobody watches this side.",
+		"A ford across the river east of the village: a way round the checkpoint to the shore.", 30.0)
+
+	# 4. Things to read and see at the checkpoint and on the PTT line.
+	_notable(Vector3(-4.6, 1.4, 41.0), "BEKANNTMACHUNG / AVIS. Curfew 22h to 5h. The coastal zone: entry only with a valid Ausweis.",
+		"Curfew 22:00-05:00. The coastal zone needs an Ausweis (zone pass).", 9.0)
+	_notable(Vector3(4.6, 1.3, 46.0), "A sentry box with a field telephone. If he calls this in, more will come.",
+		"The checkpoint sentry has a telephone. Cut the line first?", 22.0)
+	for it2 in get_tree().get_nodes_in_group("interactables"):
+		var ib := it2 as Interactable
+		if ib and ib.prompt == "cut the telephone line":
+			_notable(ib.global_position, "A PTT junction box. The checkpoint's telephone line runs through it.",
+				"PTT junction box on a pole, east side of the street: cut it (F) and the sentry can't call for help.", 10.0)
+
+
+## Chimney smoke, mist lying in the river valley, and a few far-off farm lights.
+func _build_atmosphere() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 404
+	var smoke_mat := ParticleProcessMaterial.new()
+	smoke_mat.direction = Vector3.UP
+	smoke_mat.spread = 8.0
+	smoke_mat.initial_velocity_min = 0.4
+	smoke_mat.initial_velocity_max = 0.8
+	smoke_mat.gravity = Vector3(0.35, 0.15, 0.1)
+	smoke_mat.scale_min = 1.0
+	smoke_mat.scale_max = 2.0
+	var grow := Curve.new()
+	grow.add_point(Vector2(0.0, 0.4))
+	grow.add_point(Vector2(1.0, 3.0))
+	var ct := CurveTexture.new()
+	ct.curve = grow
+	smoke_mat.scale_curve = ct
+	var fade := Gradient.new()
+	fade.set_color(0, Color(0.4, 0.4, 0.42, 0.0))
+	fade.add_point(0.15, Color(0.42, 0.42, 0.44, 0.22))
+	fade.set_color(fade.get_point_count() - 1, Color(0.45, 0.45, 0.47, 0.0))
+	var gt := GradientTexture1D.new()
+	gt.gradient = fade
+	smoke_mat.color_ramp = gt
+	var quad := QuadMesh.new()
+	quad.size = Vector2(0.9, 0.9)
+	var qm := StandardMaterial3D.new()
+	qm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	qm.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	qm.vertex_color_use_as_albedo = true
+	qm.albedo_texture = ProcTex.soft_dot()
+	qm.shading_mode = BaseMaterial3D.SHADING_MODE_PER_VERTEX
+	quad.material = qm
+	for h in _houses:
+		if rng.randf() < 0.4:
+			continue
+		var fp := footprint(h)
+		var top := h.global_position + fp.get_center() + Vector3.UP * (fp.size.y * 0.5)
+		var along := Vector3(0, 0, 1) if fp.size.z > fp.size.x else Vector3(1, 0, 0)
+		var half := (fp.size.z if along.z > 0.5 else fp.size.x) * 0.5 - 0.6
+		var p := GPUParticles3D.new()
+		p.amount = 24
+		p.lifetime = 9.0
+		p.local_coords = false
+		p.process_material = smoke_mat
+		p.draw_pass_1 = quad
+		p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		p.visibility_aabb = AABB(Vector3(-6, -1, -6), Vector3(16, 14, 12))
+		add_child(p)
+		p.global_position = top + along * half * (1.0 if rng.randf() < 0.5 else -1.0) - Vector3.UP * 0.6
+
+	# Mist pooled along the river.
+	var mist := FogMaterial.new()
+	mist.density = 0.12
+	mist.albedo = Color(0.7, 0.72, 0.76)
+	mist.height_falloff = 0.6
+	var z := -160.0
+	while z < 100.0:
+		var fv := FogVolume.new()
+		fv.shape = RenderingServer.FOG_VOLUME_SHAPE_ELLIPSOID
+		fv.size = Vector3(46.0, 5.0, 38.0)
+		fv.material = mist
+		add_child(fv)
+		fv.global_position = Vector3(Terrain.river_center_x(z), -0.6, z)
+		z += 26.0
+
+	# Far-off farms with a lamp still burning behind a shutter.
+	for k in 7:
+		var a := rng.randf() * TAU
+		var r := rng.randf_range(130.0, 185.0)
+		var fx2 := cos(a) * r
+		var fz2 := clampf(sin(a) * r, -185.0, 85.0)
+		var y := Terrain.height(fx2, fz2) + 1.6
+		var l := OmniLight3D.new()
+		l.light_color = Color(1.0, 0.6, 0.3)
+		l.light_energy = 0.8
+		l.omni_range = 5.0
+		add_child(l)
+		l.global_position = Vector3(fx2, y, fz2)
+		var w := MeshInstance3D.new()
+		var wq := QuadMesh.new()
+		wq.size = Vector2(0.5, 0.4)
+		var wm := StandardMaterial3D.new()
+		wm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		wm.albedo_color = Color(1.0, 0.65, 0.3)
+		wm.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+		wq.material = wm
+		w.mesh = wq
+		add_child(w)
+		w.global_position = l.global_position
 
 
 func is_phone_line_ok() -> bool:

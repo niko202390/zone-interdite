@@ -42,6 +42,7 @@ const KEY_ACTIONS := {
 	"help": [KEY_F1],
 	"watch": [KEY_X],
 	"notebook": [KEY_J],
+	"throw": [KEY_G],
 	"quit": [KEY_F10],
 }
 const MOUSE_ACTIONS := {

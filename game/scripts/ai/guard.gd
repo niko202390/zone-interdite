@@ -33,7 +33,26 @@ const BARKS := {
 	"phone": [["Posten Nord an Kommandantur! Alarm!", "North post to HQ! Alarm!"]],
 	"phone_ok": [["Jawohl. Verstärkung ist unterwegs.", "Understood. Reinforcements are on the way."]],
 	"phone_dead": [["Die Leitung ist tot! Verdammt!", "The line's dead! Damn it!"]],
+	"greet": [["'n Abend, Kamerad.", "Evening, mate."], ["Na, Matrose? Auch noch unterwegs?", "Out late too, sailor?"]],
+	"unmasked": [["Moment... Sie sind kein Matrose! Halt!", "Wait... you're no sailor! Halt!"]],
 }
+
+## Small talk at the checkpoint, [sentry line, patrol reply]. Some of it is useful to an eavesdropper.
+const CHATS := [
+	[["Die Leitung zum Hafen spinnt schon wieder.", "The line to the harbour's playing up again."],
+	 ["Solange sie bis zur Kommandantur geht, ist mir das egal.", "As long as it reaches HQ, I don't care."]],
+	[["Guégan hat seine Tasche schon wieder hinterm Café liegen lassen.", "Guégan's left his satchel behind the café again."],
+	 ["Der säuft sich noch um seinen Posten. Mit Passierschein und allem.", "He'll drink himself out of his job. Pass and all."]],
+	[["Hast du die Mäntel der Marine auf der Leine gesehen? Hinter den Häusern.", "Seen the navy coats on the washing line? Behind the houses."],
+	 ["Bei dem Wetter werden die nie trocken.", "In this weather they'll never dry."]],
+	[["Am Bach kommt man an der Furt fast trockenen Fußes rüber.", "You can cross the stream at the ford with nearly dry feet."],
+	 ["Da unten patrouilliert keiner. Zu nass.", "Nobody patrols down there. Too wet."]],
+	[["Bei dem Regen hört man keinen kommen.", "In this rain you can't hear anyone coming."],
+	 ["Deshalb schaust du ja auch hin.", "That's why you keep your eyes open."]],
+	[["Noch drei Stunden bis zur Ablösung.", "Three more hours until we're relieved."],
+	 ["Und dann Sperrstunde. Dann schießen wir wenigstens auf was.", "Then curfew. At least then we get to shoot at something."]],
+]
+static var _chat_index := 0
 ## Seconds a turned-back civilian has to leave the restricted zone before the sentry treats them as hostile.
 const TURN_BACK_GRACE := 8.0
 
@@ -98,6 +117,7 @@ static var _grace_until_ms := 0     # wall-clock ms until which a turned-back ci
 static var phone_line_ok := true
 var _bark_cd := 0.0
 var _call := ""          # "", "going", "calling", "done"
+var _chat_cd := 20.0
 var _call_t := 0.0
 var _turned_away_t := 999.0    # seconds since the player was turned back from this checkpoint
 var _warned := false
@@ -272,6 +292,13 @@ func _eye_pos() -> Vector3:
 ## How hostile what he sees is. 1 or more means "enemy", below 1 means "a civilian worth watching".
 func _hostility() -> float:
 	var h := 0.0
+	if _player.disguise == "kriegsmarine":
+		# A sailor on the street is one of their own, unless he's waving a pistol about.
+		if _player.firearm and not _player.firearm.holstered:
+			h += 1.0
+		if _combat_t < 90.0:
+			h += 1.0
+		return h
 	if _player.firearm and not _player.firearm.holstered:
 		h += 1.0
 	if _player.crouching:
@@ -313,6 +340,41 @@ func _zone_violation() -> bool:
 
 func _player_in_challenge_zone() -> bool:
 	return challenge_zone.has_volume() and challenge_zone.has_point(_player.global_position)
+
+
+## Quiet talk shown as a subtitle if the player is close enough to overhear. No noise; it's just talk.
+func say(line: Array) -> void:
+	if state == State.DEAD or _player == null:
+		return
+	var d := _player.global_position.distance_to(global_position)
+	if d < 22.0 and _player.overlay and _player.overlay.has_method("subtitle"):
+		_player.overlay.subtitle(line[0], line[1], Hearing.loss() > 0.4 or d > 15.0)
+		_player.overlay.subtitle_t_override(4.5)
+
+
+## The sentry and a passing patrol pass the time. Eavesdroppers learn things.
+func _update_chat(delta: float) -> void:
+	if not checkpoint or state != State.PATROL:
+		return
+	_chat_cd -= delta
+	if _chat_cd > 0.0:
+		return
+	for n in get_tree().get_nodes_in_group("guards"):
+		var g := n as Guard
+		if g == null or g == self or g.checkpoint or g.state != State.PATROL:
+			continue
+		if g.global_position.distance_to(global_position) > 8.0:
+			continue
+		_chat_cd = randf_range(35.0, 55.0)
+		var pair: Array = CHATS[_chat_index % CHATS.size()]
+		_chat_index += 1
+		say(pair[0])
+		var other := g
+		get_tree().create_timer(3.2, false).timeout.connect(func() -> void:
+			if is_instance_valid(other):
+				other.say(pair[1]))
+		return
+	_chat_cd = 2.0
 
 
 ## Say something out loud. Loud barks carry, and other soldiers who hear them come to look.
@@ -416,6 +478,18 @@ func _perceive() -> void:
 	_visibility = light_f * dist_f * angle_f * posture_f * motion_f * (seen_points * 0.5) * (1.0 + alertness)
 	if dist < 2.5:
 		_visibility = maxf(_visibility, 2.0)
+	if _player.disguise == "kriegsmarine":
+		# Seen clearly up close, the civilian shoes and the wrong face give it away.
+		if dist < 4.5 and light_f > 0.8 and suspicion > 0.45:
+			_player.disguise = ""
+			_player.note("He's seen through the coat.", 3.0)
+			_bark_cd = 0.0
+			bark("unmasked")
+			_combat_t = 0.0
+			suspicion = 1.3
+			_enter(State.ALERTED)
+		else:
+			_visibility *= 0.5
 
 
 func _on_noise(pos: Vector3, loudness: float, source: Node) -> void:
@@ -508,7 +582,10 @@ func _think(delta: float) -> void:
 		_bark_cd = 0.0
 		bark("warning")
 	# He remembers turning you back for a minute and just watches rather than asking again.
-	if checkpoint and _turned_away_t > 60.0 and state in [State.PATROL, State.CURIOUS, State.SUSPICIOUS] \
+	if checkpoint and _player.disguise == "kriegsmarine" and _can_see_player and state == State.PATROL \
+			and global_position.distance_to(_player.global_position) < 9.0 and _bark_cd <= 0.0 and randf() < 0.02:
+		bark("greet")
+	if checkpoint and _player.disguise == "" and _turned_away_t > 60.0 and state in [State.PATROL, State.CURIOUS, State.SUSPICIOUS] \
 			and _can_see_player and not hostile and (_player_in_challenge_zone() or _zone_violation()):
 		_enter(State.CHALLENGE)
 
@@ -571,6 +648,7 @@ func _physics_process(delta: float) -> void:
 		return
 	_state_t += delta
 	_combat_t += delta
+	_update_chat(delta)
 	_turned_away_t += delta
 	_bark_cd = maxf(_bark_cd - delta, 0.0)
 	_whistle_cd = maxf(_whistle_cd - delta, 0.0)

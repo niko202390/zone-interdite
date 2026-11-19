@@ -49,6 +49,16 @@ var health := 100.0
 var dead := false
 ## Your forged documents. Mission 1 starts with a good carte d'identité but no pass for the coastal zone.
 var papers := {"identity": true, "zone_pass": false}
+## Things in your coat pockets.
+var items := {"bottle": 0}
+## "" for your own clothes, "kriegsmarine" for a stolen navy greatcoat.
+var disguise := ""
+var _gaze := {}
+var _notice_t := 0.0
+var _vault_t := -1.0
+var _vault_from := Vector3.ZERO
+var _vault_to := Vector3.ZERO
+var _vault_peak := 0.0
 ## Seconds the body is locked into an action, such as a takedown.
 var busy := 0.0
 ## The body being dragged, if any.
@@ -120,6 +130,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			crouching = false
 	elif event.is_action_pressed("jump"):
 		_jump_requested = true
+	elif event.is_action_pressed("throw"):
+		_throw()
 	elif event.is_action_pressed("interact"):
 		_interact()
 	elif event.is_action_pressed("watch"):
@@ -147,6 +159,112 @@ func is_aiming() -> bool:
 
 func horizontal_speed() -> float:
 	return Vector2(velocity.x, velocity.z).length()
+
+
+# --- vaulting, throwing, noticing -------------------------------------------------------------
+
+## Space in front of a low wall, fence or crate climbs over it (or onto it, if there's room on top).
+func _try_vault() -> bool:
+	if dragging or busy > 0.0 or crouching:
+		return false
+	var fwd := -global_basis.z
+	fwd.y = 0.0
+	fwd = fwd.normalized()
+	var space := get_world_3d().direct_space_state
+	var base := global_position
+	var low := PhysicsRayQueryParameters3D.create(base + Vector3.UP * 0.45, base + Vector3.UP * 0.45 + fwd * 0.9, Game.LAYER_WORLD, [get_rid()])
+	var low_hit := space.intersect_ray(low)
+	if low_hit.is_empty():
+		return false
+	var reach := Vector2(low_hit.position.x - base.x, low_hit.position.z - base.z).length()
+	var high := PhysicsRayQueryParameters3D.create(base + Vector3.UP * 1.55, base + Vector3.UP * 1.55 + fwd * 1.1, Game.LAYER_WORLD, [get_rid()])
+	if not space.intersect_ray(high).is_empty():
+		return false
+	# Probe the top just beyond where the forward ray met the obstacle's face.
+	var probe := base + fwd * (reach + 0.12)
+	var top_q := PhysicsRayQueryParameters3D.create(probe + Vector3.UP * 1.6, probe + Vector3.UP * 0.2, Game.LAYER_WORLD, [get_rid()])
+	var top := space.intersect_ray(top_q)
+	if top.is_empty():
+		return false
+	var top_y: float = top.position.y
+	if top_y - base.y < 0.35 or top_y - base.y > 1.4:
+		return false
+	var far := base + fwd * (reach + 1.0)
+	var far_q := PhysicsRayQueryParameters3D.create(far + Vector3.UP * 1.8, far + Vector3.DOWN * 2.0, Game.LAYER_WORLD, [get_rid()])
+	var far_hit := space.intersect_ray(far_q)
+	if far_hit.is_empty():
+		return false
+	_vault_from = base
+	_vault_to = Vector3(far.x, (far_hit.position as Vector3).y + 0.02, far.z)
+	_vault_peak = top_y + 0.3
+	_vault_t = 0.0
+	velocity = Vector3.ZERO
+	stamina = maxf(stamina - 0.08, 0.0)
+	SoundLib.play_2d("player/cloth_wool_move", 0.0)
+	Game.emit_noise(global_position, 52.0, self)
+	return true
+
+
+func _update_vault(delta: float) -> void:
+	_vault_t += delta / 0.6
+	var t := clampf(_vault_t, 0.0, 1.0)
+	var p := _vault_from.lerp(_vault_to, smoothstep(0.0, 1.0, t))
+	var lift := maxf(_vault_peak - _vault_from.y, 0.0)
+	p.y = lerpf(_vault_from.y, _vault_to.y, t) + sin(t * PI) * lift
+	global_position = p
+	if _vault_t >= 1.0:
+		_vault_t = -1.0
+		_footstep(1.4, 2.0)
+
+
+## G throws an empty bottle if you have one, or a stone from the road if you don't. Either way it makes a
+## noise where it lands, and a bottle shatters much louder.
+func _throw() -> void:
+	if dead or busy > 0.0 or dragging:
+		return
+	var t := Throwable.new()
+	if items.get("bottle", 0) > 0:
+		items["bottle"] -= 1
+	else:
+		t.loudness = 64.0
+		t.breaks = false
+		t.sound_key = "impacts/impact_dirt"
+	get_tree().current_scene.add_child(t)
+	var fwd := -camera.global_basis.z
+	t.global_position = camera.global_position + fwd * 0.5 + Vector3.DOWN * 0.1
+	t.linear_velocity = fwd * 11.0 + Vector3.UP * 2.5 + velocity
+	t.angular_velocity = Vector3(randf_range(-8, 8), randf_range(-8, 8), randf_range(-8, 8))
+	SoundLib.play_2d("player/cloth_wool_move", -4.0)
+
+
+## Looking at something notable for a moment makes the character notice it.
+func _update_noticing(delta: float) -> void:
+	_notice_t -= delta
+	if _notice_t > 0.0:
+		return
+	_notice_t = 0.15
+	var eye := camera.global_position
+	var fwd := -camera.global_basis.z
+	var space := get_world_3d().direct_space_state
+	for n in get_tree().get_nodes_in_group("notables"):
+		var nb := n as Notable
+		if nb == null or nb.noticed:
+			continue
+		var to := nb.global_position - eye
+		var d := to.length()
+		if d > nb.radius or rad_to_deg(fwd.angle_to(to)) > 15.0:
+			_gaze.erase(nb)
+			continue
+		var q := PhysicsRayQueryParameters3D.create(eye, nb.global_position, Game.LAYER_WORLD, [get_rid()])
+		var hit := space.intersect_ray(q)
+		if not hit.is_empty() and (hit.position as Vector3).distance_to(nb.global_position) > 0.8:
+			continue
+		_gaze[nb] = float(_gaze.get(nb, 0.0)) + 0.15
+		if _gaze[nb] >= nb.look_time:
+			nb.noticed = true
+			note(nb.thought, 5.5)
+			if overlay and overlay.has_method("add_lead"):
+				overlay.add_lead(nb.lead)
 
 
 # --- interaction: takedowns and bodies ---------------------------------------------------------
@@ -314,6 +432,12 @@ func _physics_process(delta: float) -> void:
 	if not on_floor:
 		velocity.y -= _gravity * delta
 		_fall_speed = maxf(_fall_speed, -velocity.y)
+	if _vault_t >= 0.0:
+		_update_vault(delta)
+		return
+	if _jump_requested and on_floor and _try_vault():
+		_jump_requested = false
+		return
 	if _jump_requested:
 		_jump_requested = false
 		if on_floor and stamina > 0.12 and not crouching:
@@ -437,6 +561,7 @@ func _process(delta: float) -> void:
 	_recoil = _recoil.lerp(Vector2.ZERO, 1.0 - exp(-_recoil_recovery * delta))
 	if not dead:
 		_update_interaction(delta)
+		_update_noticing(delta)
 
 	# Breathing sway: always slightly there, much worse when winded, and strongest while aiming.
 	var t := Time.get_ticks_msec() / 1000.0

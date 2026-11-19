@@ -5,7 +5,7 @@ extends CanvasLayer
 const CONTROLS := """WASD  move        Mouse wheel  walking pace        Shift  sprint
 C  crouch        Space  jump        Q / E  lean
 RMB  aim        LMB  fire        R  reload        T  check magazine
-B  safety (decocks the hammer)        H  holster        F  interact / take down / papers        X  watch        J  notebook
+B  safety (decocks the hammer)        H  holster        F  interact / take down / papers        G  throw        X  watch        J  notebook
 F1  this card        F11  fullscreen        Esc  pause / settings        F10  quit"""
 
 const INK := Color(0.86, 0.83, 0.76)
@@ -21,6 +21,22 @@ var _subtitle_t := 0.0
 var _notebook: Label
 ## Pages of the player's notebook: objectives and leads, in their own shorthand. Set by the level.
 var notebook_text := ""
+## Things noticed or overheard, added as the player discovers them.
+var leads: PackedStringArray = PackedStringArray()
+
+
+func add_lead(text: String) -> void:
+	if text == "" or leads.has(text):
+		return
+	leads.append(text)
+	if _notebook and _notebook.visible:
+		_notebook.text = _notebook_page()
+
+
+func _notebook_page() -> String:
+	if leads.is_empty():
+		return notebook_text
+	return notebook_text + "\n\nLEADS\n  - " + "\n  - ".join(leads)
 
 
 var _pause: Control
@@ -243,6 +259,10 @@ func subtitle(german: String, english: String, muffled := false) -> void:
 	_subtitle_t = 3.2
 
 
+func subtitle_t_override(seconds: float) -> void:
+	_subtitle_t = seconds
+
+
 ## A faint, context-only prompt just below the centre of the screen. An empty string hides it.
 func hint(text: String) -> void:
 	if text != "":
@@ -265,7 +285,7 @@ func _input(event: InputEvent) -> void:
 		_set_paused(not get_tree().paused)
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("notebook") and not get_tree().paused:
-		_notebook.text = notebook_text
+		_notebook.text = _notebook_page()
 		_notebook.visible = not _notebook.visible
 		SoundLib.play_2d("player/cloth_wool_move", -6.0)
 	elif event.is_action_pressed("help"):
