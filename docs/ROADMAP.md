@@ -7,7 +7,7 @@ The milestones and design are in `docs/DESIGN.md`.
 ## Now: finishing M1 "First Night"
 - [x] Integrate the generated environment kit (houses, street, props, ground textures). *Still to do: a final lighting pass against the real materials.*
 - [x] Integrate the P38 model with gloved hands (fixes for the safety lever, magazine path, left ejection and reload hand).
-- [ ] **Next session, first:** the P38 renders silver instead of blued. Diagnosis: Godot reads its roughness as far too glossy, so it mirrors the bright sky. The debug flag `--gun-rough=0.9` makes it dark, and so does `--gun-metal=0`. Fix the roughness texture import or channel, or remap it, then re-tune the ADS sleeve size and the hip pose.
+- [x] ~~The P38 renders silver instead of blued.~~ Fixed with reflection probes, a semi-matte wartime finish and a softer dusk sun. Was: Diagnosis: Godot reads its roughness as far too glossy, so it mirrors the bright sky. The debug flag `--gun-rough=0.9` makes it dark, and so does `--gun-metal=0`. Fix the roughness texture import or channel, or remap it, then re-tune the ADS sleeve size and the hip pose.
 - [ ] Export a fresh .exe and push.
 
 ## Next: M1 polish (pick freely)
@@ -20,9 +20,11 @@ The milestones and design are in `docs/DESIGN.md`.
 
 ## M2 "Eyes & Ears" (one item per session)
 1. [x] A sentry NPC: a stand-in body, navmesh, a patrol route, idle behaviours. A sentry and a patrol are in the test level, with a chest torch.
-2. [x] Vision: a cone, light level at the player's position, movement, posture. *Still to do: silhouette against the sky.*
+2. [x] Vision: a cone, light level at the player's position, movement, posture, and skylining (a figure against open sky is seen much further away, especially at night).
 3. [x] Hearing: listen to `Game.noise_emitted`, with occlusion through walls, rain masking, and a rough sense of where a sound came from.
-4. [x] Suspicion states (curious, suspicious, searching, alerted), social stealth, the whistle alarm, and bolt-action fire at the player. *Still to do: German barks, which depend on the voice decision.*
+4. [x] Suspicion states (curious, suspicious, searching, alerted), social stealth, the whistle alarm, and bolt-action fire at the player. German barks are shown as subtitles; voiced barks wait on the voice decision.
+4b. [x] Checkpoint papers check: the challenge, the inspection, being turned back with a grace period, then a warning and gunfire. Wounded men and curfew breakers are seized. Verdicts are shared by all soldiers.
+4c. [ ] Arrest rather than shoot: "Mitkommen!" leads to custody and an interrogation or escape sequence.
 5. [ ] Hit zones, wounds and death. A simple ragdoll. *(Done so far: head/body damage, a fall-over death, and the player's wound slowdown with fade-to-black death and restart.)*
 5b. [ ] Proper Kar98k sounds (a deep rifle crack, the bolt cycle) and a supersonic snap when a round passes near you. The guards borrow a pitched-down P38 shot for now.
 5c. [ ] Guard tuning pass after playtesting: detection speed, how lethal they are, search duration.
@@ -32,12 +34,12 @@ The milestones and design are in `docs/DESIGN.md`.
 ## Campaign foundations (see docs/CAMPAIGN.md)
 - [ ] Mission data format: map, season, time of day, objectives with alternative completions, outcome grades.
 - [ ] CampaignState autoload: your description, network, intel level, gear and choices, saved at the hideout.
-- [ ] Time of day and season system: sun and moon phase, curfew hours, length of the night.
+- [x] Time of day: a 5x clock, blue hour fading to a moonless night, curfew 22:00–05:00, the church striking the hours, and X to check your watch. *Still to do: moon phase and seasons.*
 - [ ] Grow the test street into Plouzennec: the harbour, the signals post, the café, the church, the road to the cliffs.
 
 ## M3 "The Wire"
 - [ ] Alert as information. Report objects that travel by voice, whistle, phone, runner and radio.
-- [ ] Field telephones and the exchange. Cuttable PTT wires (WireSpan → interactive).
+- [x] (first slice) A field telephone at the checkpoint, a PTT junction box where the line can be cut, and reinforcements after a call. *Still to do: the exchange, more posts, the line to HQ as a network, and runners.*
 - [ ] An escalating response: patrols, search parties, linked checkpoints, curfew tightening.
 - [ ] Dogs: tracking scent trails, barking, chasing. This is the terror moment.
 
@@ -54,6 +56,7 @@ The milestones and design are in `docs/DESIGN.md`.
 - [ ] A better rain bed, and rework the dog barks if they don't convince.
 
 ## Session log
+- **2026-11-18 (night, at home):** The P38 is fixed (probes, finish, sun specular). Clock, night and curfew. German barks with subtitles. Checkpoint papers check. Field telephone, cuttable line and reinforcements. Skylining. Generic interactables. Fixed the clock running 60x too fast.
 - **2026-11-18 (evening):** Silent takedowns, body dragging and discovery. Air absorption, muzzle smoke, Kar98k sounds. The environment kit and P38 are integrated. Godot couldn't decode the JPEG ICC profiles, so `tools/glb_strip_icc.py` was added. Campaign drafted in docs/CAMPAIGN.md.
 - **2026-11-18 (later):** Settings menu. M2 guards: a sentry and a patrol with sight, hearing, suspicion states, social stealth, whistle alarm and rifle fire. Player wounds and death with restart. Headless guard behaviour test.
 - **2026-11-18:** Project set up. M1 code: player, P38 mechanics, hearing damage, dusk test level. Research done on German security, Enigma and weapons. 111 synthesized sounds. Environment kit and P38 model in progress.

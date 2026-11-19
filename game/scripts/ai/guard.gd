@@ -381,7 +381,7 @@ func _perceive() -> void:
 	var light := Visibility.light_level(get_world_3d(), chest, [_player.get_rid()])
 	var light_f := clampf(light / 0.5, 0.12, 2.5)
 	var effective_range := view_distance * clampf(light_f, 0.25, 1.0)
-	if dist > effective_range:
+	if dist > view_distance:
 		return
 	var facing := -global_basis.z
 	var look := facing.rotated(Vector3.UP, _look_yaw)
@@ -398,6 +398,16 @@ func _perceive() -> void:
 	if seen_points == 0:
 		return
 	_can_see_player = true
+	# Skylining: with nothing behind your head but open sky, you're a black cut-out against the glow.
+	# It matters most when the ground is dark, so it scales up as the ambient light falls.
+	var beyond := head + (head - eye).normalized() * 70.0
+	var sky_q := PhysicsRayQueryParameters3D.create(head, beyond, Game.LAYER_WORLD, [get_rid(), _player.get_rid()])
+	if space.intersect_ray(sky_q).is_empty():
+		light_f = maxf(light_f, 0.45) * lerpf(2.2, 1.3, clampf(Visibility.ambient / 0.25, 0.0, 1.0))
+		effective_range = maxf(effective_range, view_distance * 0.7)
+	if dist > effective_range:
+		_can_see_player = false
+		return
 	var dist_f := pow(clampf(1.0 - dist / effective_range, 0.0, 1.0), 1.3)
 	var angle_f := lerpf(1.0, 0.3, ang / (fov_deg * 0.5))
 	var posture_f := 0.55 if _player.crouching else 1.0

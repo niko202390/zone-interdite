@@ -43,6 +43,9 @@ func _run() -> void:
 	player.debug_place(Vector3(-2.0, 0.05, -50.0), 90.0, 0.0)
 	player.firearm.holstered = false
 	player.debug_fire()
+	# Reinforcements come up this street; keep the test's player alive and unarmed so the run isn't cut short.
+	player.health = 1.0e6
+	player.firearm.holstered = true
 	await _report("INTACT", 14.0)
 
 	await _load()
@@ -59,5 +62,7 @@ func _run() -> void:
 	print("line_ok=", level.call("is_phone_line_ok"))
 	player.debug_place(Vector3(-2.0, 0.05, -50.0), 90.0, 0.0)
 	player.debug_fire()
+	player.health = 1.0e6
+	player.firearm.holstered = true
 	await _report("CUT   ", 14.0)
 	quit()
