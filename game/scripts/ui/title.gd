@@ -296,7 +296,20 @@ func _build_document() -> void:
 void fragment(){ float d=length((UV-vec2(0.5,0.42))*vec2(1.0,1.4)); COLOR=vec4(1.0,0.75,0.45,0.0)+vec4(0.0,0.0,0.0,smoothstep(0.25,0.95,d)*0.85); COLOR.rgb=vec3(0.0); }"""
 	lamp.material = lm
 	for i in PAGES.size():
-		var page := _make_page(i)
+		# Photoreal renders from tools/blender/intro when they exist; drawn pages otherwise.
+		var render := "res://assets/briefing/page_%d.png" % (i + 1)
+		var page: Control
+		if ResourceLoader.exists(render):
+			var tr := TextureRect.new()
+			tr.texture = load(render)
+			tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+			tr.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			tr.visible = false
+			page = tr
+		else:
+			page = _make_page(i)
 		_root_doc.add_child(page)
 		_page_nodes.append(page)
 	_root_doc.add_child(lamp)
