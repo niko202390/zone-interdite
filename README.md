@@ -9,3 +9,5 @@ A slow, hard, quasi-horror stealth/survival FPS set in occupied Brittany, winter
 - Design: `docs/DESIGN.md`. Historical research: `docs/research/`.
 
 Binary assets are stored with Git LFS, so run `git lfs install` before you clone.
+
+**Playing:** download the latest full build from [Releases](https://github.com/niko202390/zone-interdite/releases). It updates itself with small patches from the title screen. See `docs/RELEASING.md`.
