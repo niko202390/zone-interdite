@@ -28,6 +28,12 @@ The milestones and design are in `docs/DESIGN.md`.
 6. [ ] Silent takedowns. Bodies can be found, dragged and hidden.
 7. [ ] Evidence: bodies, blood, open doors and missing sentries all raise suspicion.
 
+## Campaign foundations (see docs/CAMPAIGN.md)
+- [ ] Mission data format: map, season, time of day, objectives with alternative completions, outcome grades.
+- [ ] CampaignState autoload: your description, network, intel level, gear and choices, saved at the hideout.
+- [ ] Time of day and season system: sun and moon phase, curfew hours, length of the night.
+- [ ] Grow the test street into Plouzennec: the harbour, the signals post, the café, the church, the road to the cliffs.
+
 ## M3 "The Wire"
 - [ ] Alert as information. Report objects that travel by voice, whistle, phone, runner and radio.
 - [ ] Field telephones and the exchange. Cuttable PTT wires (WireSpan → interactive).

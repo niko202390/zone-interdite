@@ -1,6 +1,6 @@
 # Zone Interdite: design document
 
-This is a living document. Historical research that supports it lives in `docs/research/`. Asset conventions live in `docs/ASSET_PIPELINE.md`.
+This is a living document. Historical research that supports it lives in `docs/research/`. Asset conventions live in `docs/ASSET_PIPELINE.md`. The ten-mission campaign and its story are in `docs/CAMPAIGN.md`.
 
 ## Pitch
 
