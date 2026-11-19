@@ -69,6 +69,8 @@ The target playtest machine is a high-end laptop with an RTX 5080, so budget for
 ## Export settings
 
 - Export `.glb` with embedded textures and modifiers applied. Don't export cameras or lights; lights are placed in Godot.
+- **After every export, run `tools/glb_strip_icc.py <file-or-folder>`.** Blender writes an ICC colour profile into sRGB JPEGs, and Godot 4.7's in-memory JPEG decoder rejects it, which leaves the material with no base colour.
+- First-person steel: we look along the barrel at grazing angles, so glossy metal mirrors the sky. Author wartime blueing as semi-matte (roughness around 0.5). The game also overrides it per weapon (`WeaponData.finish_*`).
 
 ## Audio
 
