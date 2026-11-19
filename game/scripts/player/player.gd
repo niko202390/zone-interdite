@@ -245,7 +245,7 @@ func _footstep(hspeed: float, extra_db := 0.0) -> void:
 	if not SoundLib.has_sound(key):
 		key = "footsteps/cobble_%s" % ("run" if running else "walk")
 	var pace_t := clampf(hspeed / 1.8, 0.0, 1.0)
-	var vol := lerpf(-22.0, -8.0, pace_t) + (5.0 if running else 0.0) - (6.0 if crouching else 0.0) + extra_db
+	var vol := lerpf(-7.0, 3.0, pace_t) + (4.0 if running else 0.0) - (6.0 if crouching else 0.0) + extra_db
 	SoundLib.play_3d(key, global_position + Vector3.UP * 0.05, vol, 40.0, 0.06, 2.0)
 	# Loudness for AI, in dB SPL at 1 m: a creep is about 38, a normal walk about 58, a sprint on cobbles about 75.
 	var loud := lerpf(38.0, 58.0, pace_t) + (13.0 if running else 0.0) - (8.0 if crouching else 0.0) \
@@ -319,9 +319,9 @@ func _process(delta: float) -> void:
 	head.position = Vector3(bob_x, _eye + bob_y - _landing_dip, 0.0)
 
 	# Body sounds.
-	_breath_calm.volume_db = linear_to_db(maxf((1.0 - exhaustion) * 0.3, 0.0001)) - 20.0
-	_breath_hard.volume_db = linear_to_db(maxf(exhaustion, 0.0001)) - 7.0
-	_heart.volume_db = linear_to_db(maxf(exhaustion * 0.8, 0.0001)) - 9.0
+	_breath_calm.volume_db = linear_to_db(maxf((1.0 - exhaustion) * 0.3, 0.0001)) - 6.0 + SoundLib.gain("player/breath_calm_loop")
+	_breath_hard.volume_db = linear_to_db(maxf(exhaustion, 0.0001)) + SoundLib.gain("player/breath_exhausted_loop")
+	_heart.volume_db = linear_to_db(maxf(exhaustion * 0.8, 0.0001)) - 2.0 + SoundLib.gain("player/heartbeat_loop")
 
 
 # --- debug harness -----------------------------------------------------------------------------

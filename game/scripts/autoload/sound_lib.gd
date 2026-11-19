@@ -3,12 +3,36 @@ extends Node
 ## "weapons/p38_shot" matches p38_shot.wav or p38_shot_01.wav … p38_shot_NN.wav, and one
 ## variation is picked at random (never the same one twice in a row).
 ## When a sound is missing, a generated placeholder is used so the game keeps running.
+## Each file's base mix level comes from assets/audio/manifest.json (suggested_gain_db), so the
+## volume_db values callers pass are adjustments on top of that mix.
 
 const ROOT := "res://assets/audio/"
+const MANIFEST := "res://assets/audio/manifest.json"
 
 var _cache := {}        # key -> Array[AudioStream]
 var _last_pick := {}    # key -> int
 var _placeholders := {} # key -> AudioStream
+var _gains := {}        # key (without _NN) -> suggested gain dB
+
+
+func _ready() -> void:
+	if not FileAccess.file_exists(MANIFEST):
+		return
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(MANIFEST))
+	if parsed is Dictionary and parsed.get("sounds") is Array:
+		var variant_suffix := RegEx.create_from_string("_\\d+$")
+		for entry: Dictionary in parsed["sounds"]:
+			var key := String(entry.get("file", "")).get_basename()
+			var m := variant_suffix.search(key)
+			if m:
+				key = key.substr(0, m.get_start())
+			if not _gains.has(key):
+				_gains[key] = float(entry.get("suggested_gain_db", 0.0))
+
+
+## Base mix level for a sound key, in dB.
+func gain(key: String) -> float:
+	return _gains.get(key, 0.0)
 
 
 func variants(key: String) -> Array:
@@ -53,7 +77,7 @@ func play_3d(key: String, pos: Vector3, volume_db := 0.0, max_distance := 120.0,
 	var p := AudioStreamPlayer3D.new()
 	p.stream = pick(key)
 	p.bus = Game.BUS_WORLD
-	p.volume_db = volume_db
+	p.volume_db = volume_db + gain(key)
 	p.unit_size = unit_size
 	p.max_distance = max_distance
 	p.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
@@ -71,7 +95,7 @@ func play_2d(key: String, volume_db := 0.0, bus: StringName = Game.BUS_WORLD,
 	var p := AudioStreamPlayer.new()
 	p.stream = pick(key)
 	p.bus = bus
-	p.volume_db = volume_db
+	p.volume_db = volume_db + gain(key)
 	p.pitch_scale = 1.0 + randf_range(-pitch_jitter, pitch_jitter)
 	_scene_root().add_child(p)
 	p.finished.connect(p.queue_free)

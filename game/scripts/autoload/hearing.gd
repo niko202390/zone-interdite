@@ -76,4 +76,4 @@ func _process(delta: float) -> void:
 	if _lowpass:
 		_lowpass.cutoff_hz = MAX_CUTOFF_HZ * pow(MIN_CUTOFF_HZ / MAX_CUTOFF_HZ, pow(l, 0.8))
 	AudioServer.set_bus_volume_db(_bus, -16.0 * l - 18.0 * _reflex)
-	_tinnitus_player.volume_db = linear_to_db(maxf(tinnitus, 0.0001)) - 15.0
+	_tinnitus_player.volume_db = linear_to_db(maxf(tinnitus, 0.0001)) - 4.0 + SoundLib.gain("player/tinnitus_loop")

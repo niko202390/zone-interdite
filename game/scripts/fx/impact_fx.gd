@@ -36,9 +36,9 @@ static func spawn(root: Node, pos: Vector3, normal: Vector3, dir: Vector3, surfa
 	var fx: Dictionary = SURFACES.get(surface, SURFACES["stone"])
 	_spawn_decal(root, pos, normal, fx["hole"])
 	_spawn_puff(root, pos, normal.lerp(-dir, 0.25).normalized(), fx["dust"], fx.get("sparks", false))
-	SoundLib.play_3d(fx["sound"], pos, -3.0, 90.0, 0.08, 3.0)
+	SoundLib.play_3d(fx["sound"], pos, 0.0, 90.0, 0.08, 3.0)
 	if randf() < float(fx["ricochet"]):
-		SoundLib.play_3d("impacts/ricochet", pos, -5.0, 140.0, 0.12, 4.0)
+		SoundLib.play_3d("impacts/ricochet", pos, 0.0, 140.0, 0.12, 4.0)
 	Game.emit_noise(pos, 92.0, null)
 
 

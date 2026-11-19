@@ -300,7 +300,7 @@ func _brazier(pos: Vector3) -> void:
 		crackle.stream = SoundLib.pick("ambience/fire_crackle_loop")
 		crackle.bus = Game.BUS_WORLD
 		crackle.unit_size = 2.0
-		crackle.volume_db = -8.0
+		crackle.volume_db = SoundLib.gain("ambience/fire_crackle_loop")
 		body.add_child(crackle)
 		crackle.position.y = 0.8
 		crackle.play()

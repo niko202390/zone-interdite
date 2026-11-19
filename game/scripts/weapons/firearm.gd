@@ -271,7 +271,7 @@ func _hammer_fall(extra_spread_deg: float) -> void:
 	_last_shot = _now()
 	hammer_cocked = false
 	if not chambered:
-		SoundLib.play_2d(data.sound_dry, -8.0)
+		SoundLib.play_2d(data.sound_dry, 0.0)
 		return
 	_discharge(extra_spread_deg)
 
@@ -306,7 +306,7 @@ func _discharge(extra_spread_deg: float) -> void:
 
 	var enclosed := _is_enclosed()
 	SoundLib.play_2d(data.sound_shot, 0.0, Game.BUS_WORLD, 0.02)
-	SoundLib.play_2d(data.sound_tail_interior if enclosed else data.sound_tail_exterior, -3.0, Game.BUS_WORLD, 0.03)
+	SoundLib.play_2d(data.sound_tail_interior if enclosed else data.sound_tail_exterior, 0.0, Game.BUS_WORLD, 0.03)
 	Hearing.expose(data.loudness_db, 0.45, enclosed)
 	Game.emit_noise(origin, data.loudness_db, player)
 
@@ -387,7 +387,7 @@ func _eject_casing() -> void:
 	c.body_entered.connect(func(_body: Node) -> void:
 		if bounces[0] < 3 and c.linear_velocity.length() > 0.35:
 			bounces[0] += 1
-			SoundLib.play_3d(key, c.global_position, -12.0 - bounces[0] * 5.0, 25.0, 0.12, 1.5))
+			SoundLib.play_3d(key, c.global_position, -bounces[0] * 5.0, 25.0, 0.12, 1.5))
 	_casings.append(c)
 	while _casings.size() > 40:
 		var old: Node = _casings.pop_front()
@@ -399,14 +399,14 @@ func _toggle_safety() -> void:
 	safety_on = not safety_on
 	if safety_on:
 		hammer_cocked = false   # the lever decocks, dropping the hammer safely onto a blocked firing pin
-	SoundLib.play_2d(data.sound_safety, -8.0)
+	SoundLib.play_2d(data.sound_safety, 0.0)
 	player.note("Safety on. Hammer down." if safety_on else "Safety off.", 1.6)
 
 
 func _toggle_holster() -> void:
 	holstered = not holstered
 	_begin_busy("holster" if holstered else "draw", 0.55)
-	SoundLib.play_2d("player/cloth_wool_move", -10.0)
+	SoundLib.play_2d("player/cloth_wool_move", 0.0)
 
 
 func _start_reload() -> void:
@@ -450,29 +450,29 @@ func _update_busy(delta: float) -> void:
 	match _busy:
 		"reload":
 			if _busy_event("out", 0.18):
-				SoundLib.play_2d(data.sound_mag_out, -6.0)
+				SoundLib.play_2d(data.sound_mag_out, 0.0)
 			if _busy_event("swap", 0.6):
 				var old := mag_rounds if mag_inserted else 0
 				mag_rounds = spare_mags[_reload_from]
 				spare_mags[_reload_from] = old   # the old magazine goes back in your pocket
 				mag_inserted = true
-				SoundLib.play_2d(data.sound_mag_in, -5.0)
+				SoundLib.play_2d(data.sound_mag_in, 0.0)
 			if _reload_empty and _busy_event("release", 0.78):
 				slide_locked = false
 				if not chambered and mag_rounds > 0:
 					mag_rounds -= 1
 					chambered = true
 					hammer_cocked = true
-				SoundLib.play_2d(data.sound_slide_forward, -4.0)
+				SoundLib.play_2d(data.sound_slide_forward, 0.0)
 			_mag_out = _bump(f, 0.18, 0.3, 0.52, 0.62)
 			_hand_l = _bump(f, 0.08, 0.3, 0.7, 0.92)
 		"check":
 			if _busy_event("out", 0.2):
-				SoundLib.play_2d(data.sound_mag_out, -14.0)
+				SoundLib.play_2d(data.sound_mag_out, -8.0)
 			if _busy_event("note", 0.45):
 				player.note(_ammo_estimate(), 3.2)
 			if _busy_event("in", 0.68):
-				SoundLib.play_2d(data.sound_mag_in, -12.0)
+				SoundLib.play_2d(data.sound_mag_in, -6.0)
 			_mag_out = _bump(f, 0.2, 0.32, 0.56, 0.68) * 0.45
 			_hand_l = _bump(f, 0.05, 0.25, 0.75, 0.95)
 	if _busy_t >= _busy_len:

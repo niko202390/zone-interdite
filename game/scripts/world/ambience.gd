@@ -19,10 +19,10 @@ var _patrol_step := 0.0
 
 
 func _ready() -> void:
-	_bed("ambience/wind_gusts_loop", -13.0)
-	_bed("ambience/rain_light_loop", -12.0)
-	_bed("ambience/distant_sea_loop", -21.0)
-	_bed("ambience/drips_loop", -19.0)
+	_bed("ambience/wind_gusts_loop", 0.0)
+	_bed("ambience/rain_light_loop", 0.0)
+	_bed("ambience/distant_sea_loop", 0.0)
+	_bed("ambience/drips_loop", 0.0)
 	_music = AudioStreamPlayer.new()
 	_music.bus = Game.BUS_MUSIC
 	_music.stream = SoundLib.pick("music/drone_dread_loop")
@@ -36,7 +36,7 @@ func _bed(key: String, vol: float) -> void:
 	var p := AudioStreamPlayer.new()
 	p.stream = SoundLib.pick(key)
 	p.bus = Game.BUS_WORLD
-	p.volume_db = vol
+	p.volume_db = vol + SoundLib.gain(key)
 	add_child(p)
 	p.play(randf() * 10.0)
 
@@ -76,7 +76,7 @@ func _toll_bell(count: int) -> void:
 	var church := Vector3(-140.0, 25.0, 190.0)
 	for i in count:
 		get_tree().create_timer(i * 3.2, false).timeout.connect(
-			SoundLib.play_3d.bind("ambience/church_bell_toll", church, 10.0, 900.0, 0.0, 60.0))
+			SoundLib.play_3d.bind("ambience/church_bell_toll", church, 8.0, 900.0, 0.0, 60.0))
 
 
 ## Unseen boots on the cobbles behind the houses. No patrol is there yet (AI comes in M2), only the sound.
@@ -100,7 +100,7 @@ func _update_patrol(delta: float) -> void:
 	_patrol_step += delta * 3.6
 	if _patrol_step >= 1.0:
 		_patrol_step -= randf_range(0.85, 1.0)
-		SoundLib.play_3d("footsteps/npc_hobnail_cobble", _patrol.global_position + Vector3(randf_range(-0.6, 0.6), 0, 0), 2.0, 70.0, 0.08, 5.0)
+		SoundLib.play_3d("footsteps/npc_hobnail_cobble", _patrol.global_position + Vector3(randf_range(-0.6, 0.6), 0, 0), 4.0, 70.0, 0.08, 5.0)
 	if _patrol_t >= 1.0:
 		_patrol.queue_free()
 		_patrol = null
@@ -129,4 +129,4 @@ func _update_music(delta: float) -> void:
 				_music.stop()
 				_music_state = "idle"
 				_music_timer = randf_range(200.0, 420.0)
-	_music.volume_db = linear_to_db(maxf(_music_vol, 0.0001)) - 12.0
+	_music.volume_db = linear_to_db(maxf(_music_vol, 0.0001)) + SoundLib.gain("music/drone_dread_loop")
