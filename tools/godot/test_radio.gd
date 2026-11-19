@@ -23,7 +23,7 @@ func _run() -> void:
 		quit()
 		return
 	root.get_node("Game").set_clock("19:29")
-	player.debug_place(w.global_position + Vector3(0.0, -w.global_position.y + 0.15, 1.2), 180.0, 0.0)
+	player.debug_place(w.global_position + Vector3(0.0, -w.global_position.y + 0.15, 1.2), 0.0, -25.0)
 	await _wait(0.5)
 	player._refresh_interact()
 	print("RADIO option=", player._interact_kind, " prompt=", player._interactable.prompt if player._interactable else "-")

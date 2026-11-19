@@ -1103,6 +1103,9 @@ func _build_rain() -> void:
 	pm.initial_velocity_max = 9.5
 	pm.gravity = Vector3(0, -2.0, 0)
 	pm.particle_flag_align_y = true
+	# Drops die on the first roof, sill or awning they meet, so it doesn't rain indoors.
+	pm.collision_mode = ParticleProcessMaterial.COLLISION_HIDE_ON_CONTACT
+	rain.collision_base_size = 0.02
 	rain.process_material = pm
 	var quad := QuadMesh.new()
 	quad.size = Vector2(0.006, 0.32)
@@ -1121,6 +1124,13 @@ func _build_rain() -> void:
 	rain.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(rain)
 	_rain = rain
+	var roofs := GPUParticlesCollisionHeightField3D.new()
+	roofs.name = "RainRoofs"
+	roofs.size = Vector3(40.0, 30.0, 40.0)
+	roofs.resolution = GPUParticlesCollisionHeightField3D.RESOLUTION_512
+	roofs.follow_camera_enabled = true
+	roofs.update_mode = GPUParticlesCollisionHeightField3D.UPDATE_MODE_WHEN_MOVED
+	add_child(roofs)
 
 
 func _build_bounds() -> void:

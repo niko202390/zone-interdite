@@ -304,10 +304,17 @@ func _refresh_interact() -> void:
 	_interact_kind = ""
 	_interactable = null
 	var best := 9999.0
+	var eye := camera.global_position
+	var look := -camera.global_basis.z
 	for n in get_tree().get_nodes_in_group("interactables"):
 		var it := n as Interactable
 		if it and it.can_interact(self):
-			var d0 := global_position.distance_to(it.global_position)
+			# Prefer what you're looking at: distance, weighted by how far off-centre it is.
+			var to := it.global_position - eye
+			var ang := rad_to_deg(look.angle_to(to))
+			if ang > 70.0:
+				continue
+			var d0 := global_position.distance_to(it.global_position) * (1.0 + ang / 30.0)
 			if d0 < best:
 				best = d0
 				_interactable = it
