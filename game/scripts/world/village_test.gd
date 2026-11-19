@@ -20,6 +20,9 @@ var _rain: GPUParticles3D
 
 
 func _ready() -> void:
+	Visibility.reset()
+	Visibility.ambient = 0.2          # blue hour under overcast
+	Visibility.noise_floor_db = 34.0  # drizzle and wind
 	DuskEnvironment.apply(self)
 	_build_ground()
 	_build_street()
@@ -34,6 +37,49 @@ func _ready() -> void:
 	amb.name = "Ambience"
 	amb.player = player
 	add_child(amb)
+	# The checkpoint: just being seen here unchallenged is enough to get you stopped.
+	Visibility.restricted_zones.append(AABB(Vector3(-6.0, -1.0, 41.0), Vector3(12.0, 6.0, 12.0)))
+	_build_navigation()
+	_spawn_guards()
+
+
+func _build_navigation() -> void:
+	add_to_group("navmesh_source")
+	var region := NavigationRegion3D.new()
+	region.name = "Navigation"
+	var nm := NavigationMesh.new()
+	nm.geometry_parsed_geometry_type = NavigationMesh.PARSED_GEOMETRY_STATIC_COLLIDERS
+	nm.geometry_collision_mask = Game.LAYER_WORLD
+	nm.geometry_source_geometry_mode = NavigationMesh.SOURCE_GEOMETRY_GROUPS_WITH_CHILDREN
+	nm.geometry_source_group_name = &"navmesh_source"
+	nm.cell_size = 0.25
+	nm.cell_height = 0.25
+	nm.agent_radius = 0.5
+	nm.agent_height = 1.75
+	nm.agent_max_climb = 0.5
+	nm.filter_baking_aabb = AABB(Vector3(-60.0, -2.0, -80.0), Vector3(120.0, 14.0, 160.0))
+	region.navigation_mesh = nm
+	add_child(region)
+	region.bake_finished.connect(func() -> void: Visibility.nav_ready = true)
+	region.bake_navigation_mesh(true)
+
+
+func _spawn_guards() -> void:
+	# A sentry at the checkpoint, watching the street, and a patrol walking it.
+	var sentry := Guard.new()
+	sentry.name = "Sentry"
+	sentry.patrol_points = PackedVector3Array([Vector3(2.4, 0.05, 46.6)])
+	add_child(sentry)
+	sentry.global_position = Vector3(2.4, 0.05, 46.6)
+	sentry.rotation.y = deg_to_rad(8.0)
+
+	var patrol := Guard.new()
+	patrol.name = "Patrol"
+	patrol.patrol_points = PackedVector3Array([Vector3(1.2, 0.05, 38.0), Vector3(-1.0, 0.05, 2.0),
+		Vector3(1.0, 0.05, -44.0), Vector3(-1.0, 0.05, 2.0)])
+	add_child(patrol)
+	patrol.global_position = Vector3(1.2, 0.05, 30.0)
+	patrol.rotation.y = 0.0
 
 
 # --- asset helpers -----------------------------------------------------------------------------
@@ -217,6 +263,7 @@ func _build_checkpoint() -> void:
 	blue.omni_range = 7.0
 	blue.shadow_enabled = true
 	lamp.add_child(blue)
+	Visibility.register_light(blue)
 	blue.position = Vector3(0, -0.15, 0.25)
 
 
@@ -294,6 +341,7 @@ func _brazier(pos: Vector3) -> void:
 	body.add_child(light)
 	light.position.y = 1.05
 	_flames.append(light)
+	Visibility.register_light(light)
 
 	if SoundLib.has_sound("ambience/fire_crackle_loop"):
 		var crackle := AudioStreamPlayer3D.new()
@@ -364,6 +412,7 @@ func _build_window_lights() -> void:
 				light.shadow_enabled = true
 				add_child(light)
 				light.global_position = mi.global_transform * center + normal * 0.45
+				Visibility.register_light(light)
 
 
 func _build_rain() -> void:

@@ -15,6 +15,7 @@ const SURFACES := {
 	"grass": {"dust": Color(0.24, 0.22, 0.15), "sound": "impacts/impact_dirt", "ricochet": 0.0, "hole": "grass"},
 	"metal": {"dust": Color(1.0, 0.7, 0.35), "sound": "impacts/ricochet", "ricochet": 0.6, "hole": "stone", "sparks": true},
 	"sand": {"dust": Color(0.5, 0.44, 0.34), "sound": "impacts/impact_dirt", "ricochet": 0.0, "hole": "mud"},
+	"flesh": {"dust": Color(0.22, 0.02, 0.02), "sound": "impacts/impact_dirt", "ricochet": 0.0, "hole": ""},
 }
 
 static var _decals: Array = []
@@ -34,7 +35,8 @@ static func surface_of(collider: Object, pos: Vector3) -> String:
 
 static func spawn(root: Node, pos: Vector3, normal: Vector3, dir: Vector3, surface: String) -> void:
 	var fx: Dictionary = SURFACES.get(surface, SURFACES["stone"])
-	_spawn_decal(root, pos, normal, fx["hole"])
+	if fx["hole"] != "":
+		_spawn_decal(root, pos, normal, fx["hole"])
 	_spawn_puff(root, pos, normal.lerp(-dir, 0.25).normalized(), fx["dust"], fx.get("sparks", false))
 	SoundLib.play_3d(fx["sound"], pos, 0.0, 90.0, 0.08, 3.0)
 	if randf() < float(fx["ricochet"]):

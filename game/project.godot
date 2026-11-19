@@ -16,6 +16,7 @@ Game="*res://scripts/autoload/game.gd"
 SoundLib="*res://scripts/autoload/sound_lib.gd"
 Hearing="*res://scripts/autoload/hearing.gd"
 Debug="*res://scripts/autoload/debug.gd"
+Settings="*res://scripts/autoload/settings.gd"
 
 [display]
 

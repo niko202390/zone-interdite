@@ -6,7 +6,8 @@ extends Node3D
 
 signal fired(origin: Vector3, direction: Vector3)
 
-const BASE_FOV := 62.0
+## The FOV the weapon data was tuned at; the aimed FOV scales with the player's setting.
+const REFERENCE_FOV := 62.0
 const VIEWMODEL_LAYER := 1 << 1
 const PART_NAMES := ["Frame", "Slide", "Barrel", "Hammer", "Trigger", "Magazine", "Decocker",
 	"Hand_R", "Hand_L", "Muzzle", "EjectPort", "SightRear", "SightFront"]
@@ -189,6 +190,7 @@ func _build_flash() -> void:
 	_flash_light.shadow_enabled = true
 	_flash_light.visible = false
 	muzzle.add_child(_flash_light)
+	Visibility.register_light(_flash_light)
 	_flash_light.position = Vector3(0, 0, -0.05)
 
 	_flash_mesh = MeshInstance3D.new()
@@ -228,7 +230,7 @@ func _process(delta: float) -> void:
 
 
 func _handle_input() -> void:
-	if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED or get_tree().paused:
+	if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED or get_tree().paused or player.dead:
 		return
 	if Input.is_action_just_pressed("holster") and _busy == "":
 		_toggle_holster()
@@ -335,7 +337,7 @@ func _hitscan(origin: Vector3, dir: Vector3) -> void:
 	if hit.is_empty():
 		return
 	var col: Object = hit.collider
-	var surface := ImpactFX.surface_of(col, hit.position)
+	var surface := "flesh" if col.has_method("take_hit") else ImpactFX.surface_of(col, hit.position)
 	ImpactFX.spawn(get_tree().current_scene, hit.position, hit.normal, dir, surface)
 	if col.has_method("take_hit"):
 		col.take_hit(data.damage, hit.position, dir, player)
@@ -568,7 +570,8 @@ func _update_pose(delta: float) -> void:
 	want_ads = want_ads and not holstered and not player.sprinting and _busy == "" and _retract < 0.5
 	ads = move_toward(ads, 1.0 if want_ads else 0.0, delta / data.ads_time)
 	var a := smoothstep(0.0, 1.0, ads)
-	camera.fov = lerpf(BASE_FOV, data.ads_fov, a)
+	var base_fov: float = Settings.fov
+	camera.fov = lerpf(base_fov, base_fov * data.ads_fov / REFERENCE_FOV, a)
 
 	_lower = move_toward(_lower, 1.0 if player.sprinting else 0.0, delta * 4.0)
 	_holster_amt = move_toward(_holster_amt, 1.0 if holstered else 0.0, delta / 0.5)

@@ -1,19 +1,25 @@
 extends CanvasLayer
 ## Almost all the UI there is: a faint typewritten line for what the character feels or knows,
-## the pause screen, and a controls card for playtesting.
+## the pause screen with settings, a controls card for playtesting, and the fade to black on death.
 
 const CONTROLS := """WASD  move        Mouse wheel  walking pace        Shift  sprint
 C  crouch        Space  jump        Q / E  lean
 RMB  aim        LMB  fire        R  reload        T  check magazine
 B  safety (decocks the hammer)        H  holster
-F1  this card        F11  fullscreen        Esc  pause        F10  quit"""
+F1  this card        F11  fullscreen        Esc  pause / settings        F10  quit"""
+
+const INK := Color(0.86, 0.83, 0.76)
 
 var _font: SystemFont
+var _theme: Theme
 var _note: Label
 var _note_t := 0.0
 var _pause: Control
 var _help: Label
 var _help_t := 10.0
+var _fade: ColorRect
+var _fade_target := 0.0
+var _value_labels := {}
 
 
 func _ready() -> void:
@@ -21,8 +27,20 @@ func _ready() -> void:
 	layer = 10
 	_font = SystemFont.new()
 	_font.font_names = PackedStringArray(["Courier New", "Courier", "Liberation Mono", "monospace"])
+	_theme = Theme.new()
+	_theme.default_font = _font
+	_theme.default_font_size = 18
+	_theme.set_color("font_color", "Label", INK)
+	_theme.set_color("font_color", "CheckBox", INK)
+	_theme.set_color("font_color", "OptionButton", INK)
 
-	_note = _label(19, Color(0.86, 0.83, 0.76))
+	_fade = ColorRect.new()
+	_fade.color = Color(0, 0, 0, 0)
+	_fade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_fade)
+
+	_note = _label(19)
 	_note.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
 	_note.offset_top = -120
 	_note.offset_bottom = -80
@@ -31,7 +49,7 @@ func _ready() -> void:
 	_note.modulate.a = 0.0
 	add_child(_note)
 
-	_help = _label(17, Color(0.8, 0.78, 0.72))
+	_help = _label(17)
 	_help.text = CONTROLS
 	_help.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 	_help.offset_top = 40
@@ -42,47 +60,136 @@ func _ready() -> void:
 	if Debug.active():
 		_help_t = 0.0
 
-	_pause = ColorRect.new()
-	(_pause as ColorRect).color = Color(0.0, 0.0, 0.0, 0.72)
-	_pause.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_pause.mouse_filter = Control.MOUSE_FILTER_STOP
-	var title := _label(42, Color(0.9, 0.86, 0.78))
-	title.text = "ZONE INTERDITE"
-	title.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	title.offset_top = -200
-	title.offset_bottom = -140
-	title.offset_left = -600
-	title.offset_right = 600
-	_pause.add_child(title)
-	var body := _label(18, Color(0.82, 0.8, 0.74))
-	body.text = "Paused.  Esc resumes.\n\n" + CONTROLS
-	body.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	body.offset_top = -100
-	body.offset_bottom = 140
-	body.offset_left = -700
-	body.offset_right = 700
-	_pause.add_child(body)
-	_pause.visible = false
-	add_child(_pause)
+	_build_pause()
 
 
-func _label(size: int, color: Color) -> Label:
+func _label(size: int) -> Label:
 	var l := Label.new()
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	l.autowrap_mode = TextServer.AUTOWRAP_OFF
 	l.add_theme_font_override("font", _font)
 	l.add_theme_font_size_override("font_size", size)
-	l.add_theme_color_override("font_color", color)
+	l.add_theme_color_override("font_color", INK)
 	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
 	l.add_theme_constant_override("outline_size", 5)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return l
 
 
+# --- pause and settings ------------------------------------------------------------------------
+
+func _build_pause() -> void:
+	var bg := ColorRect.new()
+	bg.color = Color(0.0, 0.0, 0.0, 0.78)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bg.mouse_filter = Control.MOUSE_FILTER_STOP
+	bg.theme = _theme
+	_pause = bg
+
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bg.add_child(center)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 14)
+	center.add_child(col)
+
+	var title := _label(40)
+	title.text = "ZONE INTERDITE"
+	col.add_child(title)
+	var sub := _label(17)
+	sub.text = "Paused.  Esc resumes."
+	col.add_child(sub)
+
+	var grid := GridContainer.new()
+	grid.columns = 3
+	grid.add_theme_constant_override("h_separation", 24)
+	grid.add_theme_constant_override("v_separation", 10)
+	col.add_child(grid)
+
+	_slider_row(grid, "Mouse sensitivity", 0.3, 3.0, 0.05, Settings.sensitivity / 0.0022,
+		func(v: float) -> void: Settings.set_value("sensitivity", 0.0022 * v), "%.2fx")
+	_slider_row(grid, "Field of view", 70.0, 110.0, 1.0, Settings.horizontal_fov(Settings.fov),
+		func(v: float) -> void: Settings.set_value("fov", _vertical_fov(v)), "%d°")
+	_slider_row(grid, "Master volume", 0.0, 100.0, 1.0, Settings.master_volume * 100.0,
+		func(v: float) -> void: Settings.set_value("master_volume", v / 100.0), "%d")
+	_slider_row(grid, "Effects volume", 0.0, 100.0, 1.0, Settings.effects_volume * 100.0,
+		func(v: float) -> void: Settings.set_value("effects_volume", v / 100.0), "%d")
+	_slider_row(grid, "Music volume", 0.0, 100.0, 1.0, Settings.music_volume * 100.0,
+		func(v: float) -> void: Settings.set_value("music_volume", v / 100.0), "%d")
+
+	var ql := _label(18)
+	ql.text = "Graphics quality"
+	ql.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	grid.add_child(ql)
+	var opt := OptionButton.new()
+	for p in Settings.PRESETS:
+		opt.add_item(p)
+	opt.selected = Settings.quality
+	opt.custom_minimum_size = Vector2(320, 0)
+	opt.item_selected.connect(func(i: int) -> void: Settings.set_value("quality", i))
+	grid.add_child(opt)
+	grid.add_child(Control.new())
+
+	_check_row(grid, "Fullscreen", Settings.fullscreen, func(on: bool) -> void: Settings.set_value("fullscreen", on))
+	_check_row(grid, "Vertical sync", Settings.vsync, func(on: bool) -> void: Settings.set_value("vsync", on))
+
+	var controls := _label(16)
+	controls.text = "\n" + CONTROLS
+	col.add_child(controls)
+
+	bg.visible = false
+	add_child(bg)
+
+
+func _slider_row(grid: GridContainer, text: String, lo: float, hi: float, step: float, value: float,
+		on_change: Callable, fmt: String) -> void:
+	var l := _label(18)
+	l.text = text
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	grid.add_child(l)
+	var s := HSlider.new()
+	s.min_value = lo
+	s.max_value = hi
+	s.step = step
+	s.value = value
+	s.custom_minimum_size = Vector2(320, 24)
+	grid.add_child(s)
+	var v := _label(18)
+	v.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	v.custom_minimum_size = Vector2(80, 0)
+	v.text = fmt % value
+	grid.add_child(v)
+	s.value_changed.connect(func(nv: float) -> void:
+		v.text = fmt % nv
+		on_change.call(nv))
+
+
+func _check_row(grid: GridContainer, text: String, value: bool, on_toggle: Callable) -> void:
+	var l := _label(18)
+	l.text = text
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	grid.add_child(l)
+	var c := CheckBox.new()
+	c.button_pressed = value
+	c.toggled.connect(on_toggle)
+	grid.add_child(c)
+	grid.add_child(Control.new())
+
+
+static func _vertical_fov(horizontal_deg: float) -> float:
+	return rad_to_deg(2.0 * atan(tan(deg_to_rad(horizontal_deg) * 0.5) * 9.0 / 16.0))
+
+
+# --- runtime -----------------------------------------------------------------------------------
+
 func note(text: String, seconds := 3.0) -> void:
 	_note.text = text
 	_note_t = seconds
+
+
+## 0 = clear, 1 = black. Used for death and later for passing out / transitions.
+func fade_to(alpha: float) -> void:
+	_fade_target = alpha
 
 
 func _input(event: InputEvent) -> void:
@@ -108,3 +215,4 @@ func _process(delta: float) -> void:
 	_note.modulate.a = move_toward(_note.modulate.a, 0.85 if _note_t > 0.0 else 0.0, delta * 2.5)
 	_help_t -= delta
 	_help.modulate.a = move_toward(_help.modulate.a, 0.8 if _help_t > 0.0 else 0.0, delta * 1.5)
+	_fade.color.a = move_toward(_fade.color.a, _fade_target, delta * 0.6)

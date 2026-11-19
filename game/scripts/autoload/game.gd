@@ -13,7 +13,8 @@ const BUS_MUSIC := &"Music"
 const LAYER_WORLD := 1
 const LAYER_PLAYER := 2
 const LAYER_DEBRIS := 4      # casings and similar small stuff
-const LAYER_HITBOX := 8      # character hit zones (M2)
+const LAYER_HITBOX := 8      # things bullets can hit that take damage (characters)
+const LAYER_CHARACTER := 16  # NPC bodies, for movement collision
 
 const KEY_ACTIONS := {
 	"move_forward": [KEY_W],

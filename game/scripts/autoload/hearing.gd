@@ -17,6 +17,8 @@ const MAX_CUTOFF_HZ := 20000.0
 var temporary := 0.0
 var permanent := 0.0
 var tinnitus := 0.0
+## Effects volume from Settings. It's applied here because this script owns the World bus level.
+var effects_gain_db := 0.0
 var _reflex := 0.0
 
 var _bus := -1
@@ -75,5 +77,6 @@ func _process(delta: float) -> void:
 	var l := loss()
 	if _lowpass:
 		_lowpass.cutoff_hz = MAX_CUTOFF_HZ * pow(MIN_CUTOFF_HZ / MAX_CUTOFF_HZ, pow(l, 0.8))
-	AudioServer.set_bus_volume_db(_bus, -16.0 * l - 18.0 * _reflex)
+	AudioServer.set_bus_volume_db(_bus, effects_gain_db - 16.0 * l - 18.0 * _reflex)
+	AudioServer.set_bus_volume_db(AudioServer.get_bus_index(Game.BUS_TINNITUS), effects_gain_db)
 	_tinnitus_player.volume_db = linear_to_db(maxf(tinnitus, 0.0001)) - 4.0 + SoundLib.gain("player/tinnitus_loop")

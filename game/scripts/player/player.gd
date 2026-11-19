@@ -45,6 +45,8 @@ var stride_phase := 0.0
 ## Look motion accumulated this frame (pixels). The weapon consumes it for sway.
 var mouse_motion := Vector2.ZERO
 var debug_force_ads := false
+var health := 100.0
+var dead := false
 
 var _eye := 1.64
 var _recoil := Vector2.ZERO          # (yaw, pitch) offset that recovers toward zero
@@ -89,7 +91,7 @@ func _make_loop(key: String) -> AudioStreamPlayer:
 # --- input -------------------------------------------------------------------------------------
 
 func _unhandled_input(event: InputEvent) -> void:
-	if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+	if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED or dead:
 		return
 	if event is InputEventMouseMotion:
 		var motion: Vector2 = event.relative
@@ -127,6 +129,29 @@ func horizontal_speed() -> float:
 	return Vector2(velocity.x, velocity.z).length()
 
 
+## Hit by a bullet. There's no health bar: you feel it in the jolt, your breathing, and how slowly you move.
+func take_hit(damage: float, _pos: Vector3, _dir: Vector3, _attacker: Node) -> void:
+	if dead:
+		return
+	health -= damage
+	add_recoil(deg_to_rad(randf_range(5.0, 9.0)), deg_to_rad(randf_range(-7.0, 7.0)), 2.5, 0.45)
+	SoundLib.play_2d("impacts/impact_dirt", 3.0)
+	stamina *= 0.5
+	exhaustion = 1.0
+	if health <= 0.0:
+		_die()
+	else:
+		note("You're hit." if health > 40.0 else "You're badly hurt.", 2.5)
+
+
+func _die() -> void:
+	dead = true
+	if overlay:
+		overlay.fade_to(1.0)
+	note("You were killed.", 9.0)
+	get_tree().create_timer(7.0, false).timeout.connect(get_tree().reload_current_scene)
+
+
 func note(text: String, seconds := 3.0) -> void:
 	if overlay and overlay.has_method("note"):
 		overlay.note(text, seconds)
@@ -137,7 +162,7 @@ func note(text: String, seconds := 3.0) -> void:
 func _physics_process(delta: float) -> void:
 	var on_floor := is_on_floor()
 	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
-	if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+	if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED or dead:
 		input = Vector2.ZERO
 	var wish := global_basis * Vector3(input.x, 0.0, input.y)
 	wish.y = 0.0
@@ -158,6 +183,8 @@ func _physics_process(delta: float) -> void:
 		speed *= crouch_mult
 	if is_aiming():
 		speed = minf(speed, 0.9)
+	if health < 50.0:
+		speed *= 0.75   # wounded
 
 	var horiz := Vector3(velocity.x, 0.0, velocity.z)
 	var k := 1.0 - exp(-(ground_accel if on_floor else air_accel) * delta)
@@ -201,6 +228,8 @@ func _update_stamina(delta: float) -> void:
 			var rate := (1.0 / 16.0) * (0.45 if hspeed > 1.2 else 1.0) * (1.25 if crouching else 1.0)
 			stamina = minf(stamina + delta * rate, 1.0)
 	var target := clampf((0.7 - stamina) / 0.7, 0.0, 1.0)
+	if health < 50.0:
+		target = maxf(target, 0.45)
 	exhaustion = move_toward(exhaustion, target, delta * (0.5 if target > exhaustion else 0.1))
 
 
@@ -317,6 +346,11 @@ func _process(delta: float) -> void:
 	var bob_x := sin(ph) * 0.012 * amt * strength
 	_landing_dip = move_toward(_landing_dip, 0.0, delta * 0.5)
 	head.position = Vector3(bob_x, _eye + bob_y - _landing_dip, 0.0)
+	if dead:
+		# Collapse: the view drops to the cobbles and rolls.
+		_eye = move_toward(_eye, 0.22, delta * 2.2)
+		lean_pivot.rotation.z = move_toward(lean_pivot.rotation.z, deg_to_rad(72.0), delta * 1.6)
+		head.position = Vector3(0, _eye, 0)
 
 	# Body sounds.
 	_breath_calm.volume_db = linear_to_db(maxf((1.0 - exhaustion) * 0.3, 0.0001)) - 6.0 + SoundLib.gain("player/breath_calm_loop")
