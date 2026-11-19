@@ -65,6 +65,9 @@ func peaceful() -> bool:
 func _run_views() -> void:
 	var outdir: String = args.get("outdir", OS.get_user_data_dir().path_join("shots"))
 	DirAccess.make_dir_recursive_absolute(outdir)
+	var level := get_tree().get_first_node_in_group("level")
+	while level and not level.get("is_built"):
+		await get_tree().process_frame
 	await _frames(int(args.get("warm", "240")))
 	var player := get_tree().get_first_node_in_group("player") as Player
 	if player and args.has("rifle"):

@@ -27,7 +27,9 @@ func _run() -> void:
 	current_scene = level
 	player = level.get_node("Player")
 	player.health = 1.0e6
-	await _wait(3.0)
+	while not level.is_built:
+		await process_frame
+	await _wait(1.0)
 	var g: Node = level.get_node("Patrol")
 	player.debug_place(g.global_position + g.global_basis.z * 1.2, rad_to_deg(g.rotation.y), -20.0)
 	g.silent_kill(player)

@@ -25,7 +25,9 @@ func _load() -> void:
 	root.add_child(level)
 	current_scene = level
 	player = level.get_node("Player")
-	await _wait(3.0)
+	while not level.is_built:
+		await process_frame
+	await _wait(1.0)
 
 
 func _report(label: String, seconds: float) -> void:
@@ -58,7 +60,9 @@ func _run() -> void:
 	player._refresh_interact()
 	print("CUT option=", player._interact_kind, " prompt=", player._interactable.prompt if player._interactable else "-")
 	player._interact()
-	await _wait(3.0)
+	while not level.is_built:
+		await process_frame
+	await _wait(1.0)
 	print("line_ok=", level.call("is_phone_line_ok"))
 	player.debug_place(Vector3(-2.0, 0.05, -50.0), 90.0, 0.0)
 	player.debug_fire()

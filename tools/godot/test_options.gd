@@ -24,7 +24,9 @@ func _load() -> void:
 	player = level.get_node("Player")
 	player.health = 1.0e6
 	player.firearm.holstered = true
-	await _wait(3.0)
+	while not level.is_built:
+		await process_frame
+	await _wait(1.0)
 
 
 func _interactable(prompt: String) -> Node3D:
@@ -93,6 +95,8 @@ func _run() -> void:
 	player.debug_place(Vector3(-2.0, 0.05, 14.0), 180.0, -12.0)
 	await _wait(0.5)
 	player._throw()
-	await _wait(3.0)
+	while not level.is_built:
+		await process_frame
+	await _wait(1.0)
 	print("THROW  sentry=%s  target=%s" % [sentry.state_name(), str(sentry.target_pos)])
 	quit()

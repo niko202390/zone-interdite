@@ -25,8 +25,17 @@ var reinforcement_delay := 40.0
 var _wire_spans: Array[MeshInstance3D] = []
 
 
+## Emitted once the whole level has been built (it builds over several frames behind a loading screen).
+signal built
+var is_built := false
+
+
 func _ready() -> void:
 	add_to_group("level")
+	# The player waits, frozen, until there's ground under him.
+	player.process_mode = Node.PROCESS_MODE_DISABLED
+	var loading := LoadingScreen.new()
+	add_child(loading)
 	reinforcement_delay = float(Debug.args.get("reinforce-delay", reinforcement_delay))
 	Visibility.reset()
 	Guard.reset_shared()
@@ -40,39 +49,71 @@ func _ready() -> void:
 	day_night.env = env_refs["environment"]
 	day_night.sun = env_refs["sun"]
 	add_child(day_night)
-	_build_ground()
-	_build_street()
-	_build_houses()
-	_build_square()
-	_build_checkpoint()
-	_build_harbour()
-	_build_church_and_mairie()
-	_build_strongpoint()
-	_build_farm()
-	_build_mill_and_wood()
-	_build_poles_and_wires()
-	_build_window_lights()
-	_build_reflection_probes()
-	_build_rain()
-	_build_bounds()
-	var amb := Ambience.new()
-	amb.name = "Ambience"
-	amb.player = player
-	add_child(amb)
-	# The checkpoint: just being seen here unchallenged is enough to get you stopped.
-	Visibility.restricted_zones.append(AABB(Vector3(-6.0, -1.0, 41.0), Vector3(12.0, 6.0, 12.0)))
-	# Beyond it, the whole harbour zone: the quays, the fish hall and the hotel.
-	Visibility.restricted_zones.append(AABB(Vector3(-50.0, -3.0, 53.0), Vector3(100.0, 12.0, 45.0)))
-	_build_navigation()
-	_spawn_guards()
-	# The mission begins in the field behind the Le Goff farm, south of the bourg.
-	player.debug_place(_ground_at(-10.0, -104.0, 0.1), 180.0, 0.0)
-	_setup_test_objective()
-	_build_back_lanes()
-	_place_options()
-	_place_wireless()
-	_build_atmosphere()
+	# [what the loading screen says, the step, its rough share of the build time]
+	var steps := [
+		["Shaping the land", _build_ground, 10.0],
+		["The sea and the river", _build_water, 1.0],
+		["Hedgerows, trees and gorse", _scatter_nature, 14.0],
+		["The street", func() -> void:
+			_build_street()
+			_build_houses()
+			_build_square()
+			_build_checkpoint(), 12.0],
+		["The harbour", _build_harbour, 8.0],
+		["The church and the mairie", _build_church_and_mairie, 5.0],
+		["The headland", _build_strongpoint, 3.0],
+		["Farms, the mill and the wood", func() -> void:
+			_build_farm()
+			_build_mill_and_wood(), 4.0],
+		["Wires, lamps and rain", func() -> void:
+			_build_poles_and_wires()
+			_build_window_lights()
+			_build_reflection_probes()
+			_build_rain()
+			_build_bounds()
+			var amb := Ambience.new()
+			amb.name = "Ambience"
+			amb.player = player
+			add_child(amb)
+			# The checkpoint: just being seen here unchallenged is enough to get you stopped.
+			Visibility.restricted_zones.append(AABB(Vector3(-6.0, -1.0, 41.0), Vector3(12.0, 6.0, 12.0)))
+			# Beyond it, the whole harbour zone: the quays, the fish hall and the hotel.
+			Visibility.restricted_zones.append(AABB(Vector3(-50.0, -3.0, 53.0), Vector3(100.0, 12.0, 45.0))), 3.0],
+		["Paths for the patrols", _build_navigation, 2.0],
+		["The garrison", func() -> void:
+			_spawn_guards()
+			# The mission begins in the field behind the Le Goff farm, south of the bourg.
+			player.debug_place(_ground_at(-10.0, -104.0, 0.1), 180.0, 0.0)
+			_setup_test_objective()
+			_build_back_lanes()
+			_place_options()
+			_place_wireless()
+			_build_atmosphere(), 4.0],
+	]
+	# Every model is loaded first, on all cores at once, while the bar moves. The steps then find them cached.
+	var t_load := Time.get_ticks_msec()
+	await _preload_models(loading, 0.35)
+	print("BUILD %-30s %6d ms" % ["Loading models (threaded)", Time.get_ticks_msec() - t_load])
+	var total := 0.0
+	for st in steps:
+		total += float(st[2])
+	var done := 0.0
+	var t_all := Time.get_ticks_msec()
+	for st in steps:
+		loading.set_progress(0.35 + 0.65 * done / total, String(st[0]) + "...")
+		# Let the loading screen draw before the (blocking) step runs.
+		await get_tree().process_frame
+		await get_tree().process_frame
+		var t0 := Time.get_ticks_msec()
+		(st[1] as Callable).call()
+		print("BUILD %-30s %6d ms" % [st[0], Time.get_ticks_msec() - t0])
+		done += float(st[2])
+	print("BUILD total %d ms" % (Time.get_ticks_msec() - t_all))
 	print("LEVEL READY")
+	player.process_mode = Node.PROCESS_MODE_INHERIT
+	is_built = true
+	built.emit()
+	loading.finish()
 
 
 func _build_navigation() -> void:
@@ -144,6 +185,38 @@ func _spawn_guards() -> void:
 
 
 # --- asset helpers -----------------------------------------------------------------------------
+
+const MODEL_DIRS := ["res://assets/models/env/", "res://assets/models/town/", "res://assets/models/nature/",
+	"res://assets/models/characters/", "res://assets/models/weapons/", "res://assets/models/props/"]
+## Keeps the preloaded models alive for as long as the level is.
+var _preloaded: Array[Resource] = []
+
+
+func _preload_models(loading: LoadingScreen, share: float) -> void:
+	var paths: Array[String] = []
+	for dir: String in MODEL_DIRS:
+		if not DirAccess.dir_exists_absolute(dir):
+			continue
+		for f in ResourceLoader.list_directory(dir):
+			if f.ends_with(".glb"):
+				paths.append(dir + f)
+	for p in paths:
+		ResourceLoader.load_threaded_request(p, "", true)
+	var pending := paths.duplicate()
+	while not pending.is_empty():
+		var progress := 0.0
+		for p in pending.duplicate():
+			var arr := []
+			var st := ResourceLoader.load_threaded_get_status(p, arr)
+			if st == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+				progress += float(arr[0]) if not arr.is_empty() else 0.0
+				continue
+			pending.erase(p)
+			if st == ResourceLoader.THREAD_LOAD_LOADED:
+				_preloaded.append(ResourceLoader.load_threaded_get(p))
+		var finished := paths.size() - pending.size() + progress
+		loading.set_progress(share * finished / maxf(paths.size(), 1.0), "Loading the town... %d of %d" % [paths.size() - pending.size(), paths.size()])
+		await get_tree().process_frame
 
 ## Places a kit asset with its front facing `facing_deg` (0 = +Z, 90 = +X, -90 = -X, 180 = -Z).
 ## Tags every collider with `surface`. If the .glb doesn't exist, a box of `fallback_size` is used instead.
@@ -221,8 +294,6 @@ func _build_ground() -> void:
 	mat.set_shader_parameter("mask_scale", GroundMask.SCALE)
 	var body := Terrain.build(self, mat)
 	body.set_meta("surface_fn", GroundMask.surface_at)
-	_build_water()
-	_scatter_nature()
 
 
 ## The sea along the northern shore, and the river in its valley to the east.

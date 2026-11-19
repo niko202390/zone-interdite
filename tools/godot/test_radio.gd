@@ -16,7 +16,9 @@ func _run() -> void:
 	current_scene = level
 	var player: Node = level.get_node("Player")
 	player.health = 1.0e6
-	await _wait(2.5)
+	while not level.is_built:
+		await process_frame
+	await _wait(1.0)
 	var w: Node3D = level.get_node_or_null("Wireless")
 	print("RADIO found=", w != null, " at ", w.global_position if w else Vector3.ZERO)
 	if w == null:

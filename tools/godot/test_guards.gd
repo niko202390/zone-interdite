@@ -25,7 +25,9 @@ func _load() -> void:
 	root.add_child(level)
 	current_scene = level
 	player = level.get_node("Player")
-	await _wait(3.0)
+	while not level.is_built:
+		await process_frame
+	await _wait(1.0)
 
 
 func _log(label: String, seconds: float) -> void:

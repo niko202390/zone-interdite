@@ -54,7 +54,27 @@ static func river_center_x(z: float) -> float:
 	return RIVER_X + sin(z * 0.021) * 9.0 + sin(z * 0.057) * 3.0
 
 
+## The height grid, filled once by build(). Lookups inside it are bilinear, which also matches the rendered
+## and collision surface better than the exact noise does. Outside it, or before it exists, height is computed.
+static var _grid := PackedFloat32Array()
+static var _grid_n := 0
+
+
 static func height(x: float, z: float) -> float:
+	if _grid_n > 0:
+		var gx := (x + SIZE * 0.5) / STEP
+		var gz := (z + SIZE * 0.5) / STEP
+		if gx >= 0.0 and gz >= 0.0 and gx < _grid_n - 1 and gz < _grid_n - 1:
+			var i := int(gx)
+			var j := int(gz)
+			var fx := gx - i
+			var fz := gz - j
+			var k := j * _grid_n + i
+			return lerpf(lerpf(_grid[k], _grid[k + 1], fx), lerpf(_grid[k + _grid_n], _grid[k + _grid_n + 1], fx), fz)
+	return exact_height(x, z)
+
+
+static func exact_height(x: float, z: float) -> float:
 	var p := Vector2(x, z)
 	var h := (_fbm(p * 0.011) - 0.5) * 10.0 + (_fbm(p * 0.047 + Vector2(5, 9)) - 0.5) * 1.8
 	# A broad rise to the west, where the cliffs and the strongpoint will go.
@@ -77,7 +97,9 @@ static func build(root: Node3D, material: Material) -> StaticBody3D:
 	heights.resize(n * n)
 	for j in n:
 		for i in n:
-			heights[j * n + i] = height(-half + i * STEP, -half + j * STEP)
+			heights[j * n + i] = exact_height(-half + i * STEP, -half + j * STEP)
+	_grid = heights
+	_grid_n = n
 
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
