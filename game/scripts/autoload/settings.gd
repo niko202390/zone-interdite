@@ -20,8 +20,11 @@ var fullscreen := true
 var vsync := true
 ## Right mouse toggles aiming instead of holding it.
 var aim_toggle := false
+## Sound output device; "Default" follows Windows.
+var audio_device := "Default"
 
 var _cfg := ConfigFile.new()
+var _reported := false
 
 
 func _ready() -> void:
@@ -43,6 +46,7 @@ func load_settings() -> void:
 	fullscreen = _cfg.get_value("display", "fullscreen", fullscreen)
 	vsync = _cfg.get_value("display", "vsync", vsync)
 	aim_toggle = _cfg.get_value("input", "aim_toggle", aim_toggle)
+	audio_device = _cfg.get_value("audio", "device", audio_device)
 
 
 func save_settings() -> void:
@@ -55,11 +59,17 @@ func save_settings() -> void:
 	_cfg.set_value("display", "fullscreen", fullscreen)
 	_cfg.set_value("display", "vsync", vsync)
 	_cfg.set_value("input", "aim_toggle", aim_toggle)
+	_cfg.set_value("audio", "device", audio_device)
 	_cfg.save(PATH)
 
 
 func apply_all() -> void:
 	Game.mouse_sensitivity = sensitivity
+	if not _reported:
+		_reported = true
+		# Written to the log on every start, so a silent game can be diagnosed from user://logs/godot.log.
+		print("AUDIO REPORT driver=%s device=%s devices=%s master=%.2f effects=%.2f music=%.2f" % [AudioServer.get_driver_name(),
+			AudioServer.output_device, AudioServer.get_output_device_list(), master_volume, effects_volume, music_volume])
 	_apply_audio()
 	_apply_display()
 	_apply_quality()
@@ -78,6 +88,8 @@ static func horizontal_fov(vertical_deg: float) -> float:
 
 
 func _apply_audio() -> void:
+	if AudioServer.get_output_device_list().has(audio_device) and AudioServer.output_device != audio_device:
+		AudioServer.output_device = audio_device
 	AudioServer.set_bus_volume_db(AudioServer.get_bus_index(&"Master"), linear_to_db(maxf(master_volume, 0.0001)))
 	var music := AudioServer.get_bus_index(Game.BUS_MUSIC)
 	if music >= 0:

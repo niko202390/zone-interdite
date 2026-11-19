@@ -19,6 +19,17 @@ func _ready() -> void:
 		_run_views.call_deferred()
 	if args.has("time"):
 		Game.set_clock(String(args["time"]))
+	if args.has("audio-probe"):
+		var at := Timer.new()
+		at.wait_time = 1.0
+		at.autostart = true
+		at.timeout.connect(func() -> void:
+			var parts := PackedStringArray()
+			for i in AudioServer.bus_count:
+				parts.append("%s vol=%.0f peak=%.0f mute=%s" % [AudioServer.get_bus_name(i), AudioServer.get_bus_volume_db(i),
+					AudioServer.get_bus_peak_volume_left_db(i, 0), AudioServer.is_bus_mute(i)])
+			print("AUDIO ", " | ".join(parts), " | driver=", AudioServer.get_driver_name(), " out=", AudioServer.output_device))
+		add_child(at)
 	if args.has("fps-log"):
 		var t := Timer.new()
 		t.wait_time = 2.0

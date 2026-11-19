@@ -196,6 +196,22 @@ func _build_pause() -> void:
 	grid.add_child(opt)
 	grid.add_child(Control.new())
 
+	var dl := _label(18)
+	dl.text = "Sound output"
+	dl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	grid.add_child(dl)
+	var dev := OptionButton.new()
+	var devices := AudioServer.get_output_device_list()
+	for d in devices:
+		dev.add_item(d)
+	dev.selected = maxi(devices.find(Settings.audio_device), 0)
+	dev.custom_minimum_size = Vector2(320, 0)
+	dev.item_selected.connect(func(i: int) -> void: Settings.set_value("audio_device", devices[i]))
+	grid.add_child(dev)
+	var test := Button.new()
+	test.text = "Test"
+	test.pressed.connect(func() -> void: SoundLib.play_2d("ambience/church_bell_toll", 0.0, &"Master"))
+	grid.add_child(test)
 	_check_row(grid, "Toggle aim (RMB)", Settings.aim_toggle, func(on: bool) -> void: Settings.set_value("aim_toggle", on))
 	_check_row(grid, "Fullscreen", Settings.fullscreen, func(on: bool) -> void: Settings.set_value("fullscreen", on))
 	_check_row(grid, "Vertical sync", Settings.vsync, func(on: bool) -> void: Settings.set_value("vsync", on))
