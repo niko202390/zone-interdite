@@ -91,6 +91,8 @@ var _press: Label
 var _page_nodes: Array[Control] = []
 var _wind: AudioStreamPlayer
 var _updater: Updater
+var _logo: LogoAnimation
+var _title_extras: Array = []
 var _update_label: Label
 
 
@@ -128,6 +130,13 @@ func _ready() -> void:
 				get_viewport().get_texture().get_image().save_png("user://doc_%d.png" % page_n)
 				print("DOC SHOT ", ProjectSettings.globalize_path("user://doc_%d.png" % page_n))
 				get_tree().quit())
+	if OS.get_cmdline_user_args().has("--logo-shots"):
+		for at: float in [3.0, 6.9, 9.2, 14.0]:
+			get_tree().create_timer(at).timeout.connect(func() -> void:
+				var path := "user://logo_%04.1f.png" % at
+				get_viewport().get_texture().get_image().save_png(path)
+				print("LOGO SHOT ", ProjectSettings.globalize_path(path)))
+		get_tree().create_timer(14.5).timeout.connect(get_tree().quit)
 	if OS.get_cmdline_user_args().has("--title-shot"):
 		get_tree().create_timer(2.5).timeout.connect(func() -> void:
 			get_viewport().get_texture().get_image().save_png("user://title.png")
@@ -179,8 +188,8 @@ void fragment(){
 	col.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	col.offset_left = -700
 	col.offset_right = 700
-	col.offset_top = -230
-	col.offset_bottom = 230
+	col.offset_top = -400
+	col.offset_bottom = 400
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", 6)
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -189,12 +198,9 @@ void fragment(){
 	var sign := _label("ACHTUNG  ·  SPERRGEBIET  ·  ZONE INTERDITE", _font_type, 18, Color(0.75, 0.2, 0.15))
 	sign.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(sign)
-	var logo := _label("ZONE INTERDITE", _font_logo, 104, Color(0.85, 0.82, 0.74))
-	logo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	logo.add_theme_constant_override("outline_size", 0)
-	logo.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
-	logo.add_theme_constant_override("shadow_offset_y", 6)
-	col.add_child(logo)
+	_logo = LogoAnimation.new(_font_logo)
+	col.add_child(_logo)
+	_logo.finished.connect(_on_logo_finished)
 	var wire := BarbedWire.new()
 	wire.custom_minimum_size = Vector2(1100, 36)
 	col.add_child(wire)
@@ -210,6 +216,15 @@ void fragment(){
 	_press.offset_right = 300
 	_press.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_root_title.add_child(_press)
+	# Everything but the logo waits until the ink has been revealed.
+	_title_extras = [sign, wire, sub, _press]
+	for c: Control in _title_extras:
+		c.modulate.a = 0.0
+
+
+func _on_logo_finished() -> void:
+	for c: Control in _title_extras:
+		create_tween().tween_property(c, "modulate:a", 1.0, 1.4)
 
 
 ## Version in the corner, and a quiet update check. Patches download in the background and the game restarts
@@ -374,6 +389,9 @@ func _begin_mission() -> void:
 func _advance() -> void:
 	match _stage:
 		"title":
+			if _logo and not _logo.is_done():
+				_logo.skip()
+				return
 			_show("intro")
 		"intro":
 			_show("doc")
@@ -403,7 +421,8 @@ func _input(event: InputEvent) -> void:
 
 func _process(delta: float) -> void:
 	if _stage == "title":
-		_press.modulate.a = 0.45 + 0.4 * sin(Time.get_ticks_msec() / 600.0)
+		if _logo and _logo.is_done() and _press.modulate.a > 0.4:
+			_press.modulate.a = 0.45 + 0.4 * sin(Time.get_ticks_msec() / 600.0)
 	elif _stage == "intro":
 		_intro_t += delta
 		var line: String = _intro_lines[_intro_i]
