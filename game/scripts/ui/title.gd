@@ -94,7 +94,6 @@ var _updater: Updater
 ## The title animation: the photoreal film if it's been rendered, otherwise the 2D ink-and-lighter version.
 var _logo: Node
 var _title_extras: Array = []
-var _update_label: Label
 
 
 func _ready() -> void:
@@ -249,20 +248,15 @@ func _build_updater() -> void:
 	ver.offset_bottom = -16
 	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	add_child(ver)
-	_update_label = _label("", _font_type, 14, Color(0.6, 0.57, 0.5))
-	_update_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	_update_label.offset_left = 24
-	_update_label.offset_top = -40
-	_update_label.offset_right = 900
-	_update_label.offset_bottom = -16
-	add_child(_update_label)
+	# The updater outlives the title screen, so a download carries on into the mission.
+	_updater = get_tree().root.get_node_or_null("Updater") as Updater
+	if _updater:
+		return
 	_updater = Updater.new()
-	add_child(_updater)
-	_updater.status.connect(func(t: String) -> void: _update_label.text = t)
-	_updater.restart_ready.connect(func() -> void:
-		get_tree().create_timer(1.5).timeout.connect(func() -> void:
-			OS.set_restart_on_exit(true, OS.get_cmdline_args())
-			get_tree().quit()))
+	_updater.name = "Updater"
+	_updater.title_scene = scene_file_path
+	get_tree().root.add_child.call_deferred(_updater)
+	await _updater.ready
 	if not OS.has_feature("editor"):
 		_updater.check_and_install()
 
