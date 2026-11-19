@@ -4,6 +4,12 @@ We build this in small sessions over several weeks. Each "improve and work on th
 
 The milestones and design are in `docs/DESIGN.md`.
 
+## Next session, first
+- [ ] Integrate the **rigged soldier** (an agent was still building it at the end of 19 Nov): AnimationPlayer driven by guard state, the Kar98k on its socket, the torch on TorchMount, a Feldgendarmerie variant at the checkpoint.
+- [ ] Integrate the **house interiors** (agent still finishing): coloured doors, lamps, an interior probe. The hooks already exist in village_test.gd `_setup_interior`.
+- [ ] Nature polish: the pollarded oaks on top of the talus banks have trunks like pillars. Thin twig cards could use alpha antialiasing.
+- [ ] Build size is up to 1.4 GB (nature textures). Consider 1K textures for small plants and shared textures on the talus.
+
 ## Now: finishing M1 "First Night"
 - [x] Integrate the generated environment kit (houses, street, props, ground textures). *Still to do: a final lighting pass against the real materials.*
 - [x] Integrate the P38 model with gloved hands (fixes for the safety lever, magazine path, left ejection and reload hand).
@@ -56,6 +62,7 @@ The milestones and design are in `docs/DESIGN.md`.
 - [ ] A better rain bed, and rework the dog barks if they don't convince.
 
 ## Session log
+- **2026-11-19 (night):** Playtest feedback (walk/sprint speed, aim toggle, fullscreen default, headshots, cumulative ear ringing, rifles drop). Mission 1 full design (docs/MISSION_01.md). Terrain, sea and river; nature kit (32 assets) scattered, with MultiMesh grass. Discoverable options: noticing, notebook leads, overheard chat, zone pass, greatcoat disguise, throwables, vaulting, back lanes, a ford. Chimney smoke, valley mist, distant farm lights. Synthesized babble voices. Title screen, intro and SOE briefing document. Playtest build 2 released.
 - **2026-11-18 (night, at home):** The P38 is fixed (probes, finish, sun specular). Clock, night and curfew. German barks with subtitles. Checkpoint papers check. Field telephone, cuttable line and reinforcements. Skylining. Generic interactables. Fixed the clock running 60x too fast.
 - **2026-11-18 (evening):** Silent takedowns, body dragging and discovery. Air absorption, muzzle smoke, Kar98k sounds. The environment kit and P38 are integrated. Godot couldn't decode the JPEG ICC profiles, so `tools/glb_strip_icc.py` was added. Campaign drafted in docs/CAMPAIGN.md.
 - **2026-11-18 (later):** Settings menu. M2 guards: a sentry and a patrol with sight, hearing, suspicion states, social stealth, whistle alarm and rifle fire. Player wounds and death with restart. Headless guard behaviour test.
