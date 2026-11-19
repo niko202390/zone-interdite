@@ -125,7 +125,7 @@ func _apply_environment(env: Environment) -> void:
 		return
 	env.sdfgi_enabled = quality >= 1
 	env.volumetric_fog_enabled = quality >= 1
-	env.ssr_enabled = quality >= 2
+	env.ssr_enabled = quality >= 2 and not Debug.args.has("no-ssr")
 	env.ssil_enabled = quality >= 2
 	env.ssao_enabled = true
 	env.sdfgi_cascades = 4 if quality <= 1 else (5 if quality == 2 else 6)

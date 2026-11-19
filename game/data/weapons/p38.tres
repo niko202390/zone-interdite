@@ -13,3 +13,6 @@ min_shot_interval = 0.12
 damage = 34.0
 range_m = 150.0
 loudness_db = 160.0
+mag_drop_dir = Vector3(0, -0.961, 0.276)
+eject_velocity = Vector3(-1.9, 1.5, 0.3)
+hand_l_reach = Vector3(0.15, 0.21, -0.17)

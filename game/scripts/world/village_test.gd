@@ -158,10 +158,11 @@ func _build_ground() -> void:
 	mi.mesh = plane
 	var mat := ShaderMaterial.new()
 	mat.shader = load("res://shaders/ground.gdshader")
-	for set_name in ["mud", "grass"]:
-		mat.set_shader_parameter(set_name + "_albedo", _ground_tex(set_name, "albedo", Color(0.2, 0.17, 0.13) if set_name == "mud" else Color(0.22, 0.23, 0.14)))
-		mat.set_shader_parameter(set_name + "_normal", _ground_tex(set_name, "normal", Color(0.5, 0.5, 1.0)))
-		mat.set_shader_parameter(set_name + "_orm", _ground_tex(set_name, "orm", Color(1.0, 0.85, 0.0)))
+	for set_name: String in ["mud", "grass"]:
+		var files: String = "grass_winter" if set_name == "grass" else set_name
+		mat.set_shader_parameter(set_name + "_albedo", _ground_tex(files, "albedo", Color(0.2, 0.17, 0.13) if set_name == "mud" else Color(0.22, 0.23, 0.14)))
+		mat.set_shader_parameter(set_name + "_normal", _ground_tex(files, "normal", Color(0.5, 0.5, 1.0)))
+		mat.set_shader_parameter(set_name + "_orm", _ground_tex(files, "orm", Color(1.0, 0.85, 0.0)))
 	mat.set_shader_parameter("mask_scale", GroundMask.SCALE)
 	mi.material_override = mat
 	mi.position.y = -0.005

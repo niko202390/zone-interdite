@@ -119,10 +119,15 @@ func _prepare_meshes(node: Node) -> void:
 				var mat := mi.get_active_material(i)
 				if mat is BaseMaterial3D:
 					var m := (mat as BaseMaterial3D).duplicate() as BaseMaterial3D
-					m.use_z_clip_scale = true
+					m.use_z_clip_scale = not Debug.args.has("no-vmfx")
 					m.z_clip_scale = data.z_clip_scale
-					m.use_fov_override = true
+					m.use_fov_override = not Debug.args.has("no-vmfx")
 					m.fov_override = data.viewmodel_fov
+					if Debug.args.has("gun-metal"):
+						m.metallic = float(Debug.args["gun-metal"])
+					if Debug.args.has("gun-rough"):
+						m.roughness_texture = null
+						m.roughness = float(Debug.args["gun-rough"])
 					mi.set_surface_override_material(i, m)
 	for c in node.get_children():
 		_prepare_meshes(c)
@@ -384,7 +389,8 @@ func _eject_casing() -> void:
 	c.global_position = port.global_position
 	c.global_basis = camera.global_basis * Basis.from_euler(Vector3(PI * 0.5, 0, 0))
 	var b := camera.global_basis
-	c.linear_velocity = player.velocity + b * Vector3(randf_range(1.6, 2.4), randf_range(1.3, 2.1), randf_range(-0.1, 0.6))
+	var ev := data.eject_velocity
+	c.linear_velocity = player.velocity + b * Vector3(ev.x * randf_range(0.85, 1.2), ev.y * randf_range(0.85, 1.25), ev.z + randf_range(-0.3, 0.3))
 	c.angular_velocity = Vector3(randf_range(-30, 30), randf_range(-30, 30), randf_range(-30, 30))
 	var bounces := [0]
 	var key := data.sound_casing
@@ -549,13 +555,14 @@ func _update_mechanics(delta: float) -> void:
 	_pose_part("Barrel", Vector3(0, 0, minf(data.slide_travel * _slide, data.barrel_travel)), Vector3.ZERO)
 	_pose_part("Hammer", Vector3.ZERO, Vector3(deg_to_rad(data.hammer_cock_angle_deg) * _hammer, 0, 0))
 	_pose_part("Trigger", Vector3.ZERO, Vector3(deg_to_rad(data.trigger_pull_angle_deg) * _trigger, 0, 0))
-	_pose_part("Decocker", Vector3(0, 0, data.slide_travel * _slide), Vector3(0, 0, deg_to_rad(data.safety_angle_deg) * _safety_amt))
-	_pose_part("Magazine", Vector3(0, -data.mag_drop * _mag_out, 0.01 * _mag_out), Vector3.ZERO)
+	# The safety lever rides on the slide (it's a child of it), so it only needs its own rotation.
+	_pose_part("Decocker", Vector3.ZERO, Vector3(deg_to_rad(data.safety_angle_deg) * _safety_amt, 0, 0))
+	_pose_part("Magazine", data.mag_drop_dir.normalized() * data.mag_drop * _mag_out, Vector3.ZERO)
 	if _parts.has("Magazine"):
 		_parts["Magazine"].visible = _mag_out < 0.97
 	if _parts.has("Hand_L"):
 		_parts["Hand_L"].visible = _hand_l > 0.01
-		_pose_part("Hand_L", Vector3(-0.06, -0.22, 0.12) * (1.0 - _hand_l), Vector3.ZERO)
+		_pose_part("Hand_L", data.hand_l_reach * _hand_l, Vector3.ZERO)
 
 
 func _pose_part(part: String, offset: Vector3, euler: Vector3) -> void:

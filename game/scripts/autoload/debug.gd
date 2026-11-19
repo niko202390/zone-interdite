@@ -50,6 +50,10 @@ func _run_views() -> void:
 		if player and v.has("fire"):
 			player.debug_fire()
 			await _frames(2)
+		if player and v.has("reload"):
+			player.firearm.mag_rounds = 2
+			player.firearm._start_reload()
+			await get_tree().create_timer(1.25).timeout
 		if player and v.has("pause"):
 			player.overlay._set_paused(true)
 			await _frames(3)

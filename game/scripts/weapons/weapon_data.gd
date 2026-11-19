@@ -62,8 +62,14 @@ extends Resource
 @export var barrel_travel := 0.008
 @export var hammer_cock_angle_deg := 52.0
 @export var trigger_pull_angle_deg := -16.0
-@export var safety_angle_deg := 70.0
+@export var safety_angle_deg := 55.0
 @export var mag_drop := 0.11
+## Direction the magazine slides out of the grip, in model space.
+@export var mag_drop_dir := Vector3(0, -1, 0)
+## How the empty case leaves the gun, relative to the view (x = right, y = up, z = back), in m/s.
+@export var eject_velocity := Vector3(1.9, 1.5, 0.3)
+## How far the left hand travels from its parked pose to the magazine well during a reload.
+@export var hand_l_reach := Vector3(0.14, 0.2, -0.16)
 
 @export_group("Sounds")
 @export var sound_shot := "weapons/p38_shot"

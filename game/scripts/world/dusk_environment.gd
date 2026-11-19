@@ -41,7 +41,7 @@ static func apply(root: Node3D) -> Dictionary:
 	env.ssao_intensity = 2.2
 	env.ssil_enabled = true
 	env.ssil_intensity = 0.8
-	env.ssr_enabled = true
+	env.ssr_enabled = not Debug.args.has("no-ssr")
 	env.ssr_max_steps = 48
 
 	env.glow_enabled = true
