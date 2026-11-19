@@ -8,9 +8,14 @@ extends Node
 
 signal exposed(received_db: float)
 
-## Unprotected gunfire at the ear is roughly 150-165 dB SPL. Shift starts at around 120 dB.
-const SHIFT_THRESHOLD_DB := 118.0
-const SHIFT_RANGE_DB := 42.0
+## Exposure adds up: impulses are summed as energy in a short window, so one shot in the open passes,
+## but rapid fire, firing indoors, or a rifle going off beside you does damage.
+## Your own shots count for less: you know they're coming, and the ear's reflex is braced (playtest feedback).
+const SHIFT_THRESHOLD_DB := 162.0
+const SHIFT_RANGE_DB := 14.0
+const WINDOW_TAU := 3.0
+const OWN_SHOT_DB := -2.0
+const STARTLE_DB := 6.0
 const MIN_CUTOFF_HZ := 380.0
 const MAX_CUTOFF_HZ := 20000.0
 
@@ -20,6 +25,7 @@ var tinnitus := 0.0
 ## Effects volume from Settings. It's applied here because this script owns the World bus level.
 var effects_gain_db := 0.0
 var _reflex := 0.0
+var _energy := 0.0   # decaying sum of recent impulse energy (linear, relative to 1e15)
 
 var _bus := -1
 var _lowpass: AudioEffectLowPassFilter
@@ -44,10 +50,13 @@ func _start_tinnitus() -> void:
 
 ## level_db: peak SPL at 1 m from the source. distance: metres from the listener's ear.
 ## enclosed: walls and ceiling close by reflect the impulse back, which adds several dB.
-func expose(level_db: float, distance: float, enclosed := false) -> void:
-	var received := level_db + linear_to_db(1.0 / maxf(distance, 1.0)) + (8.0 if enclosed else 0.0)
-	var dose := clampf((received - SHIFT_THRESHOLD_DB) / SHIFT_RANGE_DB, 0.0, 1.0)
+func expose(level_db: float, distance: float, enclosed := false, own := false) -> void:
+	var received := level_db + linear_to_db(1.0 / maxf(distance, 1.0)) + (8.0 if enclosed else 0.0) \
+		+ (OWN_SHOT_DB if own else STARTLE_DB)
 	exposed.emit(received)
+	_energy += pow(10.0, (received - 150.0) / 10.0)
+	var cumulative := 150.0 + 10.0 * log(maxf(_energy, 1e-9)) / log(10.0)
+	var dose := clampf((cumulative - SHIFT_THRESHOLD_DB) / SHIFT_RANGE_DB, 0.0, 1.0)
 	if dose <= 0.0:
 		return
 	# Hold the effect back a moment so the impulse itself is heard at full force (the reflex has a real latency).
@@ -72,6 +81,7 @@ func _process(delta: float) -> void:
 	var tau := 4.0 + 28.0 * temporary
 	temporary = maxf(temporary - delta * (temporary / tau + 0.002), 0.0)
 	_reflex = maxf(_reflex - delta * 4.0, 0.0)
+	_energy *= exp(-delta / WINDOW_TAU)
 	tinnitus = maxf(tinnitus - delta / (7.0 + 45.0 * tinnitus), temporary * 0.8)
 
 	var l := loss()

@@ -16,8 +16,10 @@ var master_volume := 1.0
 var effects_volume := 1.0
 var music_volume := 0.8
 var quality := 2
-var fullscreen := false
+var fullscreen := true
 var vsync := true
+## Right mouse toggles aiming instead of holding it.
+var aim_toggle := false
 
 var _cfg := ConfigFile.new()
 
@@ -40,6 +42,7 @@ func load_settings() -> void:
 	quality = _cfg.get_value("graphics", "quality", quality)
 	fullscreen = _cfg.get_value("display", "fullscreen", fullscreen)
 	vsync = _cfg.get_value("display", "vsync", vsync)
+	aim_toggle = _cfg.get_value("input", "aim_toggle", aim_toggle)
 
 
 func save_settings() -> void:
@@ -51,6 +54,7 @@ func save_settings() -> void:
 	_cfg.set_value("graphics", "quality", quality)
 	_cfg.set_value("display", "fullscreen", fullscreen)
 	_cfg.set_value("display", "vsync", vsync)
+	_cfg.set_value("input", "aim_toggle", aim_toggle)
 	_cfg.save(PATH)
 
 
@@ -83,7 +87,7 @@ func _apply_audio() -> void:
 
 
 func _apply_display() -> void:
-	if DisplayServer.get_name() == "headless":
+	if DisplayServer.get_name() == "headless" or Debug.active():
 		return
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if vsync else DisplayServer.VSYNC_DISABLED)
 	var mode := DisplayServer.window_get_mode()

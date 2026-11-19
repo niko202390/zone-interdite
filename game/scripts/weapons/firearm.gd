@@ -60,6 +60,7 @@ var _flash_light: OmniLight3D
 var _flash_mesh: MeshInstance3D
 var _flash_t := 0.0
 var _casings: Array = []
+var _ads_toggled := false
 
 
 func _ready() -> void:
@@ -327,7 +328,7 @@ func _discharge(extra_spread_deg: float) -> void:
 	var enclosed := _is_enclosed()
 	SoundLib.play_2d(data.sound_shot, 0.0, Game.BUS_WORLD, 0.02)
 	SoundLib.play_2d(data.sound_tail_interior if enclosed else data.sound_tail_exterior, 0.0, Game.BUS_WORLD, 0.03)
-	Hearing.expose(data.loudness_db, 0.45, enclosed)
+	Hearing.expose(data.loudness_db, 0.45, enclosed, true)
 	Game.emit_noise(origin, data.loudness_db, player)
 
 
@@ -585,8 +586,15 @@ func _pose_part(part: String, offset: Vector3, euler: Vector3) -> void:
 
 
 func _update_pose(delta: float) -> void:
-	var want_ads := (Input.is_action_pressed("aim") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED) \
-		or player.debug_force_ads
+	var captured := Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+	var aim_input := Input.is_action_pressed("aim") and captured
+	if Settings.aim_toggle:
+		if captured and Input.is_action_just_pressed("aim"):
+			_ads_toggled = not _ads_toggled
+		if holstered or player.sprinting or _busy != "" or player.busy > 0.0 or player.dragging != null:
+			_ads_toggled = false
+		aim_input = _ads_toggled
+	var want_ads := aim_input or player.debug_force_ads
 	want_ads = want_ads and not holstered and not player.sprinting and _busy == "" and _retract < 0.5 \
 		and player.busy <= 0.0 and player.dragging == null
 	ads = move_toward(ads, 1.0 if want_ads else 0.0, delta / data.ads_time)

@@ -769,7 +769,11 @@ func take_hit(damage: float, pos: Vector3, _dir: Vector3, attacker: Node) -> voi
 	if state == State.DEAD:
 		return
 	var local_y := pos.y - global_position.y
-	health -= damage * (4.0 if local_y > 1.5 else 1.0)
+	# Anything from the collar up is a headshot, and a headshot kills.
+	if local_y > 1.42:
+		health = 0.0
+	else:
+		health -= damage
 	SoundLib.play_3d("impacts/impact_dirt", pos, -2.0, 40.0, 0.1, 3.0)
 	if health <= 0.0:
 		_die()
@@ -791,7 +795,45 @@ func _die(quiet := false) -> void:
 	_shape.set_deferred("disabled", true)
 	velocity = Vector3.ZERO
 	add_to_group("bodies")
+	_drop_rifle()
 	SoundLib.play_3d("footsteps/cobble_run", global_position, -6.0 if quiet else 6.0, 40.0, 0.1, 3.0)
+
+
+## The rifle leaves his hands as a real object that clatters to the ground (and can be picked up later).
+func _drop_rifle() -> void:
+	if _rifle == null or not is_instance_valid(_rifle):
+		return
+	var rb := RigidBody3D.new()
+	rb.name = "DroppedKar98k"
+	rb.collision_layer = Game.LAYER_DEBRIS
+	rb.collision_mask = Game.LAYER_WORLD
+	rb.mass = 4.1
+	rb.continuous_cd = true
+	rb.set_meta("weapon", "kar98k")
+	var cs := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(0.07, 1.1, 0.12)
+	cs.shape = box
+	cs.position = Vector3(0, -0.1, 0)
+	rb.add_child(cs)
+	var xf := _rifle.global_transform
+	get_tree().current_scene.add_child(rb)
+	rb.global_transform = xf
+	_rifle.get_parent().remove_child(_rifle)
+	rb.add_child(_rifle)
+	_rifle.transform = Transform3D.IDENTITY
+	rb.linear_velocity = -global_basis.z * randf_range(0.3, 1.2) + Vector3.UP * 0.5
+	rb.angular_velocity = Vector3(randf_range(-3, 3), randf_range(-2, 2), randf_range(-3, 3))
+	rb.add_to_group("dropped_weapons")
+	_rifle = null
+	rb.contact_monitor = true
+	rb.max_contacts_reported = 1
+	var clattered := [false]
+	rb.body_entered.connect(func(_b: Node) -> void:
+		if not clattered[0]:
+			clattered[0] = true
+			SoundLib.play_3d("impacts/impact_wood", rb.global_position, -2.0, 40.0, 0.1, 2.0)
+			Game.emit_noise(rb.global_position, 60.0, null))
 
 
 func is_dead() -> bool:
@@ -952,6 +994,8 @@ func _animate(delta: float) -> void:
 	_leg_r.rotation.x = -swing
 	_body.position.y = absf(sin(_walk_phase)) * 0.025 * amt
 	_head.rotation.y = lerp_angle(_head.rotation.y, _look_yaw, 1.0 - exp(-5.0 * delta))
+	if _rifle == null:
+		return
 	var aiming := state == State.ALERTED and _can_see_player
 	if aiming:
 		_arm_r.rotation.x = lerp_angle(_arm_r.rotation.x, deg_to_rad(-80.0), 1.0 - exp(-10.0 * delta))

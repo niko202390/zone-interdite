@@ -154,6 +154,7 @@ func _build_pause() -> void:
 	grid.add_child(opt)
 	grid.add_child(Control.new())
 
+	_check_row(grid, "Toggle aim (RMB)", Settings.aim_toggle, func(on: bool) -> void: Settings.set_value("aim_toggle", on))
 	_check_row(grid, "Fullscreen", Settings.fullscreen, func(on: bool) -> void: Settings.set_value("fullscreen", on))
 	_check_row(grid, "Vertical sync", Settings.vsync, func(on: bool) -> void: Settings.set_value("vsync", on))
 

@@ -5,9 +5,9 @@ extends CharacterBody3D
 
 @export_group("Movement")
 ## Walking paces in m/s, chosen with the mouse wheel. A careful creep through to a brisk walk.
-@export var paces: PackedFloat32Array = PackedFloat32Array([0.55, 0.95, 1.35, 1.75])
+@export var paces: PackedFloat32Array = PackedFloat32Array([0.75, 1.2, 1.65, 2.1])
 @export var start_pace := 2
-@export var sprint_speed := 5.4
+@export var sprint_speed := 4.9
 @export var crouch_mult := 0.55
 @export var ground_accel := 8.0
 @export var air_accel := 0.8
