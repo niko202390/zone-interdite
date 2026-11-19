@@ -5,8 +5,9 @@ We build this in small sessions over several weeks. Each "improve and work on th
 The milestones and design are in `docs/DESIGN.md`.
 
 ## Now: finishing M1 "First Night"
-- [ ] Integrate the generated environment kit (houses, street, props, ground textures) and do a lighting pass against the real materials.
-- [ ] Integrate the P38 model with gloved hands. Tune the hip and aim-down-sights poses, and the left hand during reloads.
+- [x] Integrate the generated environment kit (houses, street, props, ground textures). *Still to do: a final lighting pass against the real materials.*
+- [x] Integrate the P38 model with gloved hands (fixes for the safety lever, magazine path, left ejection and reload hand).
+- [ ] **Next session, first:** the P38 renders silver instead of blued. Diagnosis: Godot reads its roughness as far too glossy, so it mirrors the bright sky. The debug flag `--gun-rough=0.9` makes it dark, and so does `--gun-metal=0`. Fix the roughness texture import or channel, or remap it, then re-tune the ADS sleeve size and the hip pose.
 - [ ] Export a fresh .exe and push.
 
 ## Next: M1 polish (pick freely)
@@ -53,5 +54,6 @@ The milestones and design are in `docs/DESIGN.md`.
 - [ ] A better rain bed, and rework the dog barks if they don't convince.
 
 ## Session log
+- **2026-11-18 (evening):** Silent takedowns, body dragging and discovery. Air absorption, muzzle smoke, Kar98k sounds. The environment kit and P38 are integrated. Godot couldn't decode the JPEG ICC profiles, so `tools/glb_strip_icc.py` was added. Campaign drafted in docs/CAMPAIGN.md.
 - **2026-11-18 (later):** Settings menu. M2 guards: a sentry and a patrol with sight, hearing, suspicion states, social stealth, whistle alarm and rifle fire. Player wounds and death with restart. Headless guard behaviour test.
 - **2026-11-18:** Project set up. M1 code: player, P38 mechanics, hearing damage, dusk test level. Research done on German security, Enigma and weapons. 111 synthesized sounds. Environment kit and P38 model in progress.
