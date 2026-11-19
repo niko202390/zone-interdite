@@ -118,6 +118,8 @@ static var phone_line_ok := true
 var _bark_cd := 0.0
 var _call := ""          # "", "going", "calling", "done"
 var _chat_cd := 20.0
+## Each soldier has his own voice.
+var _voice_pitch := randf_range(0.9, 1.1)
 var _call_t := 0.0
 var _turned_away_t := 999.0    # seconds since the player was turned back from this checkpoint
 var _warned := false
@@ -342,10 +344,22 @@ func _player_in_challenge_zone() -> bool:
 	return challenge_zone.has_volume() and challenge_zone.has_point(_player.global_position)
 
 
+## The voice itself: German-flavoured babble from his mouth, short/medium/long to fit the line.
+## The subtitle carries the meaning; distance, walls and your hearing shape how it sounds.
+func _voice(text: String, shout: bool) -> void:
+	var bucket := "s" if text.length() < 18 else ("m" if text.length() < 46 else "l")
+	var key := "voice/de_%s_%s" % ["shout" if shout else "talk", bucket]
+	if not SoundLib.has_sound(key):
+		return
+	var p := SoundLib.play_3d(key, _eye_pos(), 4.0 if shout else -6.0, 90.0 if shout else 30.0, 0.04, 6.0 if shout else 2.0)
+	p.pitch_scale = _voice_pitch
+
+
 ## Quiet talk shown as a subtitle if the player is close enough to overhear. No noise; it's just talk.
 func say(line: Array) -> void:
 	if state == State.DEAD or _player == null:
 		return
+	_voice(line[0], false)
 	var d := _player.global_position.distance_to(global_position)
 	if d < 22.0 and _player.overlay and _player.overlay.has_method("subtitle"):
 		_player.overlay.subtitle(line[0], line[1], Hearing.loss() > 0.4 or d > 15.0)
@@ -386,6 +400,8 @@ func bark(kind: String) -> void:
 		return
 	_bark_cd = 2.5
 	var line: Array = lines[randi() % lines.size()]
+	var loud: bool = kind in LOUD_BARKS or kind in ["alerted", "unmasked", "curfew", "wounded", "phone", "phone_dead"]
+	_voice(line[0], loud)
 	if kind in LOUD_BARKS:
 		Game.emit_noise(_eye_pos(), 76.0, self)
 	var d := _player.global_position.distance_to(global_position)
