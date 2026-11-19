@@ -90,6 +90,8 @@ var _intro_t := 0.0
 var _press: Label
 var _page_nodes: Array[Control] = []
 var _wind: AudioStreamPlayer
+var _updater: Updater
+var _update_label: Label
 
 
 func _ready() -> void:
@@ -108,6 +110,7 @@ func _ready() -> void:
 	_build_intro()
 	_build_document()
 	_show("title")
+	_build_updater()
 	_wind = AudioStreamPlayer.new()
 	_wind.stream = SoundLib.pick("ambience/wind_gusts_loop")
 	_wind.bus = Game.BUS_WORLD
@@ -207,6 +210,35 @@ void fragment(){
 	_press.offset_right = 300
 	_press.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_root_title.add_child(_press)
+
+
+## Version in the corner, and a quiet update check. Patches download in the background and the game restarts
+## itself to apply them (Boot loads them first thing).
+func _build_updater() -> void:
+	var ver := _label("v" + Boot.version, _font_type, 14, Color(0.5, 0.48, 0.44))
+	ver.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	ver.offset_left = -220
+	ver.offset_top = -40
+	ver.offset_right = -24
+	ver.offset_bottom = -16
+	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	add_child(ver)
+	_update_label = _label("", _font_type, 14, Color(0.6, 0.57, 0.5))
+	_update_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	_update_label.offset_left = 24
+	_update_label.offset_top = -40
+	_update_label.offset_right = 900
+	_update_label.offset_bottom = -16
+	add_child(_update_label)
+	_updater = Updater.new()
+	add_child(_updater)
+	_updater.status.connect(func(t: String) -> void: _update_label.text = t)
+	_updater.restart_ready.connect(func() -> void:
+		get_tree().create_timer(1.5).timeout.connect(func() -> void:
+			OS.set_restart_on_exit(true, OS.get_cmdline_args())
+			get_tree().quit()))
+	if not OS.has_feature("editor"):
+		_updater.check_and_install()
 
 
 # --- intro -------------------------------------------------------------------------------------
