@@ -26,12 +26,27 @@ the captured radio, so the Germans know roughly where you landed.
 4. **Lights on the far side of the field.** A German search party with torches and a dog is sweeping the drop zone.
    It's distant, scripted to never catch you if you keep low, and it teaches **light, crouching and staying off the
    skyline**. A dog barks once, far off.
-5. **The bridge and the deer.** At a stone footbridge a prompt suggests *look left*. A family of roe deer (chevreuil,
+5. **The straggler: your first kill, and your gun.** The weapons container drifted away on its own parachute in the
+   dark, so you have only your fighting knife. One man from the search party, an Unteroffizier with a torch and a holstered
+   P38, wanders off to relieve himself by the hedge. The game guides you without forcing you:
+   - *Crouch (C)*, keep out of his torch, and close in from behind. The takedown prompt appears only when you're in
+     position (**F**). It's quiet but not silent; the others are far enough away.
+   - *Drag him (F)* into the ditch, out of the light, and bury the body and the chute together. That's evidence twice over.
+   - **His pistol.** Picking up the P38 is where the gun tutorial starts, one prompt at a time, as you first need each one:
+     **T** to check the magazine ("Five rounds. A spare magazine on his belt."), **B** for the safety ("Carried
+     hammer-down. The first pull will be long and heavy."), **R** to reload with his spare, and **H** to holster it
+     ("A pistol in your hand in town is a death sentence. Keep it out of sight.").
+   - **His rifle stays.** A Kar98k is too long to hide under a coat, and carrying one in town is instantly hostile.
+     That's the first lesson that weapons are visible and conspicuous.
+   - *Optional:* you can let him go and slip away unarmed. That's harder later, and the game notes it without judging.
+     Either way, a missing man is noticed when the search party regroups. That's a slow fuse for later, and it raises
+     the town's alert by morning, not immediately.
+6. **The bridge and the deer.** At a stone footbridge a prompt suggests *look left*. A family of roe deer (chevreuil,
    common in the bocage) picks its way across the rocks in the river. **The deer run on the same perception system
    as the guards.** Sprint or step into the open and they bolt. Creep, and they stay. The lesson: being seen and heard
    is about light, movement and noise, not a meter. Startled deer and flushed crows are also something guards notice
    later.
-6. **Into Plouzennec** at blue hour, at the Le Goff farm, and the mission proper begins (§1).
+7. **Into Plouzennec** at blue hour, at the Le Goff farm, and the mission proper begins (§1).
 
 *A liberty, noted:* SOE preferred moonlit drops, and our night is moonless for the boat pickup. A blind drop at last
 light is unusual but plausible, and the tension it creates is the point.
@@ -47,8 +62,8 @@ the cliffs, at **02:30** for a Royal Navy motor gun boat pickup. The pickup is o
 message *« Le chat de la voisine a mangé les pommes »* tonight, at 19:30 or 21:15.
 
 **What you start with:** your coat, a forged carte d'identité (good for town, but useless for the coastal zone), 340 francs,
-a packet of Gauloises, a folding knife, and your notebook. The notebook is the diegetic objective list, written in your own
-shorthand. **You have no gun.**
+a packet of Gauloises, your Fairbairn-Sykes fighting knife, and your notebook. The notebook is the diegetic objective list, written in your own
+shorthand. **Your own weapons were lost with the container in the drop**, so any pistol you have is the one you took in the opening.
 
 **Where you start:** after the opening (§0), you reach the Le Goff farm on the southern edge of town at about 17:40.
 Madame Le Goff, a widow whose husband died in 1940, has sheltered LAPIDARY before.
