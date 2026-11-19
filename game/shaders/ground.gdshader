@@ -60,7 +60,7 @@ void fragment() {
 
 	// Wet ground is darker and glossier, mud more than grass, with puddle-ish patches in the low noise.
 	float wet = wetness * mix(1.0, 0.45, grass);
-	float puddle = (1.0 - grass) * smoothstep(0.32, 0.22, detail) * wetness;
+	float puddle = (1.0 - grass) * smoothstep(0.22, 0.14, detail) * wetness;
 	ALBEDO = alb * mix(1.0, 0.6, wet) * mix(1.0, 0.7, puddle);
 	ROUGHNESS = mix(mix(orm.g, orm.g * 0.4, wet), 0.05, puddle);
 	METALLIC = 0.0;

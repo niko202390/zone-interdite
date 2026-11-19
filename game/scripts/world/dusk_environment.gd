@@ -85,6 +85,8 @@ static func apply(root: Node3D) -> Dictionary:
 	sun.light_color = Color(0.66, 0.66, 0.8)
 	sun.light_energy = 0.9
 	sun.light_angular_distance = 3.0
+	# Blue hour: the sun is a faint glow below cloud, not a source of hard highlights.
+	sun.light_specular = 0.12
 	sun.shadow_enabled = true
 	sun.directional_shadow_max_distance = 90.0
 	sun.directional_shadow_blend_splits = true

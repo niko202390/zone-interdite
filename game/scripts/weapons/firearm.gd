@@ -123,6 +123,10 @@ func _prepare_meshes(node: Node) -> void:
 					m.z_clip_scale = data.z_clip_scale
 					m.use_fov_override = not Debug.args.has("no-vmfx")
 					m.fov_override = data.viewmodel_fov
+					if data.finish_roughness >= 0.0 and _matches_finish(m.resource_name):
+						m.roughness_texture = null
+						m.roughness = data.finish_roughness
+						m.metallic *= data.finish_metallic_scale
 					if Debug.args.has("gun-metal"):
 						m.metallic = float(Debug.args["gun-metal"])
 					if Debug.args.has("gun-rough"):
@@ -131,6 +135,13 @@ func _prepare_meshes(node: Node) -> void:
 					mi.set_surface_override_material(i, m)
 	for c in node.get_children():
 		_prepare_meshes(c)
+
+
+func _matches_finish(material_name: String) -> bool:
+	for n in data.finish_materials:
+		if material_name.contains(n):
+			return true
+	return false
 
 
 func _compute_poses() -> void:

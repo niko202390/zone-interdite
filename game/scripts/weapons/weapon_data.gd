@@ -55,6 +55,12 @@ extends Resource
 @export var reload_empty_time := 3.0
 @export var viewmodel_fov := 58.0
 @export var z_clip_scale := 0.4
+## Finish of the steel as seen in first person. We look along the barrel, so every surface is at a grazing
+## angle and glossy steel mirrors the sky. Wartime blueing was semi-matte. Materials whose names contain
+## one of `finish_materials` get this roughness (texture replaced) and a scaled metallic value. Use -1 to keep the model's own.
+@export var finish_roughness := 0.52
+@export var finish_metallic_scale := 0.85
+@export var finish_materials: PackedStringArray = PackedStringArray(["P38"])
 
 @export_group("Mechanism")
 ## Animation constants for the named parts in the model (metres / degrees).

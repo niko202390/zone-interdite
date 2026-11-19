@@ -31,6 +31,7 @@ func _ready() -> void:
 	_build_checkpoint()
 	_build_poles_and_wires()
 	_build_window_lights()
+	_build_reflection_probes()
 	_build_rain()
 	_build_bounds()
 	var amb := Ambience.new()
@@ -415,6 +416,21 @@ func _build_window_lights() -> void:
 				add_child(light)
 				light.global_position = mi.global_transform * center + normal * 0.45
 				Visibility.register_light(light)
+
+
+## Without probes every glossy surface reflects the open dusk sky, even deep in a street walled in by houses.
+## That made blued steel look chrome and wet cobbles glare. Box-projected probes capture the real street.
+func _build_reflection_probes() -> void:
+	for k in 7:
+		var probe := ReflectionProbe.new()
+		probe.size = Vector3(18.0, 12.0, 22.0)
+		probe.box_projection = true
+		probe.enable_shadows = true
+		probe.update_mode = ReflectionProbe.UPDATE_ONCE
+		probe.ambient_mode = ReflectionProbe.AMBIENT_DISABLED
+		probe.blend_distance = 3.0
+		add_child(probe)
+		probe.position = Vector3(0.0, 4.0, -60.0 + k * 20.0)
 
 
 func _build_rain() -> void:
