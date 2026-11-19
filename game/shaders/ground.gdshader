@@ -60,9 +60,10 @@ void fragment() {
 
 	// Wet ground is darker and glossier, mud more than grass, with puddle-ish patches in the low noise.
 	float wet = wetness * mix(1.0, 0.45, grass);
-	float puddle = (1.0 - grass) * smoothstep(0.22, 0.14, detail) * wetness;
+	float puddle = (1.0 - grass) * smoothstep(0.17, 0.11, detail) * wetness;
 	ALBEDO = alb * mix(1.0, 0.6, wet) * mix(1.0, 0.7, puddle);
-	ROUGHNESS = mix(mix(orm.g, orm.g * 0.4, wet), 0.05, puddle);
+	// Wet earth is a soft sheen, not a mirror; only real puddles get glossy.
+	ROUGHNESS = mix(mix(orm.g, max(orm.g * 0.75, 0.45), wet), 0.12, puddle);
 	METALLIC = 0.0;
 	AO = orm.r;
 	NORMAL_MAP = mix(nrm, vec3(0.5, 0.5, 1.0), puddle);

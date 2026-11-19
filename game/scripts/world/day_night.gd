@@ -45,7 +45,9 @@ func _process(_delta: float) -> void:
 	if sky:
 		sky.sky_top_color = (a["top"] as Color).lerp(b["top"], f)
 		sky.sky_horizon_color = (a["horizon"] as Color).lerp(b["horizon"], f)
-		sky.ground_horizon_color = sky.sky_horizon_color * 0.65
+		# The sky's lower half feeds reflections of "the ground" in open country; keep it dark like real fields.
+		sky.ground_horizon_color = sky.sky_horizon_color * 0.18
+		sky.ground_bottom_color = sky.sky_top_color * 0.15
 	env.tonemap_exposure = lerpf(a["exposure"], b["exposure"], f)
 	env.fog_light_color = (a["fog"] as Color).lerp(b["fog"], f)
 	var sun_energy := lerpf(a["sun"], b["sun"], f)

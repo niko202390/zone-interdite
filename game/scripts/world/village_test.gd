@@ -168,13 +168,6 @@ func find_marker(root: Node, marker: String) -> Node3D:
 # --- ground and street -------------------------------------------------------------------------
 
 func _build_ground() -> void:
-	var size := 420.0
-	var mi := MeshInstance3D.new()
-	var plane := PlaneMesh.new()
-	plane.size = Vector2(size, size)
-	plane.subdivide_width = 1
-	plane.subdivide_depth = 1
-	mi.mesh = plane
 	var mat := ShaderMaterial.new()
 	mat.shader = load("res://shaders/ground.gdshader")
 	for set_name: String in ["mud", "grass"]:
@@ -183,20 +176,113 @@ func _build_ground() -> void:
 		mat.set_shader_parameter(set_name + "_normal", _ground_tex(files, "normal", Color(0.5, 0.5, 1.0)))
 		mat.set_shader_parameter(set_name + "_orm", _ground_tex(files, "orm", Color(1.0, 0.85, 0.0)))
 	mat.set_shader_parameter("mask_scale", GroundMask.SCALE)
-	mi.material_override = mat
-	mi.position.y = -0.005
-	add_child(mi)
-
-	var body := StaticBody3D.new()
-	body.name = "Ground"
-	var cs := CollisionShape3D.new()
-	var shape := BoxShape3D.new()
-	shape.size = Vector3(size, 1.0, size)
-	cs.shape = shape
-	cs.position.y = -0.5
-	body.add_child(cs)
+	var body := Terrain.build(self, mat)
 	body.set_meta("surface_fn", GroundMask.surface_at)
-	add_child(body)
+	_build_water()
+	_scatter_nature()
+
+
+## The sea along the northern shore, and the river in its valley to the east.
+func _build_water() -> void:
+	var shader: Shader = load("res://shaders/water.gdshader")
+	var sea := MeshInstance3D.new()
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(900.0, 500.0)
+	sea.mesh = plane
+	var sea_mat := ShaderMaterial.new()
+	sea_mat.shader = shader
+	sea.material_override = sea_mat
+	sea.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(sea)
+	sea.position = Vector3(0.0, Terrain.SEA_LEVEL, 330.0)
+
+	var river_mat := ShaderMaterial.new()
+	river_mat.shader = shader
+	river_mat.set_shader_parameter("flow", Vector2(0.0, 0.06))
+	river_mat.set_shader_parameter("wave_scale", 0.18)
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var z := -200.0
+	while z < 120.0:
+		var z1 := z + 4.0
+		var w0 := lerpf(7.0, 22.0, smoothstep(-100.0, 100.0, z)) * 0.9
+		var w1 := lerpf(7.0, 22.0, smoothstep(-100.0, 100.0, z1)) * 0.9
+		var c0 := Terrain.river_center_x(z)
+		var c1 := Terrain.river_center_x(z1)
+		var y := -1.3
+		var a := Vector3(c0 - w0, y, z)
+		var b := Vector3(c0 + w0, y, z)
+		var c := Vector3(c1 - w1, y, z1)
+		var d := Vector3(c1 + w1, y, z1)
+		for v in [a, c, b, b, c, d]:
+			st.set_normal(Vector3.UP)
+			st.add_vertex(v)
+		z = z1
+	var river := MeshInstance3D.new()
+	river.mesh = st.commit()
+	river.material_override = river_mat
+	river.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(river)
+
+
+## Trees, gorse, hedgerow banks, rocks and grass outside the village, placed by a seeded scatter that
+## avoids the village, the street, the river and the sea. Only uses kit pieces that exist.
+func _scatter_nature() -> void:
+	const NATURE := "res://assets/models/nature/"
+	var kinds := {
+		"tree": ["tree_oak_a", "tree_oak_b", "tree_beech_a", "tree_beech_b", "tree_chestnut_a", "tree_ash_a", "tree_pine_a", "tree_pine_b"],
+		"bush": ["gorse_a", "gorse_b", "gorse_c", "bramble_a", "bramble_b", "bracken_a", "bracken_b"],
+		"rock": ["rock_small", "rock_medium", "rock_large", "rock_outcrop"],
+		"grass": ["grass_tuft_a", "grass_tuft_b", "grass_tuft_c", "rush_a", "rush_b", "fern_dead_a", "fern_dead_b"],
+	}
+	var scenes := {}
+	for kind: String in kinds:
+		scenes[kind] = []
+		for asset: String in kinds[kind]:
+			var path := NATURE + asset + ".glb"
+			if ResourceLoader.exists(path):
+				scenes[kind].append(load(path))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 1944
+	var counts := {"tree": 260, "bush": 420, "rock": 90, "grass": 1600}
+	for kind: String in counts:
+		var list: Array = scenes[kind]
+		if list.is_empty():
+			continue
+		var placed := 0
+		var tries := 0
+		while placed < counts[kind] and tries < counts[kind] * 6:
+			tries += 1
+			var x := rng.randf_range(-185.0, 185.0)
+			var z := rng.randf_range(-185.0, 105.0)
+			if Terrain.village_mask(x, z) > 0.02 or absf(x - Terrain.river_center_x(z)) < 26.0:
+				continue
+			var h := Terrain.height(x, z)
+			if h < Terrain.SEA_LEVEL + 0.4:
+				continue
+			# Trees cluster into copses and along field edges rather than spreading evenly.
+			if kind == "tree" and GroundMask.fbm(Vector2(x, z) * 0.02) < 0.5:
+				continue
+			var node: Node3D = (list[rng.randi() % list.size()] as PackedScene).instantiate()
+			add_child(node)
+			node.position = Vector3(x, h - 0.05, z)
+			node.rotation.y = rng.randf() * TAU
+			var s := rng.randf_range(0.8, 1.25)
+			node.scale = Vector3(s, s, s)
+			_tag_surface(node, "wood" if kind == "tree" else ("stone" if kind == "rock" else "grass"))
+			placed += 1
+	# Hedgerow banks lining the lane south of the village.
+	var bank := NATURE + "talus_bank_10m.glb"
+	if ResourceLoader.exists(bank):
+		var scene: PackedScene = load(bank)
+		for side: float in [-1.0, 1.0]:
+			for k in 9:
+				var bz := -82.0 - k * 10.0
+				var bx := side * 6.0
+				var b := scene.instantiate() as Node3D
+				add_child(b)
+				b.position = Vector3(bx, Terrain.height(bx, bz), bz)
+				_tag_surface(b, "mud")
 
 
 func _ground_tex(set_name: String, channel: String, fallback: Color) -> Texture2D:
@@ -500,6 +586,15 @@ func _build_window_lights() -> void:
 ## Without probes every glossy surface reflects the open dusk sky, even deep in a street walled in by houses.
 ## That made blued steel look chrome and wet cobbles glare. Box-projected probes capture the real street.
 func _build_reflection_probes() -> void:
+	# One broad probe over the open country, so glossy things out there reflect dark fields, not only sky.
+	var wide := ReflectionProbe.new()
+	wide.size = Vector3(420.0, 60.0, 420.0)
+	wide.update_mode = ReflectionProbe.UPDATE_ONCE
+	wide.ambient_mode = ReflectionProbe.AMBIENT_DISABLED
+	wide.max_distance = 400.0
+	wide.priority = -1
+	add_child(wide)
+	wide.position = Vector3(0.0, 4.0, -40.0)
 	for k in 7:
 		var probe := ReflectionProbe.new()
 		probe.size = Vector3(18.0, 12.0, 22.0)
