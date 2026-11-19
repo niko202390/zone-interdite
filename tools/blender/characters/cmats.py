@@ -382,7 +382,7 @@ def build_soldier_mats(variant):
     M['glove'] = mat_wool("glove", (0.036, 0.038, 0.034), (0.05, 0.052, 0.046), mud=False, knit=True)
     M['leather'] = mat_leather("leather")
     M['leather_boot'] = mat_leather("leather_boot", boot=True)
-    M['helmet'] = mat_paint("helmet", (0.052, 0.058, 0.050), 0.78, 1.4, chip_attr="rim", chip=0.5)
+    M['helmet'] = mat_paint("helmet", (0.052, 0.058, 0.050), 0.78, 1.4, chip_attr="rim", chip=0.3)
     M['helmet_in'] = mat_paint("helmet_in", (0.03, 0.03, 0.027), 0.7, 0.5, chip=0.0)
     M['liner'] = mat_leather("liner")
     M['button'] = mat_paint("button", (0.07, 0.072, 0.064), 0.5, 2.0, chip=0.3, metal_under=(0.3, 0.3, 0.3))
@@ -401,6 +401,7 @@ def build_soldier_mats(variant):
         M['gorget_bright'] = mat_metal("gorget_bright", (0.50, 0.50, 0.48), 0.32)
         M['gorget_dark'] = mat_paint("gorget_dark", (0.018, 0.018, 0.018), 0.55, 0.3, chip=0.0)
         M['lumi'] = mat_metal("lumi", (0.40, 0.43, 0.32), 0.6, 0.0)
+    viewport_colors(M, piping)
     return M
 
 
@@ -575,3 +576,17 @@ def unwrap_pack(ob, smart_mask=None, scale_mats=None, margin=0.002):
     bpy.ops.uv.select_all(action='SELECT')
     bpy.ops.uv.pack_islands(rotate=True, margin=margin)
     bpy.ops.object.mode_set(mode='OBJECT')
+
+
+def viewport_colors(M, piping):
+    cols = {'wool_coat': (0.30, 0.32, 0.27), 'wool_trouser': (0.25, 0.27, 0.23), 'leather': (0.05, 0.05, 0.05),
+            'leather_boot': (0.06, 0.06, 0.06), 'helmet': (0.25, 0.28, 0.24), 'skin': (0.4, 0.28, 0.22),
+            'canvas': (0.28, 0.29, 0.2), 'felt': (0.35, 0.25, 0.15), 'canister': (0.27, 0.30, 0.25),
+            'piping': piping, 'glove': (0.2, 0.2, 0.2), 'button': (0.4, 0.4, 0.4), 'wood': (0.4, 0.25, 0.1),
+            'steel': (0.2, 0.2, 0.2), 'gorget': (0.6, 0.6, 0.6), 'gorget_bright': (0.9, 0.9, 0.9),
+            'gorget_dark': (0.1, 0.1, 0.1), 'wool_coat_in': (0.15, 0.16, 0.14), 'helmet_in': (0.15, 0.15, 0.14),
+            'liner': (0.1, 0.07, 0.05), 'sole': (0.05, 0.05, 0.05), 'wool_tunic': (0.2, 0.25, 0.2),
+            'cup': (0.03, 0.03, 0.03), 'steel_bright': (0.6, 0.6, 0.6), 'lumi': (0.8, 0.8, 0.6)}
+    for k, v in cols.items():
+        if k in M:
+            M[k]['mat'].diffuse_color = (v[0], v[1], v[2], 1.0)

@@ -229,6 +229,49 @@ func _build_water() -> void:
 	add_child(river)
 
 
+## Thousands of grass tufts, rushes and dead ferns as one MultiMesh per kind: cheap to draw, no collision.
+func _scatter_ground_cover(list: Array, total: int, rng: RandomNumberGenerator) -> void:
+	if list.is_empty():
+		return
+	var per := total / list.size()
+	for scene: PackedScene in list:
+		var src := scene.instantiate()
+		var mi := src.find_children("*", "MeshInstance3D", true, false)
+		if mi.is_empty():
+			src.free()
+			continue
+		var mesh: Mesh = (mi[0] as MeshInstance3D).mesh
+		src.free()
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.mesh = mesh
+		var xforms: Array[Transform3D] = []
+		var tries := 0
+		while xforms.size() < per and tries < per * 5:
+			tries += 1
+			var x := rng.randf_range(-185.0, 185.0)
+			var z := rng.randf_range(-185.0, 100.0)
+			var vm := Terrain.village_mask(x, z)
+			if vm > 0.5 or absf(x - Terrain.river_center_x(z)) < 14.0:
+				continue
+			# Tufts cluster where the ground is grassy rather than bare mud.
+			if GroundMask.grassiness(Vector3(x, 0, z)) < 0.35 and rng.randf() < 0.7:
+				continue
+			var h := Terrain.height(x, z)
+			if h < Terrain.SEA_LEVEL + 0.3:
+				continue
+			var s := rng.randf_range(0.7, 1.4)
+			xforms.append(Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(s, s, s)), Vector3(x, h - 0.03, z)))
+		mm.instance_count = xforms.size()
+		for k in xforms.size():
+			mm.set_instance_transform(k, xforms[k])
+		var mmi := MultiMeshInstance3D.new()
+		mmi.multimesh = mm
+		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mmi.visibility_range_end = 70.0
+		add_child(mmi)
+
+
 ## Trees, gorse, hedgerow banks, rocks and grass outside the village, placed by a seeded scatter that
 ## avoids the village, the street, the river and the sea. Only uses kit pieces that exist.
 func _scatter_nature() -> void:
@@ -236,8 +279,8 @@ func _scatter_nature() -> void:
 	var kinds := {
 		"tree": ["tree_oak_a", "tree_oak_b", "tree_beech_a", "tree_beech_b", "tree_chestnut_a", "tree_ash_a", "tree_pine_a", "tree_pine_b"],
 		"bush": ["gorse_a", "gorse_b", "gorse_c", "bramble_a", "bramble_b", "bracken_a", "bracken_b"],
-		"rock": ["rock_small", "rock_medium", "rock_large", "rock_outcrop"],
-		"grass": ["grass_tuft_a", "grass_tuft_b", "grass_tuft_c", "rush_a", "rush_b", "fern_dead_a", "fern_dead_b"],
+		"rock": ["rock_small", "rock_medium", "rock_large", "rock_outcrop_moss"],
+		"grass": ["grass_tuft_a", "grass_tuft_b", "grass_tuft_c", "rush_clump_a", "rush_clump_b", "fern_dead_a", "fern_dead_b"],
 	}
 	var scenes := {}
 	for kind: String in kinds:
@@ -248,10 +291,11 @@ func _scatter_nature() -> void:
 				scenes[kind].append(load(path))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 1944
-	var counts := {"tree": 260, "bush": 420, "rock": 90, "grass": 1600}
+	var counts := {"tree": 260, "bush": 420, "rock": 90, "grass": 6000}
+	_scatter_ground_cover(scenes["grass"], counts["grass"], rng)
 	for kind: String in counts:
 		var list: Array = scenes[kind]
-		if list.is_empty():
+		if list.is_empty() or kind == "grass":
 			continue
 		var placed := 0
 		var tries := 0

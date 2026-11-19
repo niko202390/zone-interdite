@@ -28,7 +28,7 @@ def pnoise(x, y, z, period, scale, seed=0.0):
 
 def _mats():
     return dict(
-        granite=mat("Granite", "rock"),
+        granite=mat("Granite", "rock", tint=(0.78, 0.78, 0.76)),
         moss=mat("Moss", "moss"),
         dressed=mat("DressedGranite", "granite", folder=ENVTEX),
         rubble=mat("Rubble", "rubble", folder=ENVTEX),
@@ -72,7 +72,7 @@ def _moss_fn(M, thr, seed, zmin=0.0):
     def f(face):
         n = face.normal
         c = face.calc_center_median()
-        s = n.z + 0.35 * noise.noise(c * 1.3 + Vector((seed, 0, 0))) + 0.15 * n.y
+        s = 0.65 * n.z + 0.5 * noise.noise(c * 1.1 + Vector((seed, 0, 0))) + 0.15 * noise.noise(c * 4.0) + 0.12 * n.y
         return M["moss"] if (s > thr and c.z > zmin) else M["granite"]
     return f
 
@@ -107,7 +107,7 @@ def outcrop(name, seed=9):
         bmesh.ops.transform(bm, matrix=Matrix.Translation((x, y, 0)) @ rot, verts=bm.verts)
         pts = [v.co.copy() for v in bm.verts]
         bm.normal_update()
-        mb.add_bm(bm, _moss_fn(M, 0.25, seed + k), scale=0.5, smooth=True)
+        mb.add_bm(bm, _moss_fn(M, 0.32, seed + k), scale=0.5, smooth=True)
         cols.append(_hull_of(pts, f"Outcrop{k}"))
     ob = mb.build(name)
     # grass and fern tufts around the foot and in the joints
@@ -130,8 +130,8 @@ def outcrop(name, seed=9):
 
 ROCKS = {
     "rock_small": lambda n: boulder(n, 0.32, 0.26, 0.22, 3, 4, 0.75),
-    "rock_medium": lambda n: boulder(n, 0.75, 0.6, 0.5, 5, 5, 0.6),
-    "rock_large": lambda n: boulder(n, 1.5, 1.2, 0.95, 7, 5, 0.5),
+    "rock_medium": lambda n: boulder(n, 0.75, 0.6, 0.5, 5, 5, 0.75),
+    "rock_large": lambda n: boulder(n, 1.5, 1.2, 0.95, 7, 5, 0.6),
     "rock_outcrop_moss": lambda n: outcrop(n),
 }
 
@@ -200,7 +200,7 @@ def bank_mesh(mb, M, y0, y1, rows_per_m=5, cols_per_seg=2, endcap=None):
             # UVs: along-bank y, across = arc length approximated by x,z
             uvs = [((mb.verts[i].x * 0.5 + mb.verts[i].z * 0.5 * (1 if mb.verts[i].x >= 0 else -1)), mb.verts[i].y * 0.5)
                    for i in (a, b, cc, d)]
-            mb.face((a, d, cc, b), [uvs[0], uvs[3], uvs[2], uvs[1]], mt)
+            mb.face((a, b, cc, d), uvs, mt)
     if endcap is not None:
         # close the bank end (gateway): end face polygon, pointing along endcap sign
         r = 0 if endcap < 0 else nr
@@ -623,7 +623,7 @@ def stream_bank(name, seed=51):
                 mt = M["mud"]
             else:
                 mt = M["gravel"]
-            q = (a, d, cc, b)
+            q = (a, b, cc, d)
             mb.face(q, [(mb.verts[k].x * 0.5, mb.verts[k].y * 0.5) for k in q], mt)
     sb = MB()
     spots = []

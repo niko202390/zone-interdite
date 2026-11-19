@@ -530,6 +530,8 @@ def solve(rig, spec):
     # arms
     for side, Side in (("L", "Left"), ("R", "Right")):
         h = spec.get('hands', {}).get(side)
+        if callable(h):
+            h = h(P)
         if h:
             tgt, hd, palm, pole = h
             hd = Vector(hd).normalized()

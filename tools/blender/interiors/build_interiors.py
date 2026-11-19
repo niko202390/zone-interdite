@@ -111,6 +111,8 @@ def build_house(name, preview=True):
             lights.append((f"PV_{nm}", loc, 70.0, (1.0, 0.6, 0.3), 0.04))
         if pv.get("hearth"):
             lights.append(("PV_hearth", pv["hearth"], 25.0, (1.0, 0.38, 0.12), 0.25))
+        if pv.get("loft_light"):   # preview only: a carried lantern at the hatch
+            lights.append(("PV_loft", pv["loft_light"], 60.0, (1.0, 0.6, 0.3), 0.05))
         for k, (cam, look) in enumerate(pv["shot_in"]):
             render.render_interior(f"{name}_in{k}", cam, look, lights)
         print(f"[int] {name}: previews done ({time.time() - t0:.1f}s)")

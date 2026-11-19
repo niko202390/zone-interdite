@@ -274,7 +274,7 @@ def longere():
     for i in (0, 1, 2, 5, 7):
         ops[i].through = True
         ops[i].glow = False
-    ops[1].h = 2.05                       # taller door for a 1.8 m player
+    ops[1].h = 2.1                        # taller door for a 1.8 m player
     ops[1].enter = "Door"
     ops[1].door_paint = "Door_bottle"
     sp["dormers"][0]["through"] = True    # loft dormer
@@ -398,7 +398,8 @@ def longere():
     storeys = [("ground", FZ), ("loft", zl)]
     empties = [("LadderBottom", (-0.5, 0.85, FZ)), ("LadderTop", (-0.5, 1.0 + (zl - FZ) * math.tan(math.radians(14)), zl))]
     probe = dict(shot_in=[((-4.2, -2.1, FZ + 1.6), (-3.0, 1.6, FZ + 0.9)), ((0.3, -2.0, FZ + 1.6), (-5.5, 0.6, FZ + 0.8)),
-                          ((-5.3, -1.9, FZ + 1.6), (0.5, 1.2, FZ + 0.9)), ((-0.5, -1.8, zl + 1.6), (-5.0, 0.8, zl + 1.0))],
+                          ((-5.3, -1.9, FZ + 1.6), (0.5, 1.2, FZ + 0.9)), ((0.6, -0.4, zl + 1.6), (-5.5, 0.3, zl + 1.3))],
+                 loft_light=(-2.2, 0.0, zl + 1.7),
                  ext=dict(elev=6.0, azim=-15.0, dist_mul=0.55, target=(-3.4, -3.0, 1.6)),
                  hearth=(rx0 + 0.4, 0.0, FZ + 0.3))
     return dict(name="house_longere_int", shell=S, mb=mb, cols=cols, nav=nav, ramps=[], lamps=lamps, spots=spots,
@@ -413,7 +414,7 @@ def cafe():
     xi, yi = W / 2 - t, D / 2 - t
     ops = sp["openings"]
     ops[3].through = True
-    ops[3].h = 2.05
+    ops[3].h = 2.1
     ops[3].enter = "BackDoor"
     ops[3].door_paint = "Paint_green"
     ops[4].through = True
@@ -436,7 +437,7 @@ def cafe():
     # skirting / dado: brown-painted boarding to 1 m, typical of a café
     IF = S["ifaces"]
     # ---- bar
-    fu.bar_counter(P.sub(place(1.91, 0.2, FZ, -90)), L=2.8)
+    fu.bar_counter(P.sub(place(1.91, 0.05, FZ, -90)), L=2.5)
     fu.bottle_shelf(P.sub(place(xi - 0.12, 0.2, FZ, -90)), L=2.4, rng=random.Random(5))
     for i, y in enumerate((-0.9, -0.3, 0.5, 1.2)):
         fu.glass(P, 1.95, y, FZ + 1.06, h=0.1) if i % 2 == 0 else fu.bottle(P, 1.9, y, FZ + 1.06, kind=1 if i == 1 else 0)

@@ -375,7 +375,7 @@ def install():
         if name == "DecalDampPatch":
             return tm("DecalDampPatch", "decal_damp_patch_albedo.png", folder=TEX_DIR, alpha=True, rough=0.6)
         if name == "Embers":
-            return fm("Embers", (0.25, 0.06, 0.02), rough=0.9, emission=(1.0, 0.32, 0.08), estrength=3.0)
+            return fm("Embers", (0.20, 0.05, 0.02), rough=0.9, emission=(1.0, 0.25, 0.05), estrength=0.9)
         if name == "Ash":
             return fm("Ash", (0.11, 0.105, 0.10), rough=0.95)
         if name == "Brass":

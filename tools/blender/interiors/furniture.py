@@ -488,8 +488,9 @@ def candle(P, x, y, z):
 
 def loaf(P, x, y, z, r=0.13):
     """Round 'miche' of bread."""
-    prof = [(0.0, 0.0), (r * 0.95, 0.0), (r, r * 0.15), (r * 0.9, r * 0.38), (r * 0.6, r * 0.55), (0.0, r * 0.62)]
-    P.bm(lathe(prof, segs=14, cap_bottom=False), "Bread", matrix=T(x, y, z), smooth=True, scale=2.0)
+    prof = [(0.0, 0.0), (r * 0.92, 0.0), (r, r * 0.12), (r * 0.98, r * 0.3), (r * 0.85, r * 0.5), (r * 0.6, r * 0.66),
+            (r * 0.3, r * 0.74), (0.0, r * 0.76)]
+    P.bm(lathe(prof, segs=20, cap_bottom=False), "Bread", matrix=T(x, y, z), smooth=True, scale=2.0)
 
 
 def chair_breton(P, mat=W_OAK, name="Chair"):
@@ -675,7 +676,11 @@ def longcase_clock(P, name="Clock"):
     P.bm(cyl_y(0.07, -0.006, 0.0, segs=16), "Brass", matrix=T(0, -D / 2 + 0.005, 0.85))
     P.bm(bm_box(0, 0, 0, 0.2, 0.002, 0.9), "WindowGlass", matrix=T(0, -D / 2 + 0.002, 1.05))
     # dial
-    P.bm(cyl_y(0.15, -0.012, 0.0, segs=24), "Faience", matrix=T(0, -D / 2 - 0.0, 1.8), scale=3.0)
+    P.bm(cyl_y(0.15, -0.012, 0.0, segs=24), "EnamelWhite", matrix=T(0, -D / 2 - 0.0, 1.8), scale=3.0)
+    for k in range(12):
+        a = 2 * PI * k / 12
+        P.box(math.cos(a) * 0.125 - 0.006, -D / 2 - 0.0135, 1.8 + math.sin(a) * 0.125 - 0.006,
+              math.cos(a) * 0.125 + 0.006, -D / 2 - 0.0115, 1.8 + math.sin(a) * 0.125 + 0.006, "BlackPaint")
     P.bm(cyl_y(0.165, -0.008, 0.0, segs=24), "Brass", matrix=T(0, -D / 2 + 0.003, 1.8), scale=2.0)
     P.box(-0.005, -D / 2 - 0.016, 1.8, 0.005, -D / 2 - 0.012, 1.92, "BlackPaint")
     P.bm(bm_box(0, 0, 0, 0.008, 0.004, 0.09, rot=(0, math.radians(60), 0)), "BlackPaint",

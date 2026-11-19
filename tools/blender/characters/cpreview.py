@@ -42,10 +42,10 @@ def dusk_world(strength=1.0):
     nt.links.new(bg.outputs[0], out.inputs['Surface'])
 
 
-def ground():
+def ground(z=0.0):
     me = bpy.data.meshes.new("ground")
     s = 6
-    me.from_pydata([(-s, -s, 0), (s, -s, 0), (s, s, 0), (-s, s, 0)], [], [(0, 1, 2, 3)])
+    me.from_pydata([(-s, -s, z), (s, -s, z), (s, s, z), (-s, s, z)], [], [(0, 1, 2, 3)])
     ob = link(bpy.data.objects.new("ground", me))
     mat = bpy.data.materials.new("ground_mat")
     mat.use_nodes = True
@@ -89,7 +89,7 @@ def camera(name, loc, target, lens=50, ortho=None):
     return ob
 
 
-def render_dusk(tag, out_dir, samples=48, views=None, res=(1200, 1500), exposure=0.0, extra_light=True):
+def render_dusk(tag, out_dir, samples=48, views=None, res=(1200, 1500), exposure=0.0, extra_light=True, ground_z=0.0):
     sc = bpy.context.scene
     setup_cycles(samples)
     sc.cycles.use_denoising = True
@@ -99,7 +99,7 @@ def render_dusk(tag, out_dir, samples=48, views=None, res=(1200, 1500), exposure
     sc.view_settings.look = 'None'
     sc.view_settings.exposure = exposure
     dusk_world(1.0)
-    tmp = [ground()]
+    tmp = [ground(ground_z)]
     tmp.append(sun("dusk_sun", (radians(84), 0, radians(-130)), 0.35, (1.0, 0.62, 0.38)))
     if extra_light:
         tmp.append(area("lamp", (2.2, -2.5, 2.6), (0, 0, 1.2), 60.0, 1.0, (1.0, 0.85, 0.65)))

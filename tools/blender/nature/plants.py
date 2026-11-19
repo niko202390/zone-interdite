@@ -88,7 +88,7 @@ def gorse(name, rx, ry, rz, seed, ncards, spiky=False):
 def bramble(name, seed, ncanes, spread):
     rng = np.random.default_rng(seed)
     bc = mat("BrambleCard", "bramble", alpha=True)
-    cane = mat("BrambleCane", "stem", tint=(0.17, 0.06, 0.07))
+    cane = mat("BrambleCane", "stem", tint=(0.11, 0.045, 0.05))
     dead = mat("BrambleDeadCane", "stem", tint=(0.24, 0.19, 0.15))
     mb = MB()
     ncards = 0
@@ -109,7 +109,7 @@ def bramble(name, seed, ncanes, spread):
             q += Vector((noise.noise(q * 2 + Vector((seed, 0, 0))), noise.noise(q * 2 + Vector((0, seed, 0))), 0)) * 0.08
             pts.append(q)
         isdead = rng.random() < 0.25
-        tube(mb, pts, [0.011 * (1 - 0.5 * i / n) for i in range(n + 1)], dead if isdead else cane, 5, tile=0.5)
+        tube(mb, pts, [0.008 * (1 - 0.5 * i / n) for i in range(n + 1)], dead if isdead else cane, 5, tile=0.5)
         if isdead:
             continue
         # leaf cards along the cane (halves of the atlas: two cell variants)
@@ -117,8 +117,8 @@ def bramble(name, seed, ncanes, spread):
             t = i / n
             p = pts[i]
             d = (pts[i + 1] - pts[i - 1]).normalized()
-            for k in range(2):
-                sz = rng.uniform(0.45, 0.65)
+            for k in range(3):
+                sz = rng.uniform(0.6, 0.9)
                 sd = _perp(d, rng.uniform(0, 6.28))
                 upv = (d + sd * rng.uniform(0.4, 1.0) + UP * 0.3).normalized()
                 cell = (0.0, 0.0, 0.5, 1.0) if rng.random() < 0.5 else (0.5, 0.0, 1.0, 1.0)
@@ -196,8 +196,8 @@ GROUND = {
     "grass_tuft_c": lambda n: clump(n, 403, ["grass_a", "grass_b"], 26, 0.3, 0.6, 0.5, 0.16, (0.05, 0.6), 0.28),
     "rush_clump_a": lambda n: clump(n, 501, ["rush_a"], 10, 0.75, 1.05, 0.5, 0.1, (0.0, 0.25), 0.08),
     "rush_clump_b": lambda n: clump(n, 502, ["rush_b", "rush_a"], 14, 0.6, 0.95, 0.5, 0.15, (0.05, 0.35), 0.12),
-    "fern_dead_a": lambda n: clump(n, 601, ["fern_a"], 9, 0.45, 0.7, 1.0, 0.05, (0.7, 1.1), 0.3, segs=3, radial=True),
-    "fern_dead_b": lambda n: clump(n, 602, ["fern_b", "fern_a"], 12, 0.4, 0.65, 1.0, 0.08, (0.9, 1.3), 0.2, segs=3, radial=True),
+    "fern_dead_a": lambda n: clump(n, 601, ["fern_a"], 9, 0.55, 0.8, 1.0, 0.05, (0.5, 0.95), 0.3, segs=3, radial=True),
+    "fern_dead_b": lambda n: clump(n, 602, ["fern_b", "fern_a"], 12, 0.5, 0.75, 1.0, 0.08, (0.6, 1.1), 0.2, segs=3, radial=True),
 }
 WATER = {
     "reeds_a": lambda n: clump(n, 701, ["reed"], 16, 1.8, 2.4, 0.25, 0.25, (0.0, 0.2), 0.05, segs=3),

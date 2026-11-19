@@ -363,7 +363,7 @@ TWIG_SPECIES = {
                 rratio=0.7, taper=0.35, rmin=2.2, col=(0.24, 0.24, 0.23), bud=(0.016, 0.014),
                 budcol=(0.03, 0.03, 0.03), opposite=True, tropism=0.08, root_r=11.0, length=1.0),
     "hazel": dict(internode=0.05, zigzag=0.12, wobble=0.06, depth=4, pbranch=0.7, angle=0.6, ratio=0.6,
-                  rratio=0.7, taper=0.55, rmin=1.4, col=(0.36, 0.26, 0.18), bud=(0.012, 0.009),
+                  rratio=0.7, taper=0.55, rmin=1.4, col=(0.21, 0.16, 0.12), bud=(0.012, 0.009),
                   budcol=(0.28, 0.30, 0.14), root_r=8.0, length=1.0, catkin=True),
     "blackthorn": dict(internode=0.03, zigzag=0.25, wobble=0.25, depth=4, pbranch=0.75, angle=1.05, ratio=0.5,
                        rratio=0.7, taper=0.5, rmin=1.4, col=(0.11, 0.09, 0.08), bud=(0.012, 0.004),
@@ -449,9 +449,9 @@ def tex_pine(res=2048, seed=400):
 def tex_gorse(res=1024, seed=500):
     """Gorse (ajonc) spray: dense green spines on green stems, a few yellow flowers. 1 cell."""
     rng = np.random.default_rng(seed)
-    cv = Canvas(res, res, np.array((0.10, 0.14, 0.05), F))
+    cv = Canvas(res, res, np.array((0.05, 0.10, 0.03), F))
     sp = Spray(rng)
-    scol = [(0.07, 0.11, 0.035), (0.09, 0.14, 0.045), (0.06, 0.09, 0.03), (0.11, 0.15, 0.05)]
+    scol = [(0.06, 0.13, 0.035), (0.08, 0.16, 0.045), (0.05, 0.10, 0.03), (0.10, 0.17, 0.05)]
 
     def shoot(p, a, ln, r, d):
         n = max(3, int(ln / 0.025))
