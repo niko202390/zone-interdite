@@ -56,6 +56,7 @@ var dragging: Guard = null
 var _interact_t := 0.0
 var _interact_target: Guard = null
 var _interact_kind := ""
+var _interactable: Interactable = null
 
 var _eye := 1.64
 var _recoil := Vector2.ZERO          # (yaw, pitch) offset that recovers toward zero
@@ -159,6 +160,10 @@ func _interact() -> void:
 		SoundLib.play_2d("player/cloth_wool_move", -2.0)
 		return
 	_refresh_interact()
+	if _interact_kind == "object" and _interactable:
+		busy = _interactable.busy_time
+		_interactable.interact(self)
+		return
 	if _interact_kind == "papers":
 		_interact_target.present_papers(self)
 		SoundLib.play_2d("player/cloth_wool_move", -4.0)
@@ -179,7 +184,16 @@ func _interact() -> void:
 func _refresh_interact() -> void:
 	_interact_target = null
 	_interact_kind = ""
+	_interactable = null
 	var best := 9999.0
+	for n in get_tree().get_nodes_in_group("interactables"):
+		var it := n as Interactable
+		if it and it.can_interact(self):
+			var d0 := global_position.distance_to(it.global_position)
+			if d0 < best:
+				best = d0
+				_interactable = it
+				_interact_kind = "object"
 	for n in get_tree().get_nodes_in_group("guards"):
 		var g := n as Guard
 		if g == null:
@@ -225,6 +239,8 @@ func _update_interaction(delta: float) -> void:
 				overlay.hint("[F]  drag the body")
 			"papers":
 				overlay.hint("[F]  show your papers")
+			"object":
+				overlay.hint("[F]  " + _interactable.prompt)
 			_:
 				overlay.hint("")
 

@@ -19,7 +19,14 @@ var _flames: Array = []
 var _rain: GPUParticles3D
 
 
+## Seconds between a call to headquarters and the reinforcements setting off up the street.
+var reinforcement_delay := 40.0
+var _wire_spans: Array[MeshInstance3D] = []
+
+
 func _ready() -> void:
+	add_to_group("level")
+	reinforcement_delay = float(Debug.args.get("reinforce-delay", reinforcement_delay))
 	Visibility.reset()
 	Guard.reset_shared()
 	# Mission start: blue hour. A restart after death begins the evening again.
@@ -79,6 +86,7 @@ func _spawn_guards() -> void:
 	var sentry := Guard.new()
 	sentry.name = "Sentry"
 	sentry.checkpoint = true
+	sentry.phone_position = Vector3(3.7, 0.05, 45.2)
 	sentry.challenge_zone = AABB(Vector3(-6.0, -1.0, 33.0), Vector3(12.0, 6.0, 8.0))
 	sentry.patrol_points = PackedVector3Array([Vector3(2.4, 0.05, 46.6)])
 	add_child(sentry)
@@ -376,11 +384,70 @@ func _build_poles_and_wires() -> void:
 		_poles.append(spawn("telegraph_pole", Vector3(STREET_HALF + 0.6, 0, z), -90.0, "wood", Vector3(0.25, 7.5, 0.25)))
 	for k in _poles.size() - 1:
 		_wire_between(_poles[k], _poles[k + 1])
+	_build_junction_box(_poles[1])
 	var sentry_drop := Vector3(4.6, 2.35, 46.0)
 	var last := _poles[_poles.size() - 1]
 	var m := find_marker(last, "WireAttach_0")
 	var from := m.global_position if m else last.global_position + Vector3.UP * 7.2
 	add_child(WireSpan.build(from, sentry_drop, 0.5))
+
+
+## A PTT junction box at the foot of a pole, where the line can be cut without climbing.
+func _build_junction_box(pole: Node3D) -> void:
+	var box := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = Vector3(0.28, 0.38, 0.14)
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color(0.17, 0.2, 0.17)
+	m.roughness = 0.7
+	m.metallic = 0.3
+	bm.material = m
+	box.mesh = bm
+	add_child(box)
+	box.global_position = pole.global_position + Vector3(-0.2, 1.25, 0.0)
+	var cable := MeshInstance3D.new()
+	var cm := CylinderMesh.new()
+	cm.top_radius = 0.008
+	cm.bottom_radius = 0.008
+	cm.height = 5.8
+	var cable_mat := StandardMaterial3D.new()
+	cable_mat.albedo_color = Color(0.05, 0.05, 0.05)
+	cable_mat.roughness = 0.5
+	cm.material = cable_mat
+	cable.mesh = cm
+	add_child(cable)
+	cable.global_position = pole.global_position + Vector3(-0.14, 4.3, 0.0)
+	var it := Interactable.new()
+	it.prompt = "cut the telephone line"
+	it.busy_time = 2.5
+	it.noise_db = 46.0
+	it.on_use = func(_p: Node3D) -> void:
+		Guard.phone_line_ok = false
+		it.enabled = false
+		SoundLib.play_3d("weapons/p38_dryfire", it.global_position, -4.0, 20.0, 0.2, 1.5)
+		for w in _wire_spans.slice(0, 8):
+			if is_instance_valid(w):
+				w.rotation_degrees.z = randf_range(-4.0, 4.0)
+				w.position.y -= randf_range(0.6, 1.4)   # the cut spans sag and hang
+		player.note("Snip. The line goes slack.", 3.0)
+	add_child(it)
+	it.global_position = box.global_position
+
+
+func is_phone_line_ok() -> bool:
+	return Guard.phone_line_ok
+
+
+func call_reinforcements(where: Vector3) -> void:
+	get_tree().create_timer(reinforcement_delay, false).timeout.connect(func() -> void:
+		for i in 3:
+			var g := Guard.new()
+			g.name = "Reinforcement%d" % i
+			g.patrol_points = PackedVector3Array([Vector3(1.0, 0.05, 30.0), Vector3(-1.0, 0.05, -10.0)])
+			add_child(g)
+			g.global_position = Vector3(-1.5 + i * 1.5, 0.05, -66.0 - i * 1.2)
+			g.rotation.y = PI
+			g.dispatch_to(where))
 
 
 func _wire_between(a: Node3D, b: Node3D) -> void:
@@ -391,7 +458,9 @@ func _wire_between(a: Node3D, b: Node3D) -> void:
 		var pb := mb.global_position if mb else b.global_position + Vector3(0, 7.2, (w - 1.5) * 0.3)
 		if ma == null and w > 1:
 			break
-		add_child(WireSpan.build(pa, pb, randf_range(0.3, 0.45)))
+		var span := WireSpan.build(pa, pb, randf_range(0.3, 0.45))
+		add_child(span)
+		_wire_spans.append(span)
 
 
 ## Blackout rules: almost every window is dark. The few marked WindowGlow leak a little warm light.

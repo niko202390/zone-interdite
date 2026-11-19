@@ -19,6 +19,22 @@ func _ready() -> void:
 		_run_views.call_deferred()
 	if args.has("time"):
 		Game.set_clock(String(args["time"]))
+	if args.has("fps-log"):
+		var t := Timer.new()
+		t.wait_time = 2.0
+		t.autostart = true
+		t.timeout.connect(func() -> void:
+			print("FPS %d  frame %.1f ms  process %.1f ms  physics %.1f ms  guards %d" % [Engine.get_frames_per_second(),
+				1000.0 / maxf(Engine.get_frames_per_second(), 1.0),
+				Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
+				Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0,
+				get_tree().get_nodes_in_group("guards").size()]))
+		add_child(t)
+	if args.has("fire-after"):
+		get_tree().create_timer(float(args["fire-after"])).timeout.connect(func() -> void:
+			var p := get_tree().get_first_node_in_group("player") as Player
+			if p:
+				p.debug_fire())
 	if args.has("kill-after"):
 		get_tree().create_timer(float(args["kill-after"])).timeout.connect(func() -> void:
 			var p := get_tree().get_first_node_in_group("player") as Player

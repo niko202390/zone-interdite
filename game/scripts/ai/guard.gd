@@ -30,6 +30,9 @@ const BARKS := {
 	"curfew": [["Sperrstunde! Was machen Sie hier draußen?", "Curfew! What are you doing out here?"]],
 	"wounded": [["Was ist mit Ihnen passiert? Mitkommen!", "What happened to you? Come with me!"]],
 	"warning": [["Halt! Oder ich schieße!", "Halt! Or I shoot!"]],
+	"phone": [["Posten Nord an Kommandantur! Alarm!", "North post to HQ! Alarm!"]],
+	"phone_ok": [["Jawohl. Verstärkung ist unterwegs.", "Understood. Reinforcements are on the way."]],
+	"phone_dead": [["Die Leitung ist tot! Verdammt!", "The line's dead! Damn it!"]],
 }
 ## Seconds a turned-back civilian has to leave the restricted zone before the sentry treats them as hostile.
 const TURN_BACK_GRACE := 8.0
@@ -50,6 +53,9 @@ const FELDGRAU := Color(0.29, 0.31, 0.27)
 @export var fire_interval := Vector2(2.1, 2.9)
 ## A checkpoint sentry challenges people for their papers instead of treating the restricted zone as hostile outright.
 @export var checkpoint := false
+## Where his field telephone is. Vector3.INF means no telephone. When trouble starts and he can't see
+## its cause, he runs to it and calls it in, unless someone has cut the line.
+@export var phone_position := Vector3.INF
 ## The approach in front of a checkpoint, where the sentry calls you over.
 @export var challenge_zone := AABB()
 
@@ -88,7 +94,11 @@ static var _papers_checkers: Array = []
 ## Shared by all soldiers: a checkpoint's verdict on your papers stands for everyone.
 static var _cleared_until := -1.0   # game minute until which your papers have been accepted
 static var _grace_until_ms := 0     # wall-clock ms until which a turned-back civilian is let walk away
+## The PTT line from this post to headquarters. Shared by everyone on the line.
+static var phone_line_ok := true
 var _bark_cd := 0.0
+var _call := ""          # "", "going", "calling", "done"
+var _call_t := 0.0
 var _turned_away_t := 999.0    # seconds since the player was turned back from this checkpoint
 var _warned := false
 var _warn_t := 0.0
@@ -286,6 +296,7 @@ func _hostility() -> float:
 
 ## Called by the level on load so one run's paperwork doesn't leak into the next.
 static func reset_shared() -> void:
+	phone_line_ok = true
 	_papers_checkers.clear()
 	_cleared_until = -1.0
 	_grace_until_ms = 0
@@ -562,6 +573,9 @@ func _physics_process(delta: float) -> void:
 		_body_check_t = 0.4
 		_check_bodies()
 	_think(delta)
+	if _update_phone_call(delta):
+		_animate(delta)
+		return
 
 	var desired_speed := 0.0
 	var face_dir := Vector3.ZERO
@@ -772,6 +786,62 @@ func _die(quiet := false) -> void:
 
 func is_dead() -> bool:
 	return state == State.DEAD
+
+
+## Sent by headquarters after a call: run to the trouble and search.
+func dispatch_to(pos: Vector3) -> void:
+	target_pos = pos
+	alertness = 1.5
+	_combat_t = 0.0
+	_enter(State.SEARCH)
+	_wait = randf_range(60.0, 90.0)
+
+
+## Returns true while the call is taking over his movement.
+func _update_phone_call(delta: float) -> bool:
+	if phone_position == Vector3.INF or _call == "done":
+		return false
+	if _call == "":
+		if (state == State.SEARCH or state == State.ALERTED) and not _can_see_player:
+			_call = "going"
+		else:
+			return false
+	if _can_see_player and state == State.ALERTED:
+		return false   # a threat in front of him comes first
+	var to := phone_position - global_position
+	to.y = 0.0
+	if _call == "going":
+		if _move_toward_point(phone_position, run_speed, delta):
+			_call = "calling"
+			_call_t = 0.0
+			_bark_cd = 0.0
+			bark("phone")
+		_finish_move(delta)
+		return true
+	# Calling: stand at the box with the handset.
+	_call_t += delta
+	velocity.x = move_toward(velocity.x, 0.0, delta * 8.0)
+	velocity.z = move_toward(velocity.z, 0.0, delta * 8.0)
+	if _call_t > 5.0:
+		_call = "done"
+		_bark_cd = 0.0
+		if phone_line_ok:
+			bark("phone_ok")
+			get_tree().call_group("level", "call_reinforcements", target_pos)
+		else:
+			bark("phone_dead")
+			_whistle_cd = 0.0
+			_raise_alarm()
+	_finish_move(delta)
+	return true
+
+
+func _finish_move(delta: float) -> void:
+	if not is_on_floor():
+		velocity.y -= _gravity * delta
+	else:
+		velocity.y = 0.0
+	move_and_slide()
 
 
 ## A takedown is possible from close behind, or when he isn't aware of you at all.
