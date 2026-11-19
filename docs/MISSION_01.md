@@ -8,6 +8,34 @@ The systems are in `DESIGN.md`, the campaign in `CAMPAIGN.md`, and the history i
 
 ---
 
+## 0. The opening: a blind drop gone wrong (the tutorial, about 10 minutes)
+
+*The idea is the user's. It doubles as the tutorial, and it foreshadows the betrayal.*
+
+You were dropped from a Halifax at last light: a "blind drop" with no reception committee. The committee should
+have been there, but nobody came. **The reason nobody came is the campaign's secret:** London arranged the drop over
+the captured radio, so the Germans know roughly where you landed.
+
+1. **Waking.** Black screen, then ringing ears (the hearing system at full, fading). Two slow blinks with the eyelids
+   closing over the image, then you lie in a wet field tangled in rigging. Getting up is slow. The briefing you
+   read in the aircraft is the title-screen document.
+2. **The notebook.** A faint prompt, *J: your notebook*, opens your orders in your own hand. This teaches the
+   notebook and gives the context.
+3. **Bury the parachute.** It's real SOE procedure, and it teaches **evidence**. Leave it, and a patrol finding it
+   later raises the town's alert level. Hold F to drag and bury it in the hedge bank.
+4. **Lights on the far side of the field.** A German search party with torches and a dog is sweeping the drop zone.
+   It's distant, scripted to never catch you if you keep low, and it teaches **light, crouching and staying off the
+   skyline**. A dog barks once, far off.
+5. **The bridge and the deer.** At a stone footbridge a prompt suggests *look left*. A family of roe deer (chevreuil,
+   common in the bocage) picks its way across the rocks in the river. **The deer run on the same perception system
+   as the guards.** Sprint or step into the open and they bolt. Creep, and they stay. The lesson: being seen and heard
+   is about light, movement and noise, not a meter. Startled deer and flushed crows are also something guards notice
+   later.
+6. **Into Plouzennec** at blue hour, at the Le Goff farm, and the mission proper begins (§1).
+
+*A liberty, noted:* SOE preferred moonlit drops, and our night is moonless for the boat pickup. A blind drop at last
+light is unusual but plausible, and the tension it creates is the point.
+
 ## 1. Your situation
 
 It's a moonless night in February 1944. You are LAPIDARY's organiser, a French-Canadian SOE officer. Three days ago your
@@ -22,8 +50,8 @@ message *« Le chat de la voisine a mangé les pommes »* tonight, at 19:30 or 2
 a packet of Gauloises, a folding knife, and your notebook. The notebook is the diegetic objective list, written in your own
 shorthand. **You have no gun.**
 
-**Where you start:** the hayloft of the Le Goff farm on the southern edge of town, at 17:40. Madame Le Goff, a widow whose
-husband died in 1940, has sheltered you twice before.
+**Where you start:** after the opening (§0), you reach the Le Goff farm on the southern edge of town at about 17:40.
+Madame Le Goff, a widow whose husband died in 1940, has sheltered LAPIDARY before.
 
 ---
 

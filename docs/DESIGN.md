@@ -65,8 +65,20 @@ The game is a slow, hard, quasi-horror stealth/survival FPS. Its tension comes f
 - Schedules and dispositions: Resistance, neutral, collaborator or informant. Civilians feel fear, can report you, can shelter you, or can sell you out.
 - Contacts and safehouses are part of the mission's approaches.
 
-### Survival and camp
-- Hide-outs and fire (smoke and light can be seen), drying clothes, food, bandages, and light crafting. Intel gathered at the camp feeds the mission's approaches.
+### Survival and camp (the hideout)
+**Status:** designed, not built. Planned for Mission 3 ("Safe House"). Mission 1 only has safehouse save points.
+
+**Rule:** every hideout activity must feed the missions. Nothing is there for its own sake.
+
+| Activity | What it's for |
+|---|---|
+| Sleep | The only way to save. Also heals light wounds and restores stamina. |
+| Fire and drying clothes | Being cold and wet slows you, makes you shiver (aim sway), and makes you cough (noise). A fire fixes that, but its smoke and light can be seen from outside. |
+| Forging desk | Turn stolen blanks, stamps and photos into papers. Papers open approaches, like the zone pass in the test level. |
+| Intel board | Pin leads from your notebook. Linking two leads reveals an approach, such as courier + café = the steamed envelope. |
+| Wireless set | Listen to the BBC, and transmit to arrange drops. Transmitting brings the radio-detection vans (see the alert network). |
+| Cache | Store what you can't carry. Choose your loadout per mission, since pockets are small. |
+| Contacts | People who visit or need visiting. Their trust opens routes and items. |
 
 ### Mission 1: the pinch
 - At least four distinct approaches to the Enigma material, in the Hitman style. Some examples:
