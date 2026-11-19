@@ -5,7 +5,7 @@ extends CanvasLayer
 const CONTROLS := """WASD  move        Mouse wheel  walking pace        Shift  sprint
 C  crouch        Space  jump        Q / E  lean
 RMB  aim        LMB  fire        R  reload        T  check magazine
-B  safety (decocks the hammer)        H  holster        F  interact / take down / papers        X  watch
+B  safety (decocks the hammer)        H  holster        F  interact / take down / papers        X  watch        J  notebook
 F1  this card        F11  fullscreen        Esc  pause / settings        F10  quit"""
 
 const INK := Color(0.86, 0.83, 0.76)
@@ -18,6 +18,10 @@ var _hint: Label
 var _hint_text := ""
 var _subtitle: Label
 var _subtitle_t := 0.0
+var _notebook: Label
+## Pages of the player's notebook: objectives and leads, in their own shorthand. Set by the level.
+var notebook_text := ""
+
 
 var _pause: Control
 var _help: Label
@@ -72,6 +76,28 @@ func _ready() -> void:
 	_subtitle.add_theme_color_override("font_color", Color(0.95, 0.9, 0.78))
 	_subtitle.modulate.a = 0.0
 	add_child(_subtitle)
+
+	_notebook = _label(19)
+	_notebook.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_notebook.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	_notebook.set_anchors_and_offsets_preset(Control.PRESET_LEFT_WIDE)
+	_notebook.offset_left = 70
+	_notebook.offset_right = 760
+	_notebook.offset_top = 110
+	_notebook.offset_bottom = -110
+	_notebook.add_theme_color_override("font_color", Color(0.12, 0.1, 0.08))
+	_notebook.add_theme_constant_override("outline_size", 0)
+	var paper := StyleBoxFlat.new()
+	paper.bg_color = Color(0.86, 0.82, 0.72, 0.96)
+	paper.content_margin_left = 34
+	paper.content_margin_right = 34
+	paper.content_margin_top = 30
+	paper.content_margin_bottom = 30
+	paper.shadow_size = 12
+	paper.shadow_color = Color(0, 0, 0, 0.5)
+	_notebook.add_theme_stylebox_override("normal", paper)
+	_notebook.visible = false
+	add_child(_notebook)
 
 	_help = _label(17)
 	_help.text = CONTROLS
@@ -238,6 +264,10 @@ func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause"):
 		_set_paused(not get_tree().paused)
 		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("notebook") and not get_tree().paused:
+		_notebook.text = notebook_text
+		_notebook.visible = not _notebook.visible
+		SoundLib.play_2d("player/cloth_wool_move", -6.0)
 	elif event.is_action_pressed("help"):
 		_help_t = 0.0 if _help_t > 0.0 else 30.0
 	elif event is InputEventMouseButton and event.is_pressed() and not get_tree().paused \

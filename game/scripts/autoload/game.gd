@@ -41,6 +41,7 @@ const KEY_ACTIONS := {
 	"fullscreen": [KEY_F11],
 	"help": [KEY_F1],
 	"watch": [KEY_X],
+	"notebook": [KEY_J],
 	"quit": [KEY_F10],
 }
 const MOUSE_ACTIONS := {

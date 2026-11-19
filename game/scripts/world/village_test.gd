@@ -57,6 +57,7 @@ func _ready() -> void:
 	Visibility.restricted_zones.append(AABB(Vector3(-6.0, -1.0, 41.0), Vector3(12.0, 6.0, 12.0)))
 	_build_navigation()
 	_spawn_guards()
+	_setup_test_objective()
 	print("LEVEL READY")
 
 
@@ -520,6 +521,53 @@ func _build_junction_box(pole: Node3D) -> void:
 	it.global_position = box.global_position
 
 
+const NOTEBOOK := """Plouzennec. Février.
+
+The harbour is past the north checkpoint,
+inside the zone interdite. My carte d'identité
+is good for town. I have no zone pass.
+
+TO DO
+  Get past the checkpoint and reach the
+  shore beyond it. Don't get taken.
+
+WHAT I KNOW
+  - Sentry at the box, with a field telephone.
+    A second man walks the street.
+  - The PTT line runs up the east side on poles.
+    Junction box at the foot of one of them.
+    Cut it and he can't call anyone.
+  - Fields and the river to the east and west.
+    Dark out there, but the ground is open.
+  - After 22:00 it's curfew. Anyone seen is shot.
+  - Never stand against the sky.
+
+Pistol: P.38, 8 rounds + 2 spare magazines.
+Every shot carries a long way."""
+
+
+func _setup_test_objective() -> void:
+	player.overlay.notebook_text = NOTEBOOK
+	var shore := Area3D.new()
+	shore.name = "ShoreObjective"
+	shore.collision_mask = Game.LAYER_PLAYER
+	var cs := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(400.0, 20.0, 30.0)
+	cs.shape = box
+	shore.add_child(cs)
+	add_child(shore)
+	shore.position = Vector3(0.0, 0.0, 104.0)
+	shore.body_entered.connect(func(b: Node) -> void:
+		if b == player and not player.dead:
+			player.note("The sea. You made it past them, for now. (Test objective complete.)", 8.0)
+			player.overlay.notebook_text = NOTEBOOK.replace("TO DO", "DONE: reached the shore at " + Game.clock_text() + ".
+
+TO DO (next build)"))
+	get_tree().create_timer(2.5, false).timeout.connect(func() -> void:
+		player.note("Plouzennec, 17:40. Press J for your notebook.", 6.0))
+
+
 func is_phone_line_ok() -> bool:
 	return Guard.phone_line_ok
 
@@ -592,7 +640,6 @@ func _build_reflection_probes() -> void:
 	wide.update_mode = ReflectionProbe.UPDATE_ONCE
 	wide.ambient_mode = ReflectionProbe.AMBIENT_DISABLED
 	wide.max_distance = 400.0
-	wide.priority = -1
 	add_child(wide)
 	wide.position = Vector3(0.0, 4.0, -40.0)
 	for k in 7:
