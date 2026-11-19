@@ -779,6 +779,133 @@ def casing_cobble(rng):
 
 
 # =============================================================================
+# Sound designs: weapons (Kar98k heard at a distance; bullet snap)
+# =============================================================================
+
+C_SOUND = 343.0
+V_BULLET = 760.0   # 7.92x57 mm sS ball, approx. muzzle velocity
+
+
+def n_wave(n, dur_s, delay=0.0, os=8):
+    """Band-limited supersonic N-wave (+1 to -1 linear over dur_s), built oversampled then decimated."""
+    srh = SR * os
+    m = int(math.ceil((dur_s + 0.003) * srh))
+    tt = np.arange(m) / srh
+    w = np.where(tt < dur_s, 1.0 - 2.0 * tt / dur_s, 0.0)
+    nfft = next_pow2(m * 2)
+    f = np.fft.rfftfreq(nfft, 1.0 / srh)
+    y = np.fft.irfft(np.fft.rfft(w, nfft) * _minphase(r_lp(f, 18500, 4), nfft), nfft)[:m:os]
+    out = np.zeros(n)
+    place(out, y, delay)
+    return out
+
+
+def rifle_blast(rng, n, dist=30.0):
+    """7.92 mm muzzle blast heard at `dist` metres: broader pressure pulse, deep boom, air absorption."""
+    t = tax(n)
+    td = rng.uniform(0.0012, 0.002) * (1 + dist / 120.0)
+    fr = filt(friedlander(n, td, b=rng.uniform(1.2, 1.8)), lambda f: r_hp(f, 25, 2))
+    blast = filt(white(rng, n) * env_ad(n, 0.0006, rng.uniform(0.022, 0.035)),
+                 lambda f: r_bp(f, 110, 3500, 2) * r_peak(f, 600, 4.0, 1.6))
+    f0, f1 = rng.uniform(95, 125), rng.uniform(36, 46)
+    body = np.sin(TAU * phase_cycles(f1 + (f0 - f1) * np.exp(-t / 0.05))) * env_ad(n, 0.0015, rng.uniform(0.06, 0.09))
+    rumble = filt(white(rng, n) * env_ad(n, 0.003, rng.uniform(0.09, 0.14)), lambda f: r_bp(f, 28, 350, 2))
+    chuff = filt(white(rng, n) * env_ad(n, 0.004, 0.05, delay=0.001), lambda f: r_bp(f, 200, 1200, 1))
+    core = 1.0 * pk(fr) + 0.9 * pk(blast) + 0.75 * pk(body) + 0.55 * pk(rumble) + 0.3 * pk(chuff)
+    refl = np.zeros(n)
+    early = filt(pk(fr) + 0.9 * pk(blast), lambda f: r_lp(f, 5000, 1))[:N(0.2)]
+    place(refl, early, rng.uniform(0.0015, 0.006) * (1 + dist / 60), 0.45)
+    fc = 16000.0 / (1.0 + dist / 40.0)
+    return filt(core + refl, lambda f: r_lp(f, fc, 1))
+
+
+def kar98k_shot(rng, dist):
+    """Rifle fired toward the listener from `dist` m: the supersonic crack arrives first, then the muzzle boom."""
+    n = N(1.0)
+    gap = dist * (1.0 / C_SOUND - 1.0 / V_BULLET)
+    x = np.zeros(n)
+    snap = n_wave(n, rng.uniform(0.00025, 0.00045), delay=0.002)
+    snap = snap + 0.3 * filt(n_wave(n, 0.0004, delay=0.002 + rng.uniform(0.002, 0.005)), lambda f: r_lp(f, 7000, 1))
+    x += 0.9 * pk(snap)
+    x += 0.1 * pk(burst(rng, n, 0.02, 2500, 9000, attack=0.001, delay=0.003))
+    place(x, pk(rifle_blast(rng, n, dist)), 0.002 + gap, 1.0)
+    w = env_pts(n, [(0, 1.0), (0.002 + gap + 0.03, 1.0), (0.002 + gap + 0.07, 0.0)])
+    xs = pk(x)
+    x = w * sat(xs * 1.6, drive=1.8, asym=0.04) / math.tanh(1.8 * 1.6) + (1 - w) * xs
+    x = filt(x, lambda f: r_hp(f, 25, 2))
+    x = limit(normalize(x, 2.0), -1.0, release=0.04)
+    return fade(x, 0, 0.12)
+
+
+def bullet_snap(rng):
+    """Supersonic 7.92 mm round passing within ~2 m: N-wave snap, ground echo, brief whizz."""
+    n = N(0.3)
+    T = rng.uniform(0.00018, 0.0004)
+    x = n_wave(n, T, delay=0.002)
+    x += 0.35 * filt(n_wave(n, T * 1.05, delay=0.002 + rng.uniform(0.003, 0.008)), lambda f: r_lp(f, 8000, 1))
+    x = pk(x)
+    whizz = filt(white(rng, n) * env_ad(n, 0.002, rng.uniform(0.02, 0.04), delay=0.003), lambda f: r_bp(f, 2000, 9000, 2))
+    x += 0.12 * pk(whizz)
+    t = np.maximum(tax(n) - 0.003, 0)
+    zf = rng.uniform(4500, 6500) * (0.55 + 0.45 * np.exp(-t / 0.015))
+    x += 0.05 * np.sin(TAU * phase_cycles(zf)) * env_ad(n, 0.001, 0.02, delay=0.003)
+    return fade(normalize(x), 0, 0.05)
+
+
+def rifle_distant(rng, dist):
+    """Rifle shot heard at 200-500 m: low thump, highs gone, long soft roll off terrain and buildings."""
+    n = N(4.0)
+    fc = 1800.0 * (300.0 / dist)
+    core = filt(rifle_blast(rng, N(1.0), dist=dist), lambda f: r_lp(f, fc, 2) * r_hp(f, 30, 2))
+    taps = []
+    for _ in range(22):
+        tt = rng.uniform(0.08, 2.6)
+        taps.append(dict(t=tt, g=rng.uniform(0.15, 0.5) * math.exp(-tt / 1.1), lp=rng.uniform(350, 1100)))
+    late = dict(start=0.1, fade=0.4, gain=1.2, t60=[(125, 3.2), (250, 2.6), (500, 2.0), (1000, 1.3), (2000, 0.8), (8000, 0.3)])
+    ir = ir_build(rng, 3.6, taps, late, stereo=False, mod=(2.5, 0.4))
+    x = np.zeros(n)
+    place(x, pk(core), 0.0, 1.0)
+    place(x, pk(conv(core, ir)), 0.0, 0.55)
+    x = filt(x, lambda f: r_lp(f, max(900.0, fc * 1.2), 2))
+    return fade(normalize(x), 0, 1.0)
+
+
+def kar98k_bolt(rng, speed=1.0):
+    """Mauser 98 bolt cycle: lift (cocks), draw back (extract/eject), forward (strip a round), turn down (lock)."""
+    n = N(1.1)
+    s = speed
+    x = np.zeros(n)
+
+    def scrape(t0, t1, f_a, f_b, lvl):
+        dd = t1 - t0
+        m = N(dd + 0.02)
+        sc = white(rng, m) * env_pts(m, [(0, 0), (0.01, 0.7), (dd * 0.8, 1.0), (dd, 0.2), (dd + 0.02, 0)])
+
+        def mask(tc, f):
+            fcen = f_a + (f_b - f_a) * np.clip(tc / dd, 0, 1)
+            return r_bp(f[None, :], 1200, 8500, 2) * (0.35 + 1.7 * r_res(f[None, :], fcen[:, None], 700))
+
+        place(x, pk(stft_apply(sc, mask, nfft=512, hop=128)), t0, lvl)
+
+    scrape(0.0, 0.065 * s, 2600, 3000, 0.35)                                       # lift: cocking cam
+    place(x, metal_hit(rng, 0.08, rng.uniform(2400, 2800), n_modes=5, tau=(0.03, 0.006)), 0.068 * s, 0.6)
+    scrape(0.11 * s, 0.26 * s, 2200, 3400, 0.5)                                    # back
+    place(x, metal_hit(rng, 0.05, rng.uniform(3600, 4200), n_modes=4, tau=(0.012, 0.004)), 0.13 * s, 0.25)
+    place(x, metal_hit(rng, 0.2, rng.uniform(1500, 1800), tau=(0.05, 0.008)), 0.27 * s, 1.0)   # bolt stop
+    place(x, thud(rng, N(0.08), 0.012, hi=500), 0.27 * s, 0.4)
+    case = pk(modal_ir(N(0.35), [rng.uniform(2600, 3200) * r for r in BRASS_CASE], [0.09, 0.06, 0.04, 0.025], [1, 0.7, 0.5, 0.3], rng))
+    place(x, case, 0.3 * s, 0.22)                                                  # ejected case
+    scrape(0.43 * s, 0.56 * s, 3200, 2400, 0.45)                                   # forward
+    place(x, metal_hit(rng, 0.1, rng.uniform(900, 1200), n_modes=5, tau=(0.03, 0.006)), 0.47 * s, 0.5)  # strips a round
+    place(x, thud(rng, N(0.06), 0.01, hi=650), 0.47 * s, 0.35)
+    place(x, metal_hit(rng, 0.15, rng.uniform(1300, 1600), tau=(0.04, 0.007)), 0.565 * s, 0.7)
+    scrape(0.6 * s, 0.665 * s, 2800, 2500, 0.3)                                    # turn down
+    place(x, metal_hit(rng, 0.22, rng.uniform(1700, 2100), tau=(0.045, 0.007)), 0.67 * s, 0.9)        # locks
+    place(x, metal_hit(rng, 0.05, rng.uniform(3300, 3800), n_modes=4, tau=(0.012, 0.004)), 0.672 * s, 0.4)
+    return fade(normalize(x[:N(0.95)]), 0.001, 0.08)
+
+
+# =============================================================================
 # Impacts
 # =============================================================================
 
@@ -1584,6 +1711,20 @@ def build_registry():
     reg("weapons/p38_decocker.wav", p38_decocker, "weapons", "P38 safety/decocker lever: hammer drops safely", gain=-13, priority=1)
     for i in range(1, 5):
         reg(f"weapons/casing_cobble_{i:02d}.wav", casing_cobble, "weapons", "9 mm brass casing bouncing on cobbles", gain=-18, priority=1)
+    for i, d in enumerate([12.0, 25.0, 40.0, 60.0], 1):
+        gap = d * (1.0 / C_SOUND - 1.0 / V_BULLET) * 1000
+        reg(f"weapons/kar98k_shot_{i:02d}.wav", (lambda d: (lambda r: kar98k_shot(r, d)))(d), "weapons",
+            f"Kar98k 7.92x57 mm shot fired toward the listener from ~{d:.0f} m: supersonic crack, boom {gap:.0f} ms later (dry)",
+            gain=0.0, priority=1)
+    for i, sp in enumerate([1.0, 0.86], 1):
+        reg(f"weapons/kar98k_bolt_{i:02d}.wav", (lambda sp: (lambda r: kar98k_bolt(r, sp)))(sp), "weapons",
+            "Kar98k bolt cycle: lift, back, forward, down; steel on steel" + (" (brisk)" if sp < 1 else ""), gain=-14, priority=1)
+    for i in range(1, 5):
+        reg(f"weapons/bullet_snap_{i:02d}.wav", bullet_snap, "weapons",
+            "Supersonic rifle round passing within ~2 m of the head: N-wave snap, brief whizz (dry)", gain=-2, priority=1)
+    for i, d in enumerate([200.0, 320.0, 480.0], 1):
+        reg(f"weapons/rifle_distant_{i:02d}.wav", (lambda d: (lambda r: rifle_distant(r, d)))(d), "weapons",
+            f"Rifle shot heard from ~{d:.0f} m: low thump, highs gone, long soft roll", gain=-10, priority=1)
 
     for i in range(1, 5):
         reg(f"impacts/impact_stone_{i:02d}.wav", impact_stone, "impacts", "Bullet strike on granite: crack, chips, grit", gain=-6, priority=2)

@@ -945,6 +945,46 @@
    "description": "Post-gunshot tinnitus: ~4.7 kHz unsteady ring + narrow noise band"
   },
   {
+   "file": "weapons/bullet_snap_01.wav",
+   "category": "weapons",
+   "duration_s": 0.3,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -2,
+   "description": "Supersonic rifle round passing within ~2 m of the head: N-wave snap, brief whizz (dry)"
+  },
+  {
+   "file": "weapons/bullet_snap_02.wav",
+   "category": "weapons",
+   "duration_s": 0.3,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -2,
+   "description": "Supersonic rifle round passing within ~2 m of the head: N-wave snap, brief whizz (dry)"
+  },
+  {
+   "file": "weapons/bullet_snap_03.wav",
+   "category": "weapons",
+   "duration_s": 0.3,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -2,
+   "description": "Supersonic rifle round passing within ~2 m of the head: N-wave snap, brief whizz (dry)"
+  },
+  {
+   "file": "weapons/bullet_snap_04.wav",
+   "category": "weapons",
+   "duration_s": 0.3,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -2,
+   "description": "Supersonic rifle round passing within ~2 m of the head: N-wave snap, brief whizz (dry)"
+  },
+  {
    "file": "weapons/casing_cobble_01.wav",
    "category": "weapons",
    "duration_s": 1.0,
@@ -983,6 +1023,66 @@
    "sample_rate": 44100,
    "suggested_gain_db": -18,
    "description": "9 mm brass casing bouncing on cobbles"
+  },
+  {
+   "file": "weapons/kar98k_bolt_01.wav",
+   "category": "weapons",
+   "duration_s": 0.95,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -14,
+   "description": "Kar98k bolt cycle: lift, back, forward, down; steel on steel"
+  },
+  {
+   "file": "weapons/kar98k_bolt_02.wav",
+   "category": "weapons",
+   "duration_s": 0.95,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -14,
+   "description": "Kar98k bolt cycle: lift, back, forward, down; steel on steel (brisk)"
+  },
+  {
+   "file": "weapons/kar98k_shot_01.wav",
+   "category": "weapons",
+   "duration_s": 1.0,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": 0.0,
+   "description": "Kar98k 7.92x57 mm shot fired toward the listener from ~12 m: supersonic crack, boom 19 ms later (dry)"
+  },
+  {
+   "file": "weapons/kar98k_shot_02.wav",
+   "category": "weapons",
+   "duration_s": 1.0,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": 0.0,
+   "description": "Kar98k 7.92x57 mm shot fired toward the listener from ~25 m: supersonic crack, boom 40 ms later (dry)"
+  },
+  {
+   "file": "weapons/kar98k_shot_03.wav",
+   "category": "weapons",
+   "duration_s": 1.0,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": 0.0,
+   "description": "Kar98k 7.92x57 mm shot fired toward the listener from ~40 m: supersonic crack, boom 64 ms later (dry)"
+  },
+  {
+   "file": "weapons/kar98k_shot_04.wav",
+   "category": "weapons",
+   "duration_s": 1.0,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": 0.0,
+   "description": "Kar98k 7.92x57 mm shot fired toward the listener from ~60 m: supersonic crack, boom 96 ms later (dry)"
   },
   {
    "file": "weapons/p38_decocker.wav",
@@ -1083,6 +1183,36 @@
    "sample_rate": 44100,
    "suggested_gain_db": -10,
    "description": "P38 slide released forward: slams into battery"
+  },
+  {
+   "file": "weapons/rifle_distant_01.wav",
+   "category": "weapons",
+   "duration_s": 4.0,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -10,
+   "description": "Rifle shot heard from ~200 m: low thump, highs gone, long soft roll"
+  },
+  {
+   "file": "weapons/rifle_distant_02.wav",
+   "category": "weapons",
+   "duration_s": 4.0,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -10,
+   "description": "Rifle shot heard from ~320 m: low thump, highs gone, long soft roll"
+  },
+  {
+   "file": "weapons/rifle_distant_03.wav",
+   "category": "weapons",
+   "duration_s": 4.0,
+   "channels": 1,
+   "loop": false,
+   "sample_rate": 44100,
+   "suggested_gain_db": -10,
+   "description": "Rifle shot heard from ~480 m: low thump, highs gone, long soft roll"
   },
   {
    "file": "weapons/tail_interior_01.wav",
