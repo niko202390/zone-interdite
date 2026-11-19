@@ -1,7 +1,8 @@
 extends SceneTree
 ## Headless behaviour test for guards. Run:
 ##   godot --headless --path game --script ../tools/godot/test_guards.gd
-## Scenarios: (1) armed in plain view of the sentry, (2) unarmed in plain view, (3) gunshot out of sight.
+## Scenarios: armed far off in the dark, unarmed in plain view, gunshot out of sight, and (last,
+## because it kills the player and triggers a level reload) armed close to the sentry.
 
 var level: Node
 var player: Node
@@ -49,12 +50,6 @@ func _run() -> void:
 	await _log("ARMED  ", 4.0)
 
 	await _load()
-	# 1b: armed, 7 m from the sentry, inside the brazier's light.
-	player.debug_place(Vector3(0.5, 0.05, 40.0), 180.0, 0.0)
-	player.firearm.holstered = false
-	await _log("ARMED7m", 8.0)
-
-	await _load()
 	# 2: unarmed (holstered), same spot, standing still.
 	player.firearm.holstered = true
 	player.debug_place(Vector3(0.5, 0.05, 32.0), 180.0, 0.0)
@@ -67,4 +62,10 @@ func _run() -> void:
 	await _wait(0.5)
 	player.debug_fire()
 	await _log("GUNSHOT", 5.0)
+
+	await _load()
+	# 1b: armed, 7 m from the sentry, inside the brazier's light.
+	player.debug_place(Vector3(0.5, 0.05, 40.0), 180.0, 0.0)
+	player.firearm.holstered = false
+	await _log("ARMED7m", 8.0)
 	quit()

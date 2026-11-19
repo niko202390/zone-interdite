@@ -17,6 +17,11 @@ func _ready() -> void:
 			args[kv[0]] = kv[1] if kv.size() > 1 else "true"
 	if args.has("views"):
 		_run_views.call_deferred()
+	if args.has("kill-after"):
+		get_tree().create_timer(float(args["kill-after"])).timeout.connect(func() -> void:
+			var p := get_tree().get_first_node_in_group("player") as Player
+			if p:
+				p.take_hit(999.0, p.global_position, Vector3.FORWARD, null))
 
 
 func active() -> bool:

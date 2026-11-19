@@ -41,6 +41,7 @@ func _ready() -> void:
 	Visibility.restricted_zones.append(AABB(Vector3(-6.0, -1.0, 41.0), Vector3(12.0, 6.0, 12.0)))
 	_build_navigation()
 	_spawn_guards()
+	print("LEVEL READY")
 
 
 func _build_navigation() -> void:
