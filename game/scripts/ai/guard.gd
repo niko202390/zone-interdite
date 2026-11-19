@@ -487,17 +487,18 @@ func _fire_at_player() -> void:
 	var shot := (basis * Vector3(sin(a) * cos(phi), sin(a) * sin(phi), -cos(a))).normalized()
 
 	var muzzle := eye + dir * 0.9
-	var bang := SoundLib.play_3d("weapons/p38_shot", muzzle, 6.0, 900.0, 0.03, 18.0)
-	bang.pitch_scale = 0.72
-	var tail := SoundLib.play_3d("weapons/tail_street", muzzle, 2.0, 900.0, 0.03, 18.0)
-	tail.pitch_scale = 0.8
+	_play_rifle_report(muzzle)
 	Hearing.expose(167.0, _player.camera.global_position.distance_to(muzzle), false)
 	Game.emit_noise(muzzle, 167.0, self)
 	_flash(muzzle)
+	ImpactFX.spawn_muzzle_smoke(get_tree().current_scene, muzzle, dir, Vector3.ZERO)
 
 	var space := get_world_3d().direct_space_state
 	var q := PhysicsRayQueryParameters3D.create(eye, eye + shot * 400.0, Game.LAYER_WORLD | Game.LAYER_PLAYER, [get_rid()])
 	var hit := space.intersect_ray(q)
+	var end: Vector3 = eye + shot * 400.0 if hit.is_empty() else hit.position
+	if hit.is_empty() or hit.collider != _player:
+		_bullet_snap(eye, end)
 	if hit.is_empty():
 		return
 	if hit.collider == _player:
@@ -506,6 +507,40 @@ func _fire_at_player() -> void:
 		_player.take_hit(dmg, hit.position, shot, self)
 	else:
 		ImpactFX.spawn(get_tree().current_scene, hit.position, hit.normal, shot, ImpactFX.surface_of(hit.collider, hit.position))
+
+
+## The shot as the player hears it: the near report, or a distant thump beyond about 150 m,
+## then the bolt being worked. Falls back to a pitched-down pistol shot if the rifle sounds don't exist yet.
+func _play_rifle_report(muzzle: Vector3) -> void:
+	var d := _player.camera.global_position.distance_to(muzzle)
+	if d > 150.0 and SoundLib.has_sound("weapons/rifle_distant"):
+		SoundLib.play_3d("weapons/rifle_distant", muzzle, 10.0, 2000.0, 0.04, 60.0)
+	elif SoundLib.has_sound("weapons/kar98k_shot"):
+		SoundLib.play_3d("weapons/kar98k_shot", muzzle, 6.0, 1200.0, 0.03, 18.0)
+	else:
+		var bang := SoundLib.play_3d("weapons/p38_shot", muzzle, 6.0, 900.0, 0.03, 18.0)
+		bang.pitch_scale = 0.72
+	var tail := SoundLib.play_3d("weapons/tail_street", muzzle, 2.0, 900.0, 0.03, 18.0)
+	tail.pitch_scale = 0.8
+	if SoundLib.has_sound("weapons/kar98k_bolt"):
+		get_tree().create_timer(randf_range(0.55, 0.8), false).timeout.connect(func() -> void:
+			if state != State.DEAD:
+				SoundLib.play_3d("weapons/kar98k_bolt", global_position + Vector3.UP * 1.3, 0.0, 60.0, 0.05, 3.0))
+
+
+## A miss that passes close to your head cracks past your ear.
+func _bullet_snap(from: Vector3, to: Vector3) -> void:
+	var head := _player.camera.global_position
+	var seg := to - from
+	var length := seg.length()
+	if length < 0.01:
+		return
+	var t := clampf((head - from).dot(seg / length), 0.0, length)
+	var miss := head.distance_to(from + seg / length * t)
+	if miss < 2.5 and t > 3.0:
+		var key := "weapons/bullet_snap" if SoundLib.has_sound("weapons/bullet_snap") else "impacts/ricochet"
+		SoundLib.play_2d(key, lerpf(4.0, -6.0, miss / 2.5), Game.BUS_WORLD, 0.06)
+		Hearing.expose(150.0, maxf(miss, 0.3), false)
 
 
 func _flash(pos: Vector3) -> void:

@@ -81,6 +81,9 @@ func play_3d(key: String, pos: Vector3, volume_db := 0.0, max_distance := 120.0,
 	p.unit_size = unit_size
 	p.max_distance = max_distance
 	p.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
+	# Air absorption: the further away a sound is, the more of its high end the air eats.
+	p.attenuation_filter_cutoff_hz = 6500.0
+	p.attenuation_filter_db = -18.0
 	p.pitch_scale = 1.0 + randf_range(-pitch_jitter, pitch_jitter)
 	_scene_root().add_child(p)
 	p.global_position = pos

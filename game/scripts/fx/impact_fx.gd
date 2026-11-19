@@ -44,6 +44,47 @@ static func spawn(root: Node, pos: Vector3, normal: Vector3, dir: Vector3, surfa
 	Game.emit_noise(pos, 92.0, null)
 
 
+## A wisp of grey powder smoke that drifts and lingers in the damp air after a shot.
+static func spawn_muzzle_smoke(root: Node, pos: Vector3, forward: Vector3, inherit: Vector3) -> void:
+	var p := GPUParticles3D.new()
+	p.one_shot = true
+	p.explosiveness = 0.85
+	p.amount = 10
+	p.lifetime = 3.2
+	p.local_coords = false
+	if not _process_mats.has("muzzle_smoke"):
+		var m := ParticleProcessMaterial.new()
+		m.direction = Vector3(0, 0, -1)
+		m.spread = 18.0
+		m.initial_velocity_min = 0.4
+		m.initial_velocity_max = 1.6
+		m.gravity = Vector3(0.15, 0.25, 0.0)
+		m.damping_min = 1.5
+		m.damping_max = 2.5
+		m.scale_min = 0.6
+		m.scale_max = 1.4
+		var grow := Curve.new()
+		grow.add_point(Vector2(0.0, 0.4))
+		grow.add_point(Vector2(1.0, 3.5))
+		var ct := CurveTexture.new()
+		ct.curve = grow
+		m.scale_curve = ct
+		var fade := Gradient.new()
+		fade.set_color(0, Color(0.62, 0.62, 0.6, 0.32))
+		fade.set_color(1, Color(0.6, 0.6, 0.6, 0.0))
+		var gt := GradientTexture1D.new()
+		gt.gradient = fade
+		m.color_ramp = gt
+		_process_mats["muzzle_smoke"] = m
+	p.process_material = _process_mats["muzzle_smoke"]
+	p.draw_pass_1 = _quad()
+	p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	root.add_child(p)
+	p.global_transform = Transform3D(Basis.looking_at(forward), pos)
+	p.emitting = true
+	p.get_tree().create_timer(p.lifetime + 0.5, false).timeout.connect(p.queue_free)
+
+
 static func basis_from_up(up: Vector3) -> Basis:
 	up = up.normalized()
 	var ref := Vector3.FORWARD if absf(up.dot(Vector3.UP)) > 0.95 else Vector3.UP

@@ -302,6 +302,8 @@ func _discharge(extra_spread_deg: float) -> void:
 	player.add_recoil(deg_to_rad(data.recoil_pitch_deg * randf_range(0.85, 1.15)),
 		deg_to_rad(data.recoil_yaw_deg * randf_range(-1.0, 1.0)), data.recoil_recovery, data.recoil_stick)
 	_flash_t = 0.055
+	var muzzle_node: Node3D = _parts.get("Muzzle", _model)
+	ImpactFX.spawn_muzzle_smoke(get_tree().current_scene, muzzle_node.global_position, -camera.global_basis.z, player.velocity)
 	_flash_mesh.rotation.z = randf() * TAU
 	_flash_mesh.scale = Vector3.ONE * randf_range(0.8, 1.25)
 	_eject_casing()
