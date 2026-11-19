@@ -64,6 +64,19 @@ func _run() -> void:
 	await _log("GUNSHOT", 5.0)
 
 	await _load()
+	# Takedown: step in close behind the patrol, take him down, and see whether the sentry finds the body.
+	var patrol: Node = level.get_node("Patrol")
+	player.firearm.holstered = true
+	player.debug_place(patrol.global_position + patrol.global_basis.z * 1.0, rad_to_deg(patrol.rotation.y), 0.0)
+	await _wait(0.2)
+	player._refresh_interact()
+	print("TAKEDOWN option=", player._interact_kind)
+	player._interact()
+	await _wait(0.5)
+	player.debug_place(Vector3(-3.0, 0.05, 10.0), 180.0, 0.0)
+	await _log("BODY   ", 5.0)
+
+	await _load()
 	# 1b: armed, 7 m from the sentry, inside the brazier's light.
 	player.debug_place(Vector3(0.5, 0.05, 40.0), 180.0, 0.0)
 	player.firearm.holstered = false

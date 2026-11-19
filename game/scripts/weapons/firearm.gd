@@ -569,13 +569,15 @@ func _pose_part(part: String, offset: Vector3, euler: Vector3) -> void:
 func _update_pose(delta: float) -> void:
 	var want_ads := (Input.is_action_pressed("aim") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED) \
 		or player.debug_force_ads
-	want_ads = want_ads and not holstered and not player.sprinting and _busy == "" and _retract < 0.5
+	want_ads = want_ads and not holstered and not player.sprinting and _busy == "" and _retract < 0.5 \
+		and player.busy <= 0.0 and player.dragging == null
 	ads = move_toward(ads, 1.0 if want_ads else 0.0, delta / data.ads_time)
 	var a := smoothstep(0.0, 1.0, ads)
 	var base_fov: float = Settings.fov
 	camera.fov = lerpf(base_fov, base_fov * data.ads_fov / REFERENCE_FOV, a)
 
-	_lower = move_toward(_lower, 1.0 if player.sprinting else 0.0, delta * 4.0)
+	var lowered := player.sprinting or player.busy > 0.0 or player.dragging != null
+	_lower = move_toward(_lower, 1.0 if lowered else 0.0, delta * 4.0)
 	_holster_amt = move_toward(_holster_amt, 1.0 if holstered else 0.0, delta / 0.5)
 	_model.visible = _holster_amt < 0.99
 

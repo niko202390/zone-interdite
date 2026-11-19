@@ -47,6 +47,13 @@ var mouse_motion := Vector2.ZERO
 var debug_force_ads := false
 var health := 100.0
 var dead := false
+## Seconds the body is locked into an action, such as a takedown.
+var busy := 0.0
+## The body being dragged, if any.
+var dragging: Guard = null
+var _interact_t := 0.0
+var _interact_target: Guard = null
+var _interact_kind := ""
 
 var _eye := 1.64
 var _recoil := Vector2.ZERO          # (yaw, pitch) offset that recovers toward zero
@@ -110,6 +117,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			crouching = false
 	elif event.is_action_pressed("jump"):
 		_jump_requested = true
+	elif event.is_action_pressed("interact"):
+		_interact()
 
 
 ## Recoil from the weapon. A share of it ("stick") moves the aim permanently, like CS spray climb.
@@ -127,6 +136,77 @@ func is_aiming() -> bool:
 
 func horizontal_speed() -> float:
 	return Vector2(velocity.x, velocity.z).length()
+
+
+# --- interaction: takedowns and bodies ---------------------------------------------------------
+
+func _interact() -> void:
+	if dead or busy > 0.0:
+		return
+	if dragging:
+		dragging.dragged_by = null
+		dragging = null
+		SoundLib.play_2d("player/cloth_wool_move", -2.0)
+		return
+	_refresh_interact()
+	if _interact_kind == "takedown":
+		busy = 1.1
+		_interact_target.silent_kill(self)
+		SoundLib.play_2d("player/cloth_wool_move", 2.0)
+		SoundLib.play_3d("impacts/impact_dirt", _interact_target.global_position + Vector3.UP, -10.0, 15.0, 0.1, 1.0)
+		stamina = maxf(stamina - 0.15, 0.0)
+		add_recoil(deg_to_rad(-3.0), deg_to_rad(randf_range(-2.0, 2.0)), 4.0, 0.0)
+	elif _interact_kind == "drag":
+		dragging = _interact_target
+		dragging.dragged_by = self
+		SoundLib.play_2d("player/cloth_wool_move", 0.0)
+
+
+func _refresh_interact() -> void:
+	_interact_target = null
+	_interact_kind = ""
+	var best := 9999.0
+	for n in get_tree().get_nodes_in_group("guards"):
+		var g := n as Guard
+		if g == null:
+			continue
+		if g.is_dead():
+			var d := global_position.distance_to(g.body_center())
+			if d < 1.7 and d < best:
+				best = d
+				_interact_target = g
+				_interact_kind = "drag"
+		elif g.can_be_taken_down_by(self):
+			var d2 := global_position.distance_to(g.global_position)
+			if d2 < best + 0.5:
+				best = d2
+				_interact_target = g
+				_interact_kind = "takedown"
+
+
+func _update_interaction(delta: float) -> void:
+	busy = maxf(busy - delta, 0.0)
+	if dragging:
+		var fwd := -global_basis.z
+		fwd.y = 0.0
+		dragging.drag_toward(global_position + fwd.normalized() * 0.95, global_position, delta)
+		if horizontal_speed() > 0.2:
+			Game.emit_noise(dragging.global_position, 42.0, self)
+		if overlay and overlay.has_method("hint"):
+			overlay.hint("[F]  let go")
+		return
+	_interact_t -= delta
+	if _interact_t <= 0.0:
+		_interact_t = 0.1
+		_refresh_interact()
+	if overlay and overlay.has_method("hint"):
+		match _interact_kind:
+			"takedown":
+				overlay.hint("[F]  take him down")
+			"drag":
+				overlay.hint("[F]  drag the body")
+			_:
+				overlay.hint("")
 
 
 ## Hit by a bullet. There's no health bar: you feel it in the jolt, your breathing, and how slowly you move.
@@ -162,14 +242,14 @@ func note(text: String, seconds := 3.0) -> void:
 func _physics_process(delta: float) -> void:
 	var on_floor := is_on_floor()
 	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
-	if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED or dead:
+	if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED or dead or busy > 0.0:
 		input = Vector2.ZERO
 	var wish := global_basis * Vector3(input.x, 0.0, input.y)
 	wish.y = 0.0
 	wish = wish.normalized() * minf(input.length(), 1.0)
 
 	sprinting = Input.is_action_pressed("sprint") and input.y < -0.3 and stamina > 0.04 \
-		and on_floor and not is_aiming() and input != Vector2.ZERO
+		and on_floor and not is_aiming() and input != Vector2.ZERO and dragging == null
 	if sprinting and crouching:
 		if _can_stand():
 			crouching = false
@@ -185,6 +265,8 @@ func _physics_process(delta: float) -> void:
 		speed = minf(speed, 0.9)
 	if health < 50.0:
 		speed *= 0.75   # wounded
+	if dragging:
+		speed = minf(speed, 0.85)
 
 	var horiz := Vector3(velocity.x, 0.0, velocity.z)
 	var k := 1.0 - exp(-(ground_accel if on_floor else air_accel) * delta)
@@ -316,6 +398,8 @@ func _update_lean_clearance() -> void:
 
 func _process(delta: float) -> void:
 	_recoil = _recoil.lerp(Vector2.ZERO, 1.0 - exp(-_recoil_recovery * delta))
+	if not dead:
+		_update_interaction(delta)
 
 	# Breathing sway: always slightly there, much worse when winded, and strongest while aiming.
 	var t := Time.get_ticks_msec() / 1000.0

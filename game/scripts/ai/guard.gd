@@ -49,6 +49,12 @@ var _home_yaw := 0.0
 var _walk_phase := 0.0
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _death_t := 0.0
+var _shape: CollisionShape3D
+var _body_check_t := 0.0
+## For bodies: whether another guard has already found this one.
+var discovered := false
+## For bodies: the player dragging this one, if any.
+var dragged_by: Node3D = null
 
 # Body parts.
 var _body: Node3D
@@ -72,6 +78,7 @@ func _ready() -> void:
 	cs.shape = cap
 	cs.position.y = 0.91
 	add_child(cs)
+	_shape = cs
 	_build_body()
 	_nav = NavigationAgent3D.new()
 	_nav.radius = 0.35
@@ -226,6 +233,8 @@ func _hostility() -> float:
 		h += 0.45
 	if Visibility.in_restricted_zone(_player.global_position):
 		h += 1.0
+	if _player.dragging != null:
+		h += 1.5
 	if _combat_t < 90.0:
 		h += 1.0
 	return h
@@ -378,6 +387,10 @@ func _physics_process(delta: float) -> void:
 	if _perceive_t <= 0.0:
 		_perceive_t = 0.1
 		_perceive()
+	_body_check_t -= delta
+	if _body_check_t <= 0.0:
+		_body_check_t = 0.4
+		_check_bodies()
 	_think(delta)
 
 	var desired_speed := 0.0
@@ -570,18 +583,96 @@ func take_hit(damage: float, pos: Vector3, _dir: Vector3, attacker: Node) -> voi
 	_enter(State.ALERTED)
 
 
-func _die() -> void:
+func _die(quiet := false) -> void:
 	state = State.DEAD
 	_state_t = 0.0
 	collision_layer = 0
 	collision_mask = Game.LAYER_WORLD
+	_shape.set_deferred("disabled", true)
 	velocity = Vector3.ZERO
 	add_to_group("bodies")
-	SoundLib.play_3d("footsteps/cobble_run", global_position, 6.0, 40.0, 0.1, 3.0)
+	SoundLib.play_3d("footsteps/cobble_run", global_position, -6.0 if quiet else 6.0, 40.0, 0.1, 3.0)
+
+
+func is_dead() -> bool:
+	return state == State.DEAD
+
+
+## A takedown is possible from close behind, or when he isn't aware of you at all.
+func can_be_taken_down_by(p: Node3D) -> bool:
+	if state == State.DEAD or state == State.ALERTED:
+		return false
+	var to_p := p.global_position - global_position
+	to_p.y = 0.0
+	if to_p.length() > 1.4:
+		return false
+	var behind := (-global_basis.z).angle_to(to_p.normalized()) > deg_to_rad(105.0)
+	return behind or (not _can_see_player and suspicion < 0.5)
+
+
+## The SOE way: from behind, quick and close. Quiet, but not silent: a scuffle carries a few metres.
+func silent_kill(attacker: Node3D) -> void:
+	if state == State.DEAD:
+		return
+	health = 0.0
+	if attacker:
+		_face(global_position - attacker.global_position, 1.0, 100.0)
+	_die(true)
+	Game.emit_noise(global_position + Vector3.UP, 50.0, attacker)
+
+
+## The point at the body's chest, wherever it's lying.
+func body_center() -> Vector3:
+	return global_position + global_basis.z * 0.9 * clampf(_death_t / 0.8, 0.0, 1.0) + Vector3.UP * 0.25
+
+
+## Pull the body so its shoulders follow `shoulder_target`, with the head end toward whoever is dragging.
+func drag_toward(shoulder_target: Vector3, puller: Vector3, delta: float) -> void:
+	var to_puller := puller - global_position
+	to_puller.y = 0.0
+	if to_puller.length() > 0.1:
+		rotation.y = rotate_toward(rotation.y, atan2(to_puller.x, to_puller.z), delta * 3.0)
+	var desired := shoulder_target - global_basis.z * 1.4
+	desired.y = global_position.y
+	global_position = global_position.lerp(desired, 1.0 - exp(-5.0 * delta))
+
+
+func _check_bodies() -> void:
+	if Debug.peaceful():
+		return
+	var eye := _eye_pos()
+	var look := (-global_basis.z).rotated(Vector3.UP, _look_yaw)
+	var space := get_world_3d().direct_space_state
+	for b in get_tree().get_nodes_in_group("bodies"):
+		if b == self or not (b is Guard) or (b as Guard).discovered:
+			continue
+		var g := b as Guard
+		var bp := g.body_center()
+		var to := bp - eye
+		var light_f := clampf(Visibility.light_level(get_world_3d(), bp, [g.get_rid()]) / 0.5, 0.12, 2.5)
+		# A body on the ground is harder to make out than a man standing up.
+		if to.length() > view_distance * clampf(light_f, 0.2, 1.0) * 0.75:
+			continue
+		if rad_to_deg(look.angle_to(Vector3(to.x, 0, to.z).normalized())) > fov_deg * 0.5:
+			continue
+		var q := PhysicsRayQueryParameters3D.create(eye, bp, Game.LAYER_WORLD, [get_rid(), g.get_rid()])
+		if not space.intersect_ray(q).is_empty():
+			continue
+		g.discovered = true
+		target_pos = bp
+		alertness = 1.5
+		_combat_t = 0.0
+		_raise_alarm()
+		_enter(State.SEARCH)
+		return
 
 
 func _update_death(delta: float) -> void:
 	_death_t += delta
+	if dragged_by:
+		_body.rotation.x = deg_to_rad(84.0)
+		_body.position = Vector3(0, 0.12, 0.9)
+		return
 	var t := clampf(_death_t / 0.8, 0.0, 1.0)
 	var e := t * t
 	_body.rotation.x = lerpf(0.0, deg_to_rad(84.0), e)

@@ -5,7 +5,7 @@ extends CanvasLayer
 const CONTROLS := """WASD  move        Mouse wheel  walking pace        Shift  sprint
 C  crouch        Space  jump        Q / E  lean
 RMB  aim        LMB  fire        R  reload        T  check magazine
-B  safety (decocks the hammer)        H  holster
+B  safety (decocks the hammer)        H  holster        F  take down / drag a body
 F1  this card        F11  fullscreen        Esc  pause / settings        F10  quit"""
 
 const INK := Color(0.86, 0.83, 0.76)
@@ -14,6 +14,9 @@ var _font: SystemFont
 var _theme: Theme
 var _note: Label
 var _note_t := 0.0
+var _hint: Label
+var _hint_text := ""
+
 var _pause: Control
 var _help: Label
 var _help_t := 10.0
@@ -48,6 +51,15 @@ func _ready() -> void:
 	_note.offset_right = 700
 	_note.modulate.a = 0.0
 	add_child(_note)
+
+	_hint = _label(16)
+	_hint.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	_hint.offset_top = 60
+	_hint.offset_bottom = 90
+	_hint.offset_left = -300
+	_hint.offset_right = 300
+	_hint.modulate.a = 0.0
+	add_child(_hint)
 
 	_help = _label(17)
 	_help.text = CONTROLS
@@ -182,6 +194,13 @@ static func _vertical_fov(horizontal_deg: float) -> float:
 
 # --- runtime -----------------------------------------------------------------------------------
 
+## A faint, context-only prompt just below the centre of the screen. An empty string hides it.
+func hint(text: String) -> void:
+	if text != "":
+		_hint.text = text
+	_hint_text = text
+
+
 func note(text: String, seconds := 3.0) -> void:
 	_note.text = text
 	_note_t = seconds
@@ -216,3 +235,4 @@ func _process(delta: float) -> void:
 	_help_t -= delta
 	_help.modulate.a = move_toward(_help.modulate.a, 0.8 if _help_t > 0.0 else 0.0, delta * 1.5)
 	_fade.color.a = move_toward(_fade.color.a, _fade_target, delta * 0.6)
+	_hint.modulate.a = move_toward(_hint.modulate.a, 0.55 if _hint_text != "" else 0.0, delta * 4.0)
