@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/weapons/weapon_data.gd" id="1_wd"]
+
+[resource]
+script = ExtResource("1_wd")
+id = "p38_ac43"
+display_name = "Walther P38 (ac 43)"
+model_path = "res://assets/models/weapons/p38.glb"
+caliber = "9x19"
+magazine_capacity = 8
+min_shot_interval = 0.12
+damage = 34.0
+range_m = 150.0
+loudness_db = 157.0
