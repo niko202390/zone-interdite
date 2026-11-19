@@ -12,11 +12,9 @@ func _init() -> void:
 	_run.call_deferred()
 
 
+## Waits in game time (timers follow the same clock the guards use), not in frames.
 func _wait(seconds: float) -> void:
-	var t := 0.0
-	while t < seconds:
-		await process_frame
-		t += 1.0 / 60.0
+	await create_timer(seconds, true, true).timeout
 
 
 func _load() -> void:
@@ -75,6 +73,48 @@ func _run() -> void:
 	await _wait(0.5)
 	player.debug_place(Vector3(-3.0, 0.05, 10.0), 180.0, 0.0)
 	await _log("BODY   ", 5.0)
+
+	await _load()
+	# Papers: walk up unarmed, get challenged, show papers (no zone pass), get turned back, then push past.
+	var sentry: Node = level.get_node("Sentry")
+	player.firearm.holstered = true
+	player.debug_place(Vector3(1.5, 0.05, 37.0), 180.0, 0.0)
+	await _log("CHALLNG", 2.0)
+	print("  subtitle: ", player.overlay._subtitle.text.replace("
+", " "))
+	player.debug_place(Vector3(2.2, 0.05, 44.3), 180.0, 0.0)
+	await _wait(0.4)
+	player._refresh_interact()
+	print("PAPERS option=", player._interact_kind)
+	player._interact()
+	await _log("INSPECT", 4.5)
+	print("  subtitle: ", player.overlay._subtitle.text.replace("
+", " "))
+	# Comply: walk back out of the zone during the grace period.
+	player.debug_place(Vector3(1.0, 0.05, 36.0), 180.0, 0.0)
+	await _log("LEAVE  ", 10.0)
+
+	await _load()
+	# Defy: get turned back, then stay in the zone past the grace period.
+	player.firearm.holstered = true
+	player.health = 100000.0
+	player.debug_place(Vector3(1.5, 0.05, 37.0), 180.0, 0.0)
+	await _wait(2.0)
+	player.debug_place(Vector3(2.2, 0.05, 44.3), 180.0, 0.0)
+	await _wait(0.4)
+	player._refresh_interact()
+	player._interact()
+	await _wait(4.0)
+	await _log("LINGER ", 10.0)
+
+	await _load()
+	# Curfew: unarmed, walking normally, in view of the sentry at 22:30.
+	root.get_node("Game").set_clock("22:30")
+	player.health = 100000.0
+	player.firearm.holstered = true
+	player.debug_place(Vector3(0.5, 0.05, 40.0), 180.0, 0.0)
+	await _log("CURFEW ", 4.0)
+	root.get_node("Game").set_clock("17:40")
 
 	await _load()
 	# 1b: armed, 7 m from the sentry, inside the brazier's light.

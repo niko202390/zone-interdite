@@ -21,9 +21,17 @@ var _rain: GPUParticles3D
 
 func _ready() -> void:
 	Visibility.reset()
+	Guard.reset_shared()
+	# Mission start: blue hour. A restart after death begins the evening again.
+	Game.set_clock(String(Debug.args.get("time", "17:40")))
 	Visibility.ambient = 0.2          # blue hour under overcast
 	Visibility.noise_floor_db = 34.0  # drizzle and wind
-	DuskEnvironment.apply(self)
+	var env_refs := DuskEnvironment.apply(self)
+	var day_night := DayNight.new()
+	day_night.name = "DayNight"
+	day_night.env = env_refs["environment"]
+	day_night.sun = env_refs["sun"]
+	add_child(day_night)
 	_build_ground()
 	_build_street()
 	_build_houses()
@@ -70,6 +78,8 @@ func _spawn_guards() -> void:
 	# A sentry at the checkpoint, watching the street, and a patrol walking it.
 	var sentry := Guard.new()
 	sentry.name = "Sentry"
+	sentry.checkpoint = true
+	sentry.challenge_zone = AABB(Vector3(-6.0, -1.0, 33.0), Vector3(12.0, 6.0, 8.0))
 	sentry.patrol_points = PackedVector3Array([Vector3(2.4, 0.05, 46.6)])
 	add_child(sentry)
 	sentry.global_position = Vector3(2.4, 0.05, 46.6)

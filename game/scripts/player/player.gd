@@ -47,6 +47,8 @@ var mouse_motion := Vector2.ZERO
 var debug_force_ads := false
 var health := 100.0
 var dead := false
+## Your forged documents. Mission 1 starts with a good carte d'identité but no pass for the coastal zone.
+var papers := {"identity": true, "zone_pass": false}
 ## Seconds the body is locked into an action, such as a takedown.
 var busy := 0.0
 ## The body being dragged, if any.
@@ -119,6 +121,14 @@ func _unhandled_input(event: InputEvent) -> void:
 		_jump_requested = true
 	elif event.is_action_pressed("interact"):
 		_interact()
+	elif event.is_action_pressed("watch"):
+		var t := Game.clock_text()
+		if Game.curfew_active():
+			note("Your watch: %s. Curfew." % t, 3.0)
+		elif Game.clock_minutes >= Game.CURFEW_START - 30:
+			note("Your watch: %s. Curfew soon." % t, 3.0)
+		else:
+			note("Your watch: %s." % t, 2.5)
 
 
 ## Recoil from the weapon. A share of it ("stick") moves the aim permanently, like CS spray climb.
@@ -149,6 +159,10 @@ func _interact() -> void:
 		SoundLib.play_2d("player/cloth_wool_move", -2.0)
 		return
 	_refresh_interact()
+	if _interact_kind == "papers":
+		_interact_target.present_papers(self)
+		SoundLib.play_2d("player/cloth_wool_move", -4.0)
+		return
 	if _interact_kind == "takedown":
 		busy = 1.1
 		_interact_target.silent_kill(self)
@@ -176,6 +190,10 @@ func _refresh_interact() -> void:
 				best = d
 				_interact_target = g
 				_interact_kind = "drag"
+		elif g.wants_papers_from(self):
+			_interact_target = g
+			_interact_kind = "papers"
+			return
 		elif g.can_be_taken_down_by(self):
 			var d2 := global_position.distance_to(g.global_position)
 			if d2 < best + 0.5:
@@ -205,6 +223,8 @@ func _update_interaction(delta: float) -> void:
 				overlay.hint("[F]  take him down")
 			"drag":
 				overlay.hint("[F]  drag the body")
+			"papers":
+				overlay.hint("[F]  show your papers")
 			_:
 				overlay.hint("")
 
@@ -226,6 +246,7 @@ func take_hit(damage: float, _pos: Vector3, _dir: Vector3, _attacker: Node) -> v
 
 func _die() -> void:
 	dead = true
+	print("PLAYER DIED at ", Game.clock_text(), " pos ", global_position)
 	if overlay:
 		overlay.fade_to(1.0)
 	note("You were killed.", 9.0)

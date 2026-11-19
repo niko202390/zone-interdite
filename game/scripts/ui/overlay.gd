@@ -5,7 +5,7 @@ extends CanvasLayer
 const CONTROLS := """WASD  move        Mouse wheel  walking pace        Shift  sprint
 C  crouch        Space  jump        Q / E  lean
 RMB  aim        LMB  fire        R  reload        T  check magazine
-B  safety (decocks the hammer)        H  holster        F  take down / drag a body
+B  safety (decocks the hammer)        H  holster        F  interact / take down / papers        X  watch
 F1  this card        F11  fullscreen        Esc  pause / settings        F10  quit"""
 
 const INK := Color(0.86, 0.83, 0.76)
@@ -16,6 +16,8 @@ var _note: Label
 var _note_t := 0.0
 var _hint: Label
 var _hint_text := ""
+var _subtitle: Label
+var _subtitle_t := 0.0
 
 var _pause: Control
 var _help: Label
@@ -60,6 +62,16 @@ func _ready() -> void:
 	_hint.offset_right = 300
 	_hint.modulate.a = 0.0
 	add_child(_hint)
+
+	_subtitle = _label(20)
+	_subtitle.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_subtitle.offset_top = -190
+	_subtitle.offset_bottom = -130
+	_subtitle.offset_left = -800
+	_subtitle.offset_right = 800
+	_subtitle.add_theme_color_override("font_color", Color(0.95, 0.9, 0.78))
+	_subtitle.modulate.a = 0.0
+	add_child(_subtitle)
 
 	_help = _label(17)
 	_help.text = CONTROLS
@@ -194,6 +206,16 @@ static func _vertical_fov(horizontal_deg: float) -> float:
 
 # --- runtime -----------------------------------------------------------------------------------
 
+## Something said out loud, shown in German with a translation. When the player is half-deaf or too far
+## away, only the fact that someone is shouting gets through.
+func subtitle(german: String, english: String, muffled := false) -> void:
+	if muffled:
+		_subtitle.text = "[ muffled shouting ]"
+	else:
+		_subtitle.text = "«%s»\n(%s)" % [german, english] if german != english else "«%s»" % german
+	_subtitle_t = 3.2
+
+
 ## A faint, context-only prompt just below the centre of the screen. An empty string hides it.
 func hint(text: String) -> void:
 	if text != "":
@@ -236,3 +258,5 @@ func _process(delta: float) -> void:
 	_help.modulate.a = move_toward(_help.modulate.a, 0.8 if _help_t > 0.0 else 0.0, delta * 1.5)
 	_fade.color.a = move_toward(_fade.color.a, _fade_target, delta * 0.6)
 	_hint.modulate.a = move_toward(_hint.modulate.a, 0.55 if _hint_text != "" else 0.0, delta * 4.0)
+	_subtitle_t -= delta
+	_subtitle.modulate.a = move_toward(_subtitle.modulate.a, 0.95 if _subtitle_t > 0.0 else 0.0, delta * 3.0)

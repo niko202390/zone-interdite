@@ -28,6 +28,7 @@ func _ready() -> void:
 	_music.stream = SoundLib.pick("music/drone_dread_loop")
 	_music.volume_db = -80.0
 	add_child(_music)
+	Game.hour_struck.connect(func(hour: int) -> void: _toll_bell(((hour + 11) % 12) + 1))
 
 
 func _bed(key: String, vol: float) -> void:
@@ -48,10 +49,6 @@ func _listener_pos() -> Vector3:
 func _process(delta: float) -> void:
 	var lp := _listener_pos()
 
-	_bell_timer -= delta
-	if _bell_timer <= 0.0:
-		_bell_timer = randf_range(200.0, 360.0)
-		_toll_bell(randi_range(1, 3))
 
 	_engine_timer -= delta
 	if _engine_timer <= 0.0:

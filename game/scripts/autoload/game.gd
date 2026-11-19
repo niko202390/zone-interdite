@@ -4,6 +4,12 @@ extends Node
 
 ## position, loudness in dB SPL at 1 m, and the node that made it.
 signal noise_emitted(position: Vector3, loudness_db: float, source: Node)
+## Emitted on the hour (0-23), so the church bell can strike it.
+signal hour_struck(hour: int)
+
+## Curfew in the occupied zone, 22:00 to 05:00.
+const CURFEW_START := 22 * 60
+const CURFEW_END := 5 * 60
 
 const BUS_WORLD := &"World"
 const BUS_TINNITUS := &"Tinnitus"
@@ -34,6 +40,7 @@ const KEY_ACTIONS := {
 	"pause": [KEY_ESCAPE],
 	"fullscreen": [KEY_F11],
 	"help": [KEY_F1],
+	"watch": [KEY_X],
 	"quit": [KEY_F10],
 }
 const MOUSE_ACTIONS := {
@@ -45,12 +52,39 @@ const MOUSE_ACTIONS := {
 
 ## Radians of view rotation per pixel of mouse motion.
 var mouse_sensitivity := 0.0022
+## Time of day in minutes since midnight. Mission 1 begins at blue hour.
+var clock_minutes := 17.0 * 60.0 + 40.0
+## Game minutes per real second. At 5x, an hour of play covers five hours of the night.
+var clock_rate := 5.0 / 60.0
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_setup_input()
 	_setup_audio_buses()
+
+
+func _process(delta: float) -> void:
+	if get_tree().paused:
+		return
+	var before := clock_minutes
+	clock_minutes = fposmod(clock_minutes + delta * clock_rate, 1440.0)
+	if int(before / 60.0) != int(clock_minutes / 60.0):
+		hour_struck.emit(int(clock_minutes / 60.0))
+
+
+func set_clock(text: String) -> void:
+	var parts := text.split(":")
+	if parts.size() == 2:
+		clock_minutes = parts[0].to_float() * 60.0 + parts[1].to_float()
+
+
+func clock_text() -> String:
+	return "%02d:%02d" % [int(clock_minutes / 60.0), int(fmod(clock_minutes, 60.0))]
+
+
+func curfew_active() -> bool:
+	return clock_minutes >= CURFEW_START or clock_minutes < CURFEW_END
 
 
 func emit_noise(position: Vector3, loudness_db: float, source: Node = null) -> void:

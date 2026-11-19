@@ -10,9 +10,32 @@ extends CharacterBody3D
 ## Social stealth: an unarmed civilian walking normally at dusk is only watched. He becomes hostile if
 ## you're armed, sneaking, sprinting, in a restricted zone, near recent gunfire, or if he's been shot at.
 
-enum State { PATROL, CURIOUS, SUSPICIOUS, SEARCH, ALERTED, DEAD }
+enum State { PATROL, CURIOUS, SUSPICIOUS, SEARCH, ALERTED, DEAD, CHALLENGE, INSPECT }
 
-const STATE_NAMES := ["patrol", "curious", "suspicious", "search", "alerted", "dead"]
+const STATE_NAMES := ["patrol", "curious", "suspicious", "search", "alerted", "dead", "challenge", "inspect"]
+
+## What German soldiers shout, with translations. [german, english]. Placeholder text until voice acting exists.
+const BARKS := {
+	"curious": [["Hm?", "Hm?"], ["Wer da?", "Who's there?"], ["Was war das?", "What was that?"]],
+	"suspicious": [["Hallo? Ist da jemand?", "Hello? Is someone there?"], ["Ich seh' mal nach.", "I'll take a look."]],
+	"suspicious_seen": [["Sie da! Was machen Sie da?", "You there! What are you doing?"], ["Moment mal...", "Wait a moment..."]],
+	"search": [["Da drüben!", "Over there!"], ["Wo ist er hin?", "Where did he go?"], ["Ausschwärmen!", "Spread out!"]],
+	"alerted": [["Halt! Stehenbleiben!", "Halt! Stand still!"], ["Alarm! Alarm!", "Alarm! Alarm!"], ["Da ist er!", "There he is!"]],
+	"calm": [["Nichts. Wahrscheinlich eine Katze.", "Nothing. Probably a cat."], ["Hab' mich wohl geirrt.", "Must have been mistaken."]],
+	"body": [["Mein Gott... Alarm!", "My God... Alarm!"], ["Hier liegt einer!", "There's a man down here!"]],
+	"challenge": [["Halt! Ausweis, bitte.", "Halt! Papers, please."], ["Halt! Papiere!", "Halt! Papers!"]],
+	"inspect": [["Zeigen Sie mal her.", "Let's have a look."]],
+	"pass": [["Gut. Weitergehen.", "Fine. Move along."]],
+	"no_pass": [["Kein Passierschein für die Sperrzone. Zurück!", "No pass for the restricted zone. Go back!"]],
+	"curfew": [["Sperrstunde! Was machen Sie hier draußen?", "Curfew! What are you doing out here?"]],
+	"wounded": [["Was ist mit Ihnen passiert? Mitkommen!", "What happened to you? Come with me!"]],
+	"warning": [["Halt! Oder ich schieße!", "Halt! Or I shoot!"]],
+}
+## Seconds a turned-back civilian has to leave the restricted zone before the sentry treats them as hostile.
+const TURN_BACK_GRACE := 8.0
+
+## Barks that are shouted loud enough for other soldiers to hear and come.
+const LOUD_BARKS := ["alerted", "body", "search", "warning", "challenge"]
 const FELDGRAU := Color(0.29, 0.31, 0.27)
 
 @export var patrol_points: PackedVector3Array = PackedVector3Array()
@@ -25,6 +48,10 @@ const FELDGRAU := Color(0.29, 0.31, 0.27)
 @export var rifle_damage := 72.0
 ## A Kar98k is a bolt action: one aimed shot every couple of seconds at best.
 @export var fire_interval := Vector2(2.1, 2.9)
+## A checkpoint sentry challenges people for their papers instead of treating the restricted zone as hostile outright.
+@export var checkpoint := false
+## The approach in front of a checkpoint, where the sentry calls you over.
+@export var challenge_zone := AABB()
 
 var state := State.PATROL
 var suspicion := 0.0
@@ -55,6 +82,16 @@ var _body_check_t := 0.0
 var discovered := false
 ## For bodies: the player dragging this one, if any.
 var dragged_by: Node3D = null
+## Checkpoint sentries currently checking the player's papers. While someone is, other soldiers
+## leave you to him rather than treating the restricted zone as hostile.
+static var _papers_checkers: Array = []
+## Shared by all soldiers: a checkpoint's verdict on your papers stands for everyone.
+static var _cleared_until := -1.0   # game minute until which your papers have been accepted
+static var _grace_until_ms := 0     # wall-clock ms until which a turned-back civilian is let walk away
+var _bark_cd := 0.0
+var _turned_away_t := 999.0    # seconds since the player was turned back from this checkpoint
+var _warned := false
+var _warn_t := 0.0
 
 # Body parts.
 var _body: Node3D
@@ -231,13 +268,93 @@ func _hostility() -> float:
 		h += 0.45
 	if _player.sprinting:
 		h += 0.45
-	if Visibility.in_restricted_zone(_player.global_position):
+	if _zone_violation():
+		if checkpoint:
+			# Turned back: you get a few seconds to walk away before lingering becomes defiance.
+			if _warned or (_turned_away_t > TURN_BACK_GRACE and _turned_away_t < 90.0):
+				h += 1.0
+		elif not _someone_checking_papers() and Time.get_ticks_msec() > _grace_until_ms:
+			h += 1.0
+	if Game.curfew_active():
 		h += 1.0
 	if _player.dragging != null:
 		h += 1.5
 	if _combat_t < 90.0:
 		h += 1.0
 	return h
+
+
+## Called by the level on load so one run's paperwork doesn't leak into the next.
+static func reset_shared() -> void:
+	_papers_checkers.clear()
+	_cleared_until = -1.0
+	_grace_until_ms = 0
+
+
+static func _someone_checking_papers() -> bool:
+	_papers_checkers = _papers_checkers.filter(func(g: Variant) -> bool: return is_instance_valid(g))
+	return not _papers_checkers.is_empty()
+
+
+func _zone_violation() -> bool:
+	return Visibility.in_restricted_zone(_player.global_position) and Game.clock_minutes > _cleared_until
+
+
+func _player_in_challenge_zone() -> bool:
+	return challenge_zone.has_volume() and challenge_zone.has_point(_player.global_position)
+
+
+## Say something out loud. Loud barks carry, and other soldiers who hear them come to look.
+func bark(kind: String) -> void:
+	if _bark_cd > 0.0 or state == State.DEAD or _player == null:
+		return
+	var lines: Array = BARKS.get(kind, [])
+	if lines.is_empty():
+		return
+	_bark_cd = 2.5
+	var line: Array = lines[randi() % lines.size()]
+	if kind in LOUD_BARKS:
+		Game.emit_noise(_eye_pos(), 76.0, self)
+	var d := _player.global_position.distance_to(global_position)
+	if d < 40.0 and _player.overlay and _player.overlay.has_method("subtitle"):
+		_player.overlay.subtitle(line[0], line[1], Hearing.loss() > 0.55 or d > 28.0)
+
+
+func wants_papers_from(p: Node3D) -> bool:
+	return state == State.CHALLENGE and global_position.distance_to(p.global_position) < 2.8
+
+
+func present_papers(p: Node3D) -> void:
+	if state != State.CHALLENGE:
+		return
+	_enter(State.INSPECT)
+	if p is Player:
+		(p as Player).busy = 3.6
+
+
+func _papers_verdict() -> void:
+	if _player.health < 60.0:
+		bark("wounded")
+		_combat_t = 0.0
+		alertness = 1.5
+		suspicion = 1.3
+		_enter(State.ALERTED)
+	elif Game.curfew_active():
+		bark("curfew")
+		_combat_t = 0.0
+		suspicion = 1.3
+		_enter(State.ALERTED)
+	elif _player.papers.get("zone_pass", false):
+		bark("pass")
+		_cleared_until = Game.clock_minutes + 30.0
+		suspicion = 0.0
+		_enter(State.PATROL)
+	else:
+		bark("no_pass")
+		_turned_away_t = 0.0
+		_grace_until_ms = Time.get_ticks_msec() + int(TURN_BACK_GRACE * 1000.0)
+		suspicion = 0.3
+		_enter(State.PATROL)
 
 
 func _perceive() -> void:
@@ -312,16 +429,36 @@ func _on_noise(pos: Vector3, loudness: float, source: Node) -> void:
 func _enter(s: State) -> void:
 	if state == s or state == State.DEAD:
 		return
+	var prev := state
 	state = s
 	_state_t = 0.0
+	if s == State.CHALLENGE or s == State.INSPECT:
+		if not _papers_checkers.has(self):
+			_papers_checkers.append(self)
+	else:
+		_papers_checkers.erase(self)
 	match s:
 		State.ALERTED:
 			_fire_t = randf_range(0.55, 0.95)   # reaction time before the first aimed shot
+			bark("curfew" if Game.curfew_active() and prev != State.INSPECT else "alerted")
 			_raise_alarm()
 		State.SEARCH:
 			_wait = randf_range(18.0, 32.0)
+			bark("search")
 		State.CURIOUS:
 			_wait = randf_range(2.5, 4.5)
+			bark("curious")
+		State.SUSPICIOUS:
+			bark("suspicious_seen" if _can_see_player else "suspicious")
+		State.PATROL:
+			if prev == State.SEARCH or prev == State.SUSPICIOUS:
+				bark("calm")
+		State.CHALLENGE:
+			_warned = false
+			_warn_t = 0.0
+			bark("challenge")
+		State.INSPECT:
+			bark("inspect")
 
 
 func _raise_alarm() -> void:
@@ -344,7 +481,38 @@ func _think(delta: float) -> void:
 		_last_seen_t += delta
 		suspicion = maxf(suspicion - delta * (0.05 if state == State.SEARCH else 0.09), 0.0)
 
+	var in_grace := _turned_away_t < TURN_BACK_GRACE
+	if checkpoint and in_grace and _zone_violation() and _turned_away_t > TURN_BACK_GRACE - 2.5 \
+			and _turned_away_t - delta <= TURN_BACK_GRACE - 2.5:
+		_bark_cd = 0.0
+		bark("warning")
+	# He remembers turning you back for a minute and just watches rather than asking again.
+	if checkpoint and _turned_away_t > 60.0 and state in [State.PATROL, State.CURIOUS, State.SUSPICIOUS] \
+			and _can_see_player and not hostile and (_player_in_challenge_zone() or _zone_violation()):
+		_enter(State.CHALLENGE)
+
 	match state:
+		State.CHALLENGE:
+			if hostile and suspicion >= 1.0:
+				_enter(State.ALERTED)
+			elif _zone_violation() and global_position.distance_to(_player.global_position) > 3.0 and _state_t > 2.0:
+				if not _warned:
+					_warned = true
+					_bark_cd = 0.0
+					bark("warning")
+				_warn_t += delta
+				if _warn_t > 2.5:
+					suspicion = 1.3
+					_enter(State.ALERTED)
+			elif not _player_in_challenge_zone() and not _zone_violation() and _state_t > 3.0:
+				_turned_away_t = 0.0
+				_enter(State.PATROL)
+			elif fmod(_state_t, 9.0) < delta and _state_t > 1.0:
+				_bark_cd = 0.0
+				bark("challenge")
+		State.INSPECT:
+			if _state_t > 3.5:
+				_papers_verdict()
 		State.PATROL:
 			if suspicion >= 0.25:
 				_enter(State.CURIOUS)
@@ -382,6 +550,8 @@ func _physics_process(delta: float) -> void:
 		return
 	_state_t += delta
 	_combat_t += delta
+	_turned_away_t += delta
+	_bark_cd = maxf(_bark_cd - delta, 0.0)
 	_whistle_cd = maxf(_whistle_cd - delta, 0.0)
 	_perceive_t -= delta
 	if _perceive_t <= 0.0:
@@ -407,9 +577,14 @@ func _physics_process(delta: float) -> void:
 				_wait = randf_range(3.0, 7.0) if patrol_points.size() > 1 else 9999.0
 			if patrol_points.size() <= 1 and _wait > 0.0:
 				face_dir = Vector3.FORWARD.rotated(Vector3.UP, _home_yaw)
+			if checkpoint and _turned_away_t < TURN_BACK_GRACE + 4.0 and _can_see_player:
+				face_dir = _player.global_position - global_position   # watching you go
 		State.CURIOUS:
 			_look_yaw = move_toward(_look_yaw, 0.0, delta * 2.0)
 			face_dir = target_pos - global_position
+		State.CHALLENGE, State.INSPECT:
+			_look_yaw = move_toward(_look_yaw, 0.0, delta * 2.0)
+			face_dir = _player.global_position - global_position
 		State.SUSPICIOUS:
 			_look_yaw = move_toward(_look_yaw, 0.0, delta * 2.0)
 			if _can_see_player and global_position.distance_to(_player.global_position) < 6.0:
@@ -584,6 +759,7 @@ func take_hit(damage: float, pos: Vector3, _dir: Vector3, attacker: Node) -> voi
 
 
 func _die(quiet := false) -> void:
+	_papers_checkers.erase(self)
 	state = State.DEAD
 	_state_t = 0.0
 	collision_layer = 0
@@ -659,6 +835,8 @@ func _check_bodies() -> void:
 		if not space.intersect_ray(q).is_empty():
 			continue
 		g.discovered = true
+		_bark_cd = 0.0
+		bark("body")
 		target_pos = bp
 		alertness = 1.5
 		_combat_t = 0.0
@@ -709,7 +887,7 @@ func _animate(delta: float) -> void:
 		_rifle.rotation = _rifle.rotation.lerp(Vector3(deg_to_rad(-8.0), 0.0, deg_to_rad(-6.0)), 1.0 - exp(-6.0 * delta))
 	# The torch points where he's looking, and at you once he's interested.
 	var torch_target := 0.0
-	if state in [State.CURIOUS, State.SUSPICIOUS, State.ALERTED] and _player:
+	if state in [State.CURIOUS, State.SUSPICIOUS, State.ALERTED, State.CHALLENGE, State.INSPECT] and _player:
 		var to_p := _player.global_position + Vector3.UP - _torch.global_position
 		var local := global_basis.inverse() * to_p
 		_torch.rotation.x = lerp_angle(_torch.rotation.x, atan2(local.y, Vector2(local.x, local.z).length()), 1.0 - exp(-4.0 * delta))
