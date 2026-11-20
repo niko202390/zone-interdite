@@ -57,22 +57,22 @@
   {
    "file": "alarm/whistle_trill_01.wav",
    "category": "alarm",
-   "duration_s": 1.7,
+   "duration_s": 4.94,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -6,
-   "description": "Pea whistle, one long trilled blast"
+   "description": "Pea whistle, three long trilled blasts with short breaths between, outdoor echo"
   },
   {
    "file": "alarm/whistle_trill_02.wav",
    "category": "alarm",
-   "duration_s": 2.24,
+   "duration_s": 3.54,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -6,
-   "description": "Pea whistle, two short blasts and one long"
+   "description": "Pea whistle, two short blasts and one long, outdoor echo"
   },
   {
    "file": "ambience/church_bell_toll.wav",
@@ -147,142 +147,142 @@
   {
    "file": "footsteps/cobble_run_01.wav",
    "category": "footsteps",
-   "duration_s": 0.4,
+   "duration_s": 0.34,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
-   "suggested_gain_db": -11,
-   "description": "Player leather-soled shoe on cobble, running"
+   "suggested_gain_db": -13,
+   "description": "Player leather-soled shoe on cobble, running (heavier, shorter, more scuff)"
   },
   {
    "file": "footsteps/cobble_run_02.wav",
    "category": "footsteps",
-   "duration_s": 0.4,
+   "duration_s": 0.34,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
-   "suggested_gain_db": -11,
-   "description": "Player leather-soled shoe on cobble, running"
+   "suggested_gain_db": -13,
+   "description": "Player leather-soled shoe on cobble, running (heavier, shorter, more scuff)"
   },
   {
    "file": "footsteps/cobble_run_03.wav",
    "category": "footsteps",
-   "duration_s": 0.4,
+   "duration_s": 0.34,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
-   "suggested_gain_db": -11,
-   "description": "Player leather-soled shoe on cobble, running"
+   "suggested_gain_db": -13,
+   "description": "Player leather-soled shoe on cobble, running (heavier, shorter, more scuff)"
   },
   {
    "file": "footsteps/cobble_run_04.wav",
    "category": "footsteps",
-   "duration_s": 0.4,
+   "duration_s": 0.34,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
-   "suggested_gain_db": -11,
-   "description": "Player leather-soled shoe on cobble, running"
+   "suggested_gain_db": -13,
+   "description": "Player leather-soled shoe on cobble, running (heavier, shorter, more scuff)"
   },
   {
    "file": "footsteps/cobble_walk_01.wav",
    "category": "footsteps",
-   "duration_s": 0.4,
+   "duration_s": 0.44,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on cobble, walking"
+   "description": "Player leather-soled shoe on cobble, walking: heel then toe, rain-wet"
   },
   {
    "file": "footsteps/cobble_walk_02.wav",
    "category": "footsteps",
-   "duration_s": 0.4,
+   "duration_s": 0.44,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on cobble, walking"
+   "description": "Player leather-soled shoe on cobble, walking: heel then toe, rain-wet"
   },
   {
    "file": "footsteps/cobble_walk_03.wav",
    "category": "footsteps",
-   "duration_s": 0.4,
+   "duration_s": 0.44,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on cobble, walking"
+   "description": "Player leather-soled shoe on cobble, walking: heel then toe, rain-wet"
   },
   {
    "file": "footsteps/cobble_walk_04.wav",
    "category": "footsteps",
-   "duration_s": 0.4,
+   "duration_s": 0.44,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on cobble, walking"
+   "description": "Player leather-soled shoe on cobble, walking: heel then toe, rain-wet"
   },
   {
    "file": "footsteps/cobble_walk_05.wav",
    "category": "footsteps",
-   "duration_s": 0.4,
+   "duration_s": 0.44,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on cobble, walking"
+   "description": "Player leather-soled shoe on cobble, walking: heel then toe, rain-wet"
   },
   {
    "file": "footsteps/cobble_walk_06.wav",
    "category": "footsteps",
-   "duration_s": 0.4,
+   "duration_s": 0.44,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on cobble, walking"
+   "description": "Player leather-soled shoe on cobble, walking: heel then toe, rain-wet"
   },
   {
    "file": "footsteps/grass_run_01.wav",
    "category": "footsteps",
-   "duration_s": 0.45,
+   "duration_s": 0.36,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
-   "suggested_gain_db": -11,
-   "description": "Player leather-soled shoe on grass, running"
+   "suggested_gain_db": -13,
+   "description": "Player leather-soled shoe on grass, running (heavier, shorter, more scuff)"
   },
   {
    "file": "footsteps/grass_run_02.wav",
    "category": "footsteps",
-   "duration_s": 0.45,
+   "duration_s": 0.36,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
-   "suggested_gain_db": -11,
-   "description": "Player leather-soled shoe on grass, running"
+   "suggested_gain_db": -13,
+   "description": "Player leather-soled shoe on grass, running (heavier, shorter, more scuff)"
   },
   {
    "file": "footsteps/grass_run_03.wav",
    "category": "footsteps",
-   "duration_s": 0.45,
+   "duration_s": 0.36,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
-   "suggested_gain_db": -11,
-   "description": "Player leather-soled shoe on grass, running"
+   "suggested_gain_db": -13,
+   "description": "Player leather-soled shoe on grass, running (heavier, shorter, more scuff)"
   },
   {
    "file": "footsteps/grass_run_04.wav",
    "category": "footsteps",
-   "duration_s": 0.45,
+   "duration_s": 0.36,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
-   "suggested_gain_db": -11,
-   "description": "Player leather-soled shoe on grass, running"
+   "suggested_gain_db": -13,
+   "description": "Player leather-soled shoe on grass, running (heavier, shorter, more scuff)"
   },
   {
    "file": "footsteps/grass_walk_01.wav",
@@ -292,7 +292,7 @@
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on grass, walking"
+   "description": "Player leather-soled shoe on grass, walking: heel then toe"
   },
   {
    "file": "footsteps/grass_walk_02.wav",
@@ -302,7 +302,7 @@
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on grass, walking"
+   "description": "Player leather-soled shoe on grass, walking: heel then toe"
   },
   {
    "file": "footsteps/grass_walk_03.wav",
@@ -312,7 +312,7 @@
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on grass, walking"
+   "description": "Player leather-soled shoe on grass, walking: heel then toe"
   },
   {
    "file": "footsteps/grass_walk_04.wav",
@@ -322,7 +322,7 @@
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on grass, walking"
+   "description": "Player leather-soled shoe on grass, walking: heel then toe"
   },
   {
    "file": "footsteps/grass_walk_05.wav",
@@ -332,7 +332,7 @@
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on grass, walking"
+   "description": "Player leather-soled shoe on grass, walking: heel then toe"
   },
   {
    "file": "footsteps/grass_walk_06.wav",
@@ -342,362 +342,362 @@
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on grass, walking"
+   "description": "Player leather-soled shoe on grass, walking: heel then toe"
   },
   {
    "file": "footsteps/gravel_run_01.wav",
    "category": "footsteps",
-   "duration_s": 0.45,
+   "duration_s": 0.38,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
-   "suggested_gain_db": -11,
-   "description": "Player leather-soled shoe on gravel, running"
+   "suggested_gain_db": -13,
+   "description": "Player leather-soled shoe on gravel, running (heavier, shorter, more scuff)"
   },
   {
    "file": "footsteps/gravel_run_02.wav",
    "category": "footsteps",
-   "duration_s": 0.45,
+   "duration_s": 0.38,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
-   "suggested_gain_db": -11,
-   "description": "Player leather-soled shoe on gravel, running"
+   "suggested_gain_db": -13,
+   "description": "Player leather-soled shoe on gravel, running (heavier, shorter, more scuff)"
   },
   {
    "file": "footsteps/gravel_run_03.wav",
    "category": "footsteps",
-   "duration_s": 0.45,
+   "duration_s": 0.38,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
-   "suggested_gain_db": -11,
-   "description": "Player leather-soled shoe on gravel, running"
+   "suggested_gain_db": -13,
+   "description": "Player leather-soled shoe on gravel, running (heavier, shorter, more scuff)"
   },
   {
    "file": "footsteps/gravel_run_04.wav",
    "category": "footsteps",
-   "duration_s": 0.45,
+   "duration_s": 0.38,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
-   "suggested_gain_db": -11,
-   "description": "Player leather-soled shoe on gravel, running"
+   "suggested_gain_db": -13,
+   "description": "Player leather-soled shoe on gravel, running (heavier, shorter, more scuff)"
   },
   {
    "file": "footsteps/gravel_walk_01.wav",
    "category": "footsteps",
-   "duration_s": 0.45,
+   "duration_s": 0.46,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on gravel, walking"
+   "description": "Player leather-soled shoe on gravel, walking: heel then toe"
   },
   {
    "file": "footsteps/gravel_walk_02.wav",
    "category": "footsteps",
-   "duration_s": 0.45,
+   "duration_s": 0.46,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on gravel, walking"
+   "description": "Player leather-soled shoe on gravel, walking: heel then toe"
   },
   {
    "file": "footsteps/gravel_walk_03.wav",
    "category": "footsteps",
-   "duration_s": 0.45,
+   "duration_s": 0.46,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on gravel, walking"
+   "description": "Player leather-soled shoe on gravel, walking: heel then toe"
   },
   {
    "file": "footsteps/gravel_walk_04.wav",
    "category": "footsteps",
-   "duration_s": 0.45,
+   "duration_s": 0.46,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on gravel, walking"
+   "description": "Player leather-soled shoe on gravel, walking: heel then toe"
   },
   {
    "file": "footsteps/gravel_walk_05.wav",
    "category": "footsteps",
-   "duration_s": 0.45,
+   "duration_s": 0.46,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on gravel, walking"
+   "description": "Player leather-soled shoe on gravel, walking: heel then toe"
   },
   {
    "file": "footsteps/gravel_walk_06.wav",
    "category": "footsteps",
-   "duration_s": 0.45,
+   "duration_s": 0.46,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on gravel, walking"
+   "description": "Player leather-soled shoe on gravel, walking: heel then toe"
   },
   {
    "file": "footsteps/mud_run_01.wav",
    "category": "footsteps",
-   "duration_s": 0.55,
+   "duration_s": 0.36,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
-   "suggested_gain_db": -11,
-   "description": "Player leather-soled shoe on mud, running"
+   "suggested_gain_db": -13,
+   "description": "Player leather-soled shoe on mud, running (heavier, shorter, more scuff)"
   },
   {
    "file": "footsteps/mud_run_02.wav",
    "category": "footsteps",
-   "duration_s": 0.55,
+   "duration_s": 0.36,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
-   "suggested_gain_db": -11,
-   "description": "Player leather-soled shoe on mud, running"
+   "suggested_gain_db": -13,
+   "description": "Player leather-soled shoe on mud, running (heavier, shorter, more scuff)"
   },
   {
    "file": "footsteps/mud_run_03.wav",
    "category": "footsteps",
-   "duration_s": 0.55,
+   "duration_s": 0.36,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
-   "suggested_gain_db": -11,
-   "description": "Player leather-soled shoe on mud, running"
+   "suggested_gain_db": -13,
+   "description": "Player leather-soled shoe on mud, running (heavier, shorter, more scuff)"
   },
   {
    "file": "footsteps/mud_run_04.wav",
    "category": "footsteps",
-   "duration_s": 0.55,
+   "duration_s": 0.36,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
-   "suggested_gain_db": -11,
-   "description": "Player leather-soled shoe on mud, running"
+   "suggested_gain_db": -13,
+   "description": "Player leather-soled shoe on mud, running (heavier, shorter, more scuff)"
   },
   {
    "file": "footsteps/mud_walk_01.wav",
    "category": "footsteps",
-   "duration_s": 0.55,
+   "duration_s": 0.48,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on mud, walking"
+   "description": "Player leather-soled shoe on mud, walking: heel then toe"
   },
   {
    "file": "footsteps/mud_walk_02.wav",
    "category": "footsteps",
-   "duration_s": 0.55,
+   "duration_s": 0.48,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on mud, walking"
+   "description": "Player leather-soled shoe on mud, walking: heel then toe"
   },
   {
    "file": "footsteps/mud_walk_03.wav",
    "category": "footsteps",
-   "duration_s": 0.55,
+   "duration_s": 0.48,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on mud, walking"
+   "description": "Player leather-soled shoe on mud, walking: heel then toe"
   },
   {
    "file": "footsteps/mud_walk_04.wav",
    "category": "footsteps",
-   "duration_s": 0.55,
+   "duration_s": 0.48,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on mud, walking"
+   "description": "Player leather-soled shoe on mud, walking: heel then toe"
   },
   {
    "file": "footsteps/mud_walk_05.wav",
    "category": "footsteps",
-   "duration_s": 0.55,
+   "duration_s": 0.48,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on mud, walking"
+   "description": "Player leather-soled shoe on mud, walking: heel then toe"
   },
   {
    "file": "footsteps/mud_walk_06.wav",
    "category": "footsteps",
-   "duration_s": 0.55,
+   "duration_s": 0.48,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on mud, walking"
+   "description": "Player leather-soled shoe on mud, walking: heel then toe"
   },
   {
    "file": "footsteps/npc_hobnail_cobble_01.wav",
    "category": "footsteps",
-   "duration_s": 0.5,
+   "duration_s": 0.48,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -12,
-   "description": "German hobnailed jackboot on cobbles: heel iron clack and studs"
+   "description": "German hobnailed jackboot on wet cobbles: heel iron clack, studs, iron scrape"
   },
   {
    "file": "footsteps/npc_hobnail_cobble_02.wav",
    "category": "footsteps",
-   "duration_s": 0.5,
+   "duration_s": 0.48,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -12,
-   "description": "German hobnailed jackboot on cobbles: heel iron clack and studs"
+   "description": "German hobnailed jackboot on wet cobbles: heel iron clack, studs, iron scrape"
   },
   {
    "file": "footsteps/npc_hobnail_cobble_03.wav",
    "category": "footsteps",
-   "duration_s": 0.5,
+   "duration_s": 0.48,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -12,
-   "description": "German hobnailed jackboot on cobbles: heel iron clack and studs"
+   "description": "German hobnailed jackboot on wet cobbles: heel iron clack, studs, iron scrape"
   },
   {
    "file": "footsteps/npc_hobnail_cobble_04.wav",
    "category": "footsteps",
-   "duration_s": 0.5,
+   "duration_s": 0.48,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -12,
-   "description": "German hobnailed jackboot on cobbles: heel iron clack and studs"
+   "description": "German hobnailed jackboot on wet cobbles: heel iron clack, studs, iron scrape"
   },
   {
    "file": "footsteps/npc_hobnail_cobble_05.wav",
    "category": "footsteps",
-   "duration_s": 0.5,
+   "duration_s": 0.48,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -12,
-   "description": "German hobnailed jackboot on cobbles: heel iron clack and studs"
+   "description": "German hobnailed jackboot on wet cobbles: heel iron clack, studs, iron scrape"
   },
   {
    "file": "footsteps/npc_hobnail_cobble_06.wav",
    "category": "footsteps",
-   "duration_s": 0.5,
+   "duration_s": 0.48,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -12,
-   "description": "German hobnailed jackboot on cobbles: heel iron clack and studs"
+   "description": "German hobnailed jackboot on wet cobbles: heel iron clack, studs, iron scrape"
   },
   {
    "file": "footsteps/wood_run_01.wav",
    "category": "footsteps",
-   "duration_s": 0.5,
+   "duration_s": 0.34,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
-   "suggested_gain_db": -11,
-   "description": "Player leather-soled shoe on wood, running"
+   "suggested_gain_db": -13,
+   "description": "Player leather-soled shoe on wood, running (heavier, shorter, more scuff)"
   },
   {
    "file": "footsteps/wood_run_02.wav",
    "category": "footsteps",
-   "duration_s": 0.5,
+   "duration_s": 0.34,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
-   "suggested_gain_db": -11,
-   "description": "Player leather-soled shoe on wood, running"
+   "suggested_gain_db": -13,
+   "description": "Player leather-soled shoe on wood, running (heavier, shorter, more scuff)"
   },
   {
    "file": "footsteps/wood_run_03.wav",
    "category": "footsteps",
-   "duration_s": 0.5,
+   "duration_s": 0.34,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
-   "suggested_gain_db": -11,
-   "description": "Player leather-soled shoe on wood, running"
+   "suggested_gain_db": -13,
+   "description": "Player leather-soled shoe on wood, running (heavier, shorter, more scuff)"
   },
   {
    "file": "footsteps/wood_run_04.wav",
    "category": "footsteps",
-   "duration_s": 0.5,
+   "duration_s": 0.34,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
-   "suggested_gain_db": -11,
-   "description": "Player leather-soled shoe on wood, running"
+   "suggested_gain_db": -13,
+   "description": "Player leather-soled shoe on wood, running (heavier, shorter, more scuff)"
   },
   {
    "file": "footsteps/wood_walk_01.wav",
    "category": "footsteps",
-   "duration_s": 0.5,
+   "duration_s": 0.48,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on wood, walking"
+   "description": "Player leather-soled shoe on wood, walking: heel then toe"
   },
   {
    "file": "footsteps/wood_walk_02.wav",
    "category": "footsteps",
-   "duration_s": 0.5,
+   "duration_s": 0.48,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on wood, walking"
+   "description": "Player leather-soled shoe on wood, walking: heel then toe"
   },
   {
    "file": "footsteps/wood_walk_03.wav",
    "category": "footsteps",
-   "duration_s": 0.5,
+   "duration_s": 0.48,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on wood, walking"
+   "description": "Player leather-soled shoe on wood, walking: heel then toe"
   },
   {
    "file": "footsteps/wood_walk_04.wav",
    "category": "footsteps",
-   "duration_s": 0.5,
+   "duration_s": 0.48,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on wood, walking"
+   "description": "Player leather-soled shoe on wood, walking: heel then toe"
   },
   {
    "file": "footsteps/wood_walk_05.wav",
    "category": "footsteps",
-   "duration_s": 0.5,
+   "duration_s": 0.48,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
    "suggested_gain_db": -16,
-   "description": "Player leather-soled shoe on wood, walking"
+   "description": "Player leather-soled shoe on wood, walking: heel then toe"
   },
   {
    "file": "footsteps/wood_walk_06.wav",
    "category": "footsteps",
-   "duration_s": 0.85,
+   "duration_s": 0.48,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
@@ -1127,7 +1127,7 @@
   {
    "file": "weapons/p38_shot_01.wav",
    "category": "weapons",
-   "duration_s": 0.75,
+   "duration_s": 0.7,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
@@ -1137,7 +1137,7 @@
   {
    "file": "weapons/p38_shot_02.wav",
    "category": "weapons",
-   "duration_s": 0.75,
+   "duration_s": 0.7,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
@@ -1147,7 +1147,7 @@
   {
    "file": "weapons/p38_shot_03.wav",
    "category": "weapons",
-   "duration_s": 0.75,
+   "duration_s": 0.7,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
@@ -1157,7 +1157,7 @@
   {
    "file": "weapons/p38_shot_04.wav",
    "category": "weapons",
-   "duration_s": 0.75,
+   "duration_s": 0.7,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
@@ -1187,7 +1187,7 @@
   {
    "file": "weapons/rifle_distant_01.wav",
    "category": "weapons",
-   "duration_s": 4.0,
+   "duration_s": 4.5,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
@@ -1197,7 +1197,7 @@
   {
    "file": "weapons/rifle_distant_02.wav",
    "category": "weapons",
-   "duration_s": 4.0,
+   "duration_s": 4.5,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
@@ -1207,7 +1207,7 @@
   {
    "file": "weapons/rifle_distant_03.wav",
    "category": "weapons",
-   "duration_s": 4.0,
+   "duration_s": 4.5,
    "channels": 1,
    "loop": false,
    "sample_rate": 44100,
@@ -1217,7 +1217,7 @@
   {
    "file": "weapons/tail_interior_01.wav",
    "category": "weapons",
-   "duration_s": 1.8,
+   "duration_s": 1.5,
    "channels": 2,
    "loop": false,
    "sample_rate": 44100,
@@ -1227,7 +1227,7 @@
   {
    "file": "weapons/tail_street_01.wav",
    "category": "weapons",
-   "duration_s": 2.4,
+   "duration_s": 3.2,
    "channels": 2,
    "loop": false,
    "sample_rate": 44100,
@@ -1237,7 +1237,7 @@
   {
    "file": "weapons/tail_street_02.wav",
    "category": "weapons",
-   "duration_s": 2.4,
+   "duration_s": 3.2,
    "channels": 2,
    "loop": false,
    "sample_rate": 44100,

@@ -538,7 +538,8 @@ func _build_houses() -> void:
 	seed(1943)
 	_row(-1, -62.0, 52.0, ["house_bourg_int", "house_cafe_int", "house_bourg", "house_longere_int", "house_bourg"],
 		[Vector2(-30.0, -26.0), Vector2(6.0, 9.0)])
-	_row(1, -62.0, 40.0, ["house_longere", "house_bourg_int", "house_bourg", "house_cafe", "house_bourg_int"],
+	# One café in the bourg (the enterable one, opposite); this side gets another lived-in house.
+	_row(1, -62.0, 40.0, ["house_longere", "house_bourg_int", "house_bourg", "house_bourg_int", "house_bourg_int"],
 		[Vector2(-6.0, 24.0), Vector2(26.0, 29.0)])
 
 
@@ -589,7 +590,7 @@ func _build_harbour() -> void:
 	for p in [Vector3(-10.0, 0, 88.5), Vector3(-6.0, 0, 89.2), Vector3(30.0, 0, 88.0)]:
 		spawn("crate_wood", p, randf_range(0.0, 90.0), "wood", Vector3(0.8, 0.6, 0.6))
 	spawn("barrel_wood", Vector3(8.0, 0, 89.0), 0.0, "wood", Vector3(0.6, 0.9, 0.6))
-	_notable(HOTEL + Vector3(0, 4.0, -7.0), "The Hôtel de la Plage. Aerials on the roof, a sentry on the door. The naval signals post.",
+	_hotel_notable = _notable(HOTEL + Vector3(0, 4.0, -7.0), "The Hôtel de la Plage. Aerials on the roof, a sentry on the door. The naval signals post.",
 		"The signals post is in the Hôtel de la Plage, on the quay. One sentry on the front door. There must be a back way in.", 40.0)
 
 
@@ -887,55 +888,76 @@ func _build_junction_box(pole: Node3D) -> void:
 	it.global_position = box.global_position
 
 
-const NOTEBOOK := """Plouzennec. Février.
-
-The harbour is past the north checkpoint,
-inside the zone interdite. My carte d'identité
-is good for town. I have no zone pass.
-
-TO DO
-  Get past the checkpoint and reach the
-  shore beyond it. Don't get taken.
-
-WHAT I KNOW
-  - Sentry at the box, with a field telephone.
-    A second man walks the street.
-  - The PTT line runs up the east side on poles.
-    Junction box at the foot of one of them.
-    Cut it and he can't call anyone.
-  - Fields and the river to the east and west.
-    Dark out there, but the ground is open.
-  - After 22:00 it's curfew. Anyone seen is shot.
-  - Never stand against the sky.
-  - Yann's café has a wireless. London speaks
-    at 19:30 and 21:15. If they read "le chat
-    de la voisine", the boat comes tonight.
-
-Pistol: P.38, 8 rounds + 2 spare magazines.
-Every shot carries a long way."""
+## The journal at the start of the mission: what to do, and what's already known.
+const TASKS := [
+	["checkpoint", "Get past the checkpoint into the harbour zone. Papers, a disguise, or round it."],
+	["signals_post", "Find the Kriegsmarine signals post."],
+	["bbc", "Listen to London at 19:30 or 21:15. Is the boat coming?"],
+	["keys", "Copy the key sheets. Leave no trace."],
+	["cove", "Reach the Anse de Kerlo for the boat."],
+]
+const INTEL := [
+	"Sentry at the checkpoint box, with a field telephone. A second man walks the street.",
+	"The PTT line runs up the east side on poles. Cut it at the junction box and he can't call anyone.",
+	"Curfew 22:00. Anyone out after that is shot.",
+	"Never stand against the sky.",
+	"Yann's café has a wireless. If London reads \"le chat de la voisine\", the boat comes tonight.",
+	"P.38: eight rounds, two spare magazines. Every shot carries a long way.",
+]
+var _hotel_notable: Notable
+var _task_t := 0.0
+var _tab_taught := false
 
 
 func _setup_test_objective() -> void:
-	player.overlay.notebook_text = NOTEBOOK
+	var j := player.overlay.journal as Journal
+	j.title = "Plouzennec, février"
+	for t in TASKS:
+		j.add_task(t[0], t[1])
+	for s in INTEL:
+		j.add_intel(s)
+	j._fresh_intel.clear()
 	var shore := Area3D.new()
 	shore.name = "ShoreObjective"
 	shore.collision_mask = Game.LAYER_PLAYER
 	var cs := CollisionShape3D.new()
 	var box := BoxShape3D.new()
-	box.size = Vector3(400.0, 20.0, 30.0)
+	box.size = Vector3(26.0, 20.0, 26.0)
 	cs.shape = box
 	shore.add_child(cs)
 	add_child(shore)
-	box.size = Vector3(26.0, 20.0, 26.0)
 	shore.position = cove_position()
 	shore.body_entered.connect(func(b: Node) -> void:
 		if b == player and not player.dead:
 			player.note("The Anse de Kerlo. Shingle, and the sea. You made it past them, for now. (Test objective complete.)", 8.0)
-			player.overlay.notebook_text = NOTEBOOK.replace("TO DO", "DONE: reached the cove at " + Game.clock_text() + ".
-
-TO DO (next build)"))
+			_task_done("cove"))
+	# Taught as you go, not in the journal: a word about the watch and compass, and the journal itself.
 	get_tree().create_timer(2.5, false).timeout.connect(func() -> void:
-		player.note("Plouzennec, 17:40. Press J for your notebook.", 6.0))
+		player.note("Plouzennec, 17:40. Your notes are in your coat. (J)", 6.0))
+	get_tree().create_timer(14.0, false).timeout.connect(func() -> void:
+		if not _tab_taught:
+			player.note("The bourg is north, past the church spire. (Hold Tab: watch and compass)", 6.0))
+	player.overlay.instruments.first_used.connect(func() -> void: _tab_taught = true)
+
+
+## A task done: crossed out in the journal, and a quiet word that it's been noted.
+func _task_done(id: String) -> void:
+	var j := player.overlay.journal as Journal
+	if j.complete(id):
+		SoundLib.play_2d("ui/pen_scratch_loop", -18.0)
+
+
+## Checked a couple of times a second: where the player is and what they've found.
+func _update_tasks(delta: float) -> void:
+	_task_t -= delta
+	if _task_t > 0.0 or player == null:
+		return
+	_task_t = 0.5
+	var p := player.global_position
+	if p.z > 54.0 and absf(p.x) < 50.0 and p.z < 95.0:
+		_task_done("checkpoint")
+	if _hotel_notable and _hotel_notable.noticed:
+		_task_done("signals_post")
 
 
 func _notable(pos: Vector3, thought: String, lead := "", radius := 12.0) -> Notable:
@@ -1176,6 +1198,7 @@ func _place_wireless() -> void:
 	w.rotation.y = cafe.rotation.y
 	w.message_heard.connect(func(_t: String) -> void:
 		player.note("That's it. The boat comes tonight: 02:30, the Anse de Kerlo.", 6.0)
+		_task_done("bbc")
 		player.overlay.add_lead("The BBC read our message. The boat comes at 02:30 to the Anse de Kerlo.")
 		, CONNECT_ONE_SHOT)
 	_notable(best + Vector3.UP * 0.2, "A wireless set, tuned to London by the look of the dial.",
@@ -1423,6 +1446,7 @@ func _build_bounds() -> void:
 
 func _process(_delta: float) -> void:
 	_update_searchlight()
+	_update_tasks(_delta)
 	if _rain and player:
 		_rain.global_position = player.global_position + Vector3(0, 11, 0) + player.velocity * 0.6
 	var t := Time.get_ticks_msec() / 1000.0

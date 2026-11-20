@@ -519,8 +519,8 @@ def ir_build(rng, length, taps, late, stereo=True, mod=None):
     return ir if stereo else ir[:, 0]
 
 
-def ir_street(rng):
-    """Narrow granite street: facade slapbacks, flutter between facades, far houses, rolling tail."""
+def ir_street_drips(rng):
+    """(Drips ambience) Narrow granite street: facade slapbacks, flutter between facades, far houses, rolling tail."""
     c = 343.0
     dl, dr = rng.uniform(3.0, 5.5), rng.uniform(4.0, 7.5)
     W = dl + dr
@@ -538,16 +538,6 @@ def ir_street(rng):
     late = dict(start=0.04, fade=0.08, gain=0.6,
                 t60=[(125, 1.9), (250, 1.7), (500, 1.4), (1000, 1.1), (2000, 0.8), (4000, 0.5), (8000, 0.3), (16000, 0.15)])
     return ir_build(rng, 2.6, taps, late, mod=(4.0, 0.35))
-
-
-def ir_interior(rng):
-    taps = []
-    for _ in range(36):
-        t = rng.uniform(0.002, 0.024)
-        taps.append(dict(t=t, g=rng.uniform(0.25, 0.7) * (1.0 - t * 18), lp=rng.uniform(5000, 12000), pan=rng.uniform(-1, 1)))
-    late = dict(start=0.006, fade=0.018, gain=3.0,
-                t60=[(125, 1.5), (250, 1.35), (500, 1.15), (1000, 1.0), (2000, 0.8), (4000, 0.55), (8000, 0.35), (16000, 0.2)])
-    return ir_build(rng, 1.9, taps, late)
 
 
 def ir_field(rng):
@@ -637,60 +627,145 @@ def read_wav(path):
 # Sound designs: weapons (P38)
 # =============================================================================
 
+def sub_thump(n, t0, f_hi, f_lo, tau_f, tau, attack=0.0008):
+    """Low-frequency punch: a sine that drops from f_hi to f_lo while it decays (the chest thump of a shot)."""
+    t = np.maximum(tax(n) - t0, 0)
+    f = f_lo + (f_hi - f_lo) * np.exp(-t / tau_f)
+    return np.sin(TAU * phase_cycles(f)) * env_ad(n, attack, tau, delay=t0, curve=1.5)
+
+
+def report_layers(rng, n, t0, td, jet_tau, bang_tau, bang_fc, sub, punch_tau):
+    """The parts of a muzzle report, each peak-normalised: shock front, gas jet, bang body, sub thump, low punch."""
+    crack = filt(friedlander(n, td, b=rng.uniform(1.4, 2.2), delay=t0), lambda f: r_hp(f, 35, 2))
+    jet = filt(white(rng, n) * env_ad(n, 0.0001, jet_tau, delay=t0),
+               lambda f: r_bp(f, 700, 15000, 2) * r_peak(f, rng.uniform(2400, 4000), 5.0, 1.2))
+    bang = filt(white(rng, n) * env_ad(n, 0.0004, bang_tau, delay=t0),
+                lambda f: r_bp(f, 110, 3200, 2) * r_peak(f, bang_fc, 6.0, 1.3))
+    thump = sub_thump(n, t0, *sub)
+    punch = filt(white(rng, n) * env_ad(n, 0.0012, punch_tau, delay=t0), lambda f: r_bp(f, 45, 240, 2))
+    return [pk(v) for v in (crack, jet, bang, thump, punch)]
+
+
+def ground_reflect(x, delay, gain, fc=6000.0):
+    y = np.zeros(len(x))
+    place(y, filt(x, lambda f: r_lp(f, fc, 1)), delay, gain)
+    return x + y
+
+
+def shape_shot(x, t_sat, drive=1.8, push=1.5):
+    """Saturate only the first few tens of ms (the blast), so the decay keeps its natural shape."""
+    n = len(x)
+    w = env_pts(n, [(0, 1.0), (t_sat, 1.0), (t_sat + 0.03, 0.0)])
+    xs = pk(x)
+    return w * sat(xs * push, drive=drive, asym=0.04) / math.tanh(drive * push) + (1 - w) * xs
+
+
 def blast_core(rng, n, mech=True, level_mech=0.2):
-    """The 9 mm muzzle blast as heard by the shooter. Returns float mono, not normalised."""
-    t = tax(n)
-    td = rng.uniform(0.00045, 0.0008)
-    fr = filt(friedlander(n, td, b=rng.uniform(1.3, 2.0)), lambda f: r_hp(f, 28, 2))
-    crack = filt(white(rng, n) * env_ad(n, 0.00005, rng.uniform(0.0018, 0.0032)),
-                 lambda f: r_bp(f, 1100, 12000, 2) * r_peak(f, 3600, 4.0, 1.4))
-    blast = filt(white(rng, n) * env_ad(n, 0.0003, rng.uniform(0.010, 0.018)),
-                 lambda f: r_bp(f, 170, 4200, 2) * r_peak(f, 950, 5.0, 1.5))
-    f0, f1 = rng.uniform(140, 190), rng.uniform(46, 60)
-    fq = f1 + (f0 - f1) * np.exp(-t / 0.032)
-    body = np.sin(TAU * phase_cycles(fq)) * env_ad(n, 0.0007, rng.uniform(0.035, 0.05))
-    rumble = filt(white(rng, n) * env_ad(n, 0.002, rng.uniform(0.04, 0.06)), lambda f: r_bp(f, 32, 430, 2))
-    chuff = filt(white(rng, n) * env_ad(n, 0.003, 0.03, delay=0.001), lambda f: r_bp(f, 280, 1500, 1))
-    nf = np.zeros(n)
-    for d, g in [(0.0011, 0.38), (0.0029, 0.26), (0.0054, 0.18), (0.0083, 0.1)]:
-        place(nf, filt(pk(blast)[:N(0.08)], lambda f: r_lp(f, 7000, 1)), d, g)
-    mix = (1.0 * pk(fr) + 0.6 * pk(crack) + 0.9 * pk(blast) + 0.4 * pk(body)
-           + 0.35 * pk(rumble) + 0.35 * pk(chuff) + 0.5 * nf)
+    """The 9 mm muzzle report as heard by the shooter (float mono, not normalised). Used for the P38 and as tail excitation."""
+    t0 = 0.002
+    crack, jet, bang, thump, punch = report_layers(
+        rng, n, t0, rng.uniform(0.00035, 0.0006), rng.uniform(0.003, 0.006), rng.uniform(0.012, 0.02),
+        rng.uniform(500, 900), (rng.uniform(110, 140), rng.uniform(52, 66), 0.01, rng.uniform(0.028, 0.04)), 0.025)
+    mix = 1.0 * crack + 0.55 * jet + 0.8 * bang + 0.4 * thump + 0.3 * punch
+    mix = ground_reflect(mix, t0 + rng.uniform(0.0035, 0.005), 0.35)
     if mech:
+        # P38 cycle: barrel unlocks, slide slams the rear of its travel, rides the rails back, and returns to battery.
         m = np.zeros(n)
-        t_rear = rng.uniform(0.008, 0.012)
-        t_bat = t_rear + rng.uniform(0.013, 0.02)
-        place(m, metal_hit(rng, 0.12, rng.uniform(1900, 2400), tau=(0.035, 0.006)), t_rear, 0.6)
-        place(m, metal_hit(rng, 0.2, rng.uniform(1450, 1850), tau=(0.055, 0.008)), t_bat, 1.0)
-        m += 0.35 * pk(filt(white(rng, n) * env_ad(n, 0.0004, 0.01, delay=t_bat), lambda f: r_bp(f, 2000, 9000)))
+        t_unl = t0 + rng.uniform(0.002, 0.004)
+        t_rear = t0 + rng.uniform(0.010, 0.014)
+        t_bat = t_rear + rng.uniform(0.018, 0.028)
+        place(m, metal_hit(rng, 0.05, rng.uniform(4200, 5600), n_modes=3, tau=(0.008, 0.003)), t_unl, 0.25)
+        place(m, metal_hit(rng, 0.12, rng.uniform(1900, 2500), tau=(0.03, 0.006)), t_rear, 0.75)
+        place(m, thud(rng, N(0.06), 0.008, hi=500), t_rear, 0.3)
+        m += scuff(rng, n, t_rear + 0.002, t_bat - t_rear - 0.003, 0.18, rng.uniform(2800, 3800), bw_rel=0.3, lo=1500, hi=11000)
+        place(m, metal_hit(rng, 0.12, rng.uniform(1400, 1800), tau=(0.022, 0.005)), t_bat, 1.0)
+        place(m, thud(rng, N(0.08), 0.01, hi=450), t_bat, 0.45)
+        case = pk(modal_ir(N(0.12), [rng.uniform(4200, 5200) * r for r in BRASS_CASE], [0.03, 0.022, 0.015, 0.01],
+                           [1, 0.6, 0.4, 0.25], rng))
+        place(m, case, t_rear + rng.uniform(0.002, 0.008), 0.18)
         mix = mix + level_mech * pk(m)
     return mix
 
 
 def p38_shot(rng):
-    n = N(0.75)
-    x = blast_core(rng, n, mech=True, level_mech=0.22)
-    # Saturate only the first ~30 ms (the blast), so the decay keeps its natural shape.
-    w = env_pts(n, [(0, 1.0), (0.02, 1.0), (0.05, 0.0)])
-    xs = pk(x)
-    x = w * sat(xs * 1.5, drive=1.8, asym=0.05) / math.tanh(1.8 * 1.5) + (1 - w) * xs
-    x = filt(x, lambda f: r_hp(f, 25, 2) * r_peak(f, 110, -4.0, 1.5) * r_peak(f, 850, 4.0, 2.0))
-    x = limit(normalize(x, 2.0), -1.0, release=0.03)
-    return fade(x, 0, 0.08)
+    n = N(0.7)
+    x = blast_core(rng, n, mech=True, level_mech=0.3)
+    x = shape_shot(x, 0.015, drive=1.6, push=1.4)
+    x = filt(x, lambda f: r_hp(f, 25, 2) * r_peak(f, 160, -2.0, 1.5) * r_peak(f, 1100, 2.0, 2.0))
+    x = limit(normalize(x, 1.0), -1.5, release=0.03)
+    return fade(x, 0, 0.1)
+
+
+def ir_street(rng, length=3.2):
+    """Narrow granite street: slapback off both facades (15-40 ms), flutter between them that smears as it decays,
+    echoes off far houses, then a long rolling, thunder-like roll off the town and the hillside."""
+    c = 343.0
+    dl, dr = rng.uniform(2.8, 4.5), rng.uniform(3.5, 6.5)
+    W = dl + dr
+    taps = [dict(t=2 * dl / c, g=0.75, lp=10000, pan=-0.8), dict(t=2 * dr / c, g=0.62, lp=9500, pan=0.8)]
+    for side, d0, p in ((0, dl, -0.6), (1, dr, 0.6)):
+        for k in range(1, 15):
+            t = (2 * d0 + k * 2 * W) / c * rng.uniform(0.985, 1.015)
+            g = 0.5 * 0.76 ** k
+            lp = max(1200.0, 9000 * 0.84 ** k)
+            pp = p if k % 2 == 0 else -p
+            taps.append(dict(t=t, g=g, lp=lp, pan=pp))
+            for _ in range(min(4, k)):   # each bounce spreads a little more (rough stone, windows, doorways)
+                taps.append(dict(t=t + rng.normal(0, 0.0006 * k ** 0.6), g=g * rng.uniform(0.15, 0.4), lp=lp * 0.8, pan=pp * 0.6))
+    for _ in range(8):                   # oblique paths: doorways, the street corner, a cart
+        taps.append(dict(t=rng.uniform(0.04, 0.12), g=rng.uniform(0.07, 0.16), lp=rng.uniform(3500, 6000), pan=rng.uniform(-1, 1)))
+    for _ in range(12):                  # far facades, the church, the hill behind the town: big smeared echoes
+        t = rng.uniform(0.15, 1.6)
+        g = rng.uniform(0.06, 0.2) * math.exp(-t / 1.2)
+        lp = rng.uniform(1200, 3500) * math.exp(-t / 3.0)
+        p = rng.uniform(-0.9, 0.9)
+        for _ in range(int(rng.integers(3, 6))):
+            taps.append(dict(t=t + rng.uniform(0, 0.025), g=g * rng.uniform(0.3, 0.7), lp=lp, pan=p + rng.uniform(-0.15, 0.15)))
+    late = dict(start=0.04, fade=0.12, gain=0.45,
+                t60=[(125, 2.6), (250, 2.2), (500, 1.7), (1000, 1.2), (2000, 0.8), (4000, 0.5), (8000, 0.3), (16000, 0.15)])
+    ir = ir_build(rng, length, taps, late, mod=(3.0, 0.35))
+    # rolling thunder: low, slow swells as echoes return from further and further away
+    thunder = ir_build(rng, length, [], dict(start=0.15, fade=0.35, gain=1.0,
+                       t60=[(125, 4.2), (250, 3.6), (500, 2.6), (1000, 1.6), (2000, 0.9), (4000, 0.4), (8000, 0.2)]),
+                       mod=(1.5, 0.6))
+    t = tax(len(thunder))
+    sw = np.zeros(len(t))
+    for _ in range(int(rng.integers(3, 6))):
+        sw += rng.uniform(0.6, 1.6) * np.exp(-0.5 * ((t - rng.uniform(0.4, 2.6)) / rng.uniform(0.15, 0.4)) ** 2)
+    thunder = filt(thunder * (0.4 + sw)[:, None], lambda f: r_lp(f, 1800, 2))
+    e_ir = float((ir ** 2).sum())
+    thunder *= math.sqrt(1.1 * e_ir / (float((thunder ** 2).sum()) + 1e-12))
+    return ir + thunder
+
+
+def ir_interior(rng, length=1.4):
+    """Small stone room: very dense early reflections, a short bright-ish tail and a boomy low end (room modes)."""
+    taps = []
+    for _ in range(70):
+        t = rng.uniform(0.0015, 0.04)
+        taps.append(dict(t=t, g=rng.uniform(0.25, 0.7) * math.exp(-t / 0.02), lp=rng.uniform(5000, 12000), pan=rng.uniform(-1, 1)))
+    late = dict(start=0.004, fade=0.012, gain=4.0,
+                t60=[(125, 1.1), (250, 0.95), (500, 0.8), (1000, 0.7), (2000, 0.6), (4000, 0.45), (8000, 0.3), (16000, 0.18)])
+    ir = ir_build(rng, length, taps, late)
+    n = len(ir)
+    modes = modal_ir(n, [rng.uniform(42, 55), rng.uniform(62, 80), rng.uniform(88, 115), rng.uniform(125, 160)],
+                     [0.11, 0.09, 0.07, 0.05], [1.0, 0.8, 0.6, 0.45], rng, delay=0.002)
+    modes *= math.sqrt(0.08 * float((ir ** 2).sum()) / (2 * float((modes ** 2).sum()) + 1e-12))
+    return ir + modes[:, None]
 
 
 def shot_tail(rng, kind):
     n = N(0.5)
-    hp = 180 if kind == "street" else 80
-    exc = filt(blast_core(rng, n, mech=False), lambda f: r_lp(f, 9000, 1) * r_hp(f, hp, 2) * r_peak(f, 1200, 4.0, 2.0))
+    hp = 150 if kind == "street" else 60
+    exc = filt(blast_core(rng, n, mech=False), lambda f: r_lp(f, 10000, 1) * r_hp(f, hp, 2) * r_peak(f, 1200, 3.0, 2.0))
     ir = {"street": ir_street, "interior": ir_interior}[kind](rng)
     wet = conv(exc, ir)
-    L = N(2.4 if kind == "street" else 1.8)
+    L = N(3.2 if kind == "street" else 1.5)
     wet = pad_to(wet, L)
-    wet = filt(wet, lambda f: r_hp(f, 35, 2))
+    wet = filt(wet, lambda f: r_hp(f, 30, 2))
     if kind == "interior":
-        wet = sat(pk(wet) * 1.3, 1.4)
-    return fade(normalize(wet, -1.0), 0.0, 0.3)
+        wet = sat(pk(wet) * 1.4, 1.5)
+    return fade(normalize(wet, -1.0), 0.0, 0.4 if kind == "street" else 0.25)
 
 
 def p38_dryfire(rng):
@@ -800,74 +875,78 @@ def n_wave(n, dur_s, delay=0.0, os=8):
     return out
 
 
-def rifle_blast(rng, n, dist=30.0):
-    """7.92 mm muzzle blast heard at `dist` metres: broader pressure pulse, deep boom, air absorption."""
-    t = tax(n)
-    td = rng.uniform(0.0012, 0.002) * (1 + dist / 120.0)
-    fr = filt(friedlander(n, td, b=rng.uniform(1.2, 1.8)), lambda f: r_hp(f, 25, 2))
-    blast = filt(white(rng, n) * env_ad(n, 0.0006, rng.uniform(0.022, 0.035)),
-                 lambda f: r_bp(f, 110, 3500, 2) * r_peak(f, 600, 4.0, 1.6))
-    f0, f1 = rng.uniform(95, 125), rng.uniform(36, 46)
-    body = np.sin(TAU * phase_cycles(f1 + (f0 - f1) * np.exp(-t / 0.05))) * env_ad(n, 0.0015, rng.uniform(0.06, 0.09))
-    rumble = filt(white(rng, n) * env_ad(n, 0.003, rng.uniform(0.09, 0.14)), lambda f: r_bp(f, 28, 350, 2))
-    chuff = filt(white(rng, n) * env_ad(n, 0.004, 0.05, delay=0.001), lambda f: r_bp(f, 200, 1200, 1))
-    core = 1.0 * pk(fr) + 0.9 * pk(blast) + 0.75 * pk(body) + 0.55 * pk(rumble) + 0.3 * pk(chuff)
-    refl = np.zeros(n)
-    early = filt(pk(fr) + 0.9 * pk(blast), lambda f: r_lp(f, 5000, 1))[:N(0.2)]
-    place(refl, early, rng.uniform(0.0015, 0.006) * (1 + dist / 60), 0.45)
-    fc = 16000.0 / (1.0 + dist / 40.0)
-    return filt(core + refl, lambda f: r_lp(f, fc, 1))
+def rifle_blast(rng, n, dist=30.0, t0=0.0):
+    """7.92 mm muzzle report heard at `dist` metres: broad shock front, deep boom and sub thump, air absorption."""
+    crack, jet, bang, thump, punch = report_layers(
+        rng, n, t0, rng.uniform(0.0012, 0.0019) * (1 + dist / 150.0), rng.uniform(0.006, 0.01), rng.uniform(0.025, 0.04),
+        rng.uniform(320, 560), (rng.uniform(95, 120), rng.uniform(40, 52), 0.016, rng.uniform(0.06, 0.085)), 0.05)
+    core = 1.0 * crack + 0.4 * jet + 0.95 * bang + 0.45 * thump + 0.35 * punch
+    # ground bounce: path difference ~ 2*h1*h2/d with the rifle at 1.4 m and the ear at 1.65 m
+    core = ground_reflect(core, t0 + (4.6 / dist) / C_SOUND + 0.0002, 0.6, fc=5000)
+    fc = 18000.0 / (1.0 + dist / 50.0)
+    return filt(core, lambda f: r_lp(f, fc, 1))
 
 
 def kar98k_shot(rng, dist):
-    """Rifle fired toward the listener from `dist` m: the supersonic crack arrives first, then the muzzle boom."""
+    """Rifle fired toward the listener from `dist` m: the bullet's supersonic crack arrives first, then the muzzle boom."""
     n = N(1.0)
     gap = dist * (1.0 / C_SOUND - 1.0 / V_BULLET)
     x = np.zeros(n)
     snap = n_wave(n, rng.uniform(0.00025, 0.00045), delay=0.002)
     snap = snap + 0.3 * filt(n_wave(n, 0.0004, delay=0.002 + rng.uniform(0.002, 0.005)), lambda f: r_lp(f, 7000, 1))
-    x += 0.9 * pk(snap)
-    x += 0.1 * pk(burst(rng, n, 0.02, 2500, 9000, attack=0.001, delay=0.003))
-    place(x, pk(rifle_blast(rng, n, dist)), 0.002 + gap, 1.0)
-    w = env_pts(n, [(0, 1.0), (0.002 + gap + 0.03, 1.0), (0.002 + gap + 0.07, 0.0)])
-    xs = pk(x)
-    x = w * sat(xs * 1.6, drive=1.8, asym=0.04) / math.tanh(1.8 * 1.6) + (1 - w) * xs
-    x = filt(x, lambda f: r_hp(f, 25, 2))
-    x = limit(normalize(x, 2.0), -1.0, release=0.04)
-    return fade(x, 0, 0.12)
+    x += rng.uniform(0.7, 0.85) * pk(snap)
+    x += 0.08 * pk(burst(rng, n, 0.015, 2500, 9000, attack=0.001, delay=0.003))
+    boom = rifle_blast(rng, n, dist, t0=0.0)
+    place(x, pk(boom), 0.002 + gap, 1.0)
+    x = shape_shot(x, 0.002 + gap + 0.03, drive=1.8, push=1.6)
+    x = filt(x, lambda f: r_hp(f, 22, 2) * r_peak(f, 70, 2.0, 1.5))
+    x = limit(normalize(x, 2.5), -1.5, release=0.05)
+    return fade(x, 0, 0.15)
 
 
 def bullet_snap(rng):
-    """Supersonic 7.92 mm round passing within ~2 m: N-wave snap, ground echo, brief whizz."""
+    """Supersonic 7.92 mm round passing within ~2 m: N-wave snap, ground and wall slaps, brief whizz."""
     n = N(0.3)
     T = rng.uniform(0.00018, 0.0004)
     x = n_wave(n, T, delay=0.002)
     x += 0.35 * filt(n_wave(n, T * 1.05, delay=0.002 + rng.uniform(0.003, 0.008)), lambda f: r_lp(f, 8000, 1))
     x = pk(x)
+    for _ in range(int(rng.integers(2, 4))):   # the snap slapping back off nearby walls
+        r = np.zeros(n)
+        place(r, filt(x, lambda f: r_lp(f, rng.uniform(3000, 6000), 1)), rng.uniform(0.008, 0.035), rng.uniform(0.1, 0.22))
+        x = x + r
     whizz = filt(white(rng, n) * env_ad(n, 0.002, rng.uniform(0.02, 0.04), delay=0.003), lambda f: r_bp(f, 2000, 9000, 2))
     x += 0.12 * pk(whizz)
     t = np.maximum(tax(n) - 0.003, 0)
     zf = rng.uniform(4500, 6500) * (0.55 + 0.45 * np.exp(-t / 0.015))
     x += 0.05 * np.sin(TAU * phase_cycles(zf)) * env_ad(n, 0.001, 0.02, delay=0.003)
-    return fade(normalize(x), 0, 0.05)
+    return fade(normalize(x, -1.5), 0, 0.05)
 
 
 def rifle_distant(rng, dist):
-    """Rifle shot heard at 200-500 m: low thump, highs gone, long soft roll off terrain and buildings."""
-    n = N(4.0)
-    fc = 1800.0 * (300.0 / dist)
+    """Rifle shot heard at 200-500 m: a muffled crack-thump, then a long rolling echo off buildings, woods and hills."""
+    n = N(4.5)
+    fc = 2400.0 * (300.0 / dist)
     core = filt(rifle_blast(rng, N(1.0), dist=dist), lambda f: r_lp(f, fc, 2) * r_hp(f, 30, 2))
     taps = []
-    for _ in range(22):
-        tt = rng.uniform(0.08, 2.6)
-        taps.append(dict(t=tt, g=rng.uniform(0.15, 0.5) * math.exp(-tt / 1.1), lp=rng.uniform(350, 1100)))
-    late = dict(start=0.1, fade=0.4, gain=1.2, t60=[(125, 3.2), (250, 2.6), (500, 2.0), (1000, 1.3), (2000, 0.8), (8000, 0.3)])
-    ir = ir_build(rng, 3.6, taps, late, stereo=False, mod=(2.5, 0.4))
+    for _ in range(14):                  # discrete but smeared echoes from distant surfaces
+        tt = rng.uniform(0.12, 3.0)
+        g = rng.uniform(0.15, 0.45) * math.exp(-tt / 1.1)
+        lp = rng.uniform(400, 1200)
+        for _ in range(int(rng.integers(3, 7))):
+            taps.append(dict(t=tt + rng.uniform(0, 0.04), g=g * rng.uniform(0.4, 1.0), lp=lp))
+    late = dict(start=0.1, fade=0.5, gain=1.5, t60=[(125, 3.6), (250, 3.0), (500, 2.2), (1000, 1.4), (2000, 0.8), (8000, 0.3)])
+    ir = ir_build(rng, 4.2, taps, late, stereo=False, mod=(1.5, 0.55))
+    t = tax(len(ir))
+    sw = np.zeros(len(t))
+    for _ in range(int(rng.integers(3, 6))):
+        sw += rng.uniform(0.4, 1.0) * np.exp(-0.5 * ((t - rng.uniform(0.3, 3.0)) / rng.uniform(0.15, 0.45)) ** 2)
+    ir = ir * np.where(t > 0.1, 0.6 + sw, 1.0)
     x = np.zeros(n)
     place(x, pk(core), 0.0, 1.0)
-    place(x, pk(conv(core, ir)), 0.0, 0.55)
+    place(x, pk(conv(core, ir)), 0.0, 0.32)
     x = filt(x, lambda f: r_lp(f, max(900.0, fc * 1.2), 2))
-    return fade(normalize(x), 0, 1.0)
+    return fade(normalize(x, -1.5), 0, 1.0)
 
 
 def kar98k_bolt(rng, speed=1.0):
@@ -965,111 +1044,370 @@ def ricochet(rng):
 # =============================================================================
 # Footsteps
 # =============================================================================
+# A step is a short sequence of contacts: the heel strikes, the forefoot slaps down 30-80 ms later,
+# and the sole scuffs as it pushes off. Each contact is a smooth force pulse (its width sets how hard
+# and bright it is) convolved with a short impulse response built from the surface's and the shoe's
+# own resonant modes plus a shaped, decaying noise "texture". Loose material (grit, gravel, blades,
+# water) is made of many tiny resonant grains rather than broadband noise, so nothing reads as static.
+
+def force_pulse(width, shape=2.0):
+    m = max(3, N(width))
+    return np.sin(np.pi * (np.arange(m) + 0.5) / m) ** shape
+
+
+def res_ir(rng, dur, modes, noise_tau=0.0, shape=None, noise_g=0.5):
+    """Short impulse response: modes [((f_lo, f_hi), tau, amp), ...] plus a shaped noise decay."""
+    n = N(dur)
+    fr = [rng.uniform(*m[0]) for m in modes]
+    taus = [m[1] * rng.uniform(0.75, 1.3) for m in modes]
+    amps = [m[2] * rng.uniform(0.6, 1.0) for m in modes]
+    ir = pk(modal_ir(n, fr, taus, amps, rng))
+    if noise_tau > 0:
+        nz = white(rng, n) * env_ad(n, 0.0, noise_tau)
+        if shape is not None:
+            nz = filt(nz, shape, pad=0.05)
+        ir = ir + noise_g * pk(nz)
+    return pk(ir)
+
+
+def mix_ir(*parts):
+    """Sum impulse responses of different lengths: mix_ir((ir, gain), ...), peak-normalised."""
+    L = max(len(h) for h, _ in parts)
+    return pk(sum(g * pad_to(h, L) for h, g in parts))
+
+
+def contact(n, t, amp, width, ir, shape=2.0):
+    """A force pulse at t seconds, through an impulse response; peak-scaled to amp."""
+    out = np.zeros(n)
+    place(out, pk(conv(force_pulse(width, shape), ir)), t, amp)
+    return out
+
+
+def low_thump(n, t, f0, tau, amp, attack=0.003, drop=0.5):
+    """The leg's weight landing: a damped low sine whose pitch settles from f0*(1+drop) to f0."""
+    m = N(attack + tau * 6)
+    tt = tax(m)
+    y = np.sin(TAU * phase_cycles(f0 * (1 + drop * np.exp(-tt / 0.008)))) * env_ad(m, attack, tau, curve=1.5)
+    out = np.zeros(n)
+    place(out, pk(y), t, amp)
+    return out
+
+
+def grains(rng, n, count, t0, spread, f_lo, f_hi, tau=(0.0004, 0.0015), amp=1.0, decay=None, amp_sigma=0.7,
+           shape=1.6, second=0.5):
+    """Many tiny resonant pings (grit, gravel, droplets). Onsets follow a gamma spread after t0."""
+    out = np.zeros(n)
+    count = int(count)
+    if count <= 0:
+        return out
+    ts = t0 + rng.gamma(shape, spread / (shape * 2.5), count)
+    decay = decay or spread
+    lf0, lf1 = math.log(f_lo), math.log(f_hi)
+    for t in ts:
+        if t >= n / SR:
+            continue
+        f = math.exp(rng.uniform(lf0, lf1))
+        ta = rng.uniform(*tau) * (2000.0 / f) ** 0.4
+        m = max(8, N(ta * 7))
+        tt = np.arange(m) / SR
+        e = np.exp(-tt / ta)
+        g = np.sin(TAU * f * tt + rng.uniform(0, TAU)) + second * rng.uniform(0.2, 1.0) * np.sin(
+            TAU * f * rng.uniform(1.45, 2.4) * tt + rng.uniform(0, TAU))
+        g *= e
+        g[:3] *= np.array([0.3, 0.7, 0.9])[:min(3, m)]
+        a = rng.lognormal(0, amp_sigma) * math.exp(-max(0.0, t - t0) / decay)
+        place(out, g, t, a * rng.choice([-1, 1]))
+    return amp * pk(out) if np.abs(out).max() > 0 else out
+
+
+def scuff(rng, n, t0, dur, amp, fc, bw_rel=0.4, rate=1600.0, lo=500.0, hi=9000.0, curve=1.2):
+    """Stick-slip friction: an irregular train of micro-impulses through sole and surface resonances."""
+    k = max(6, int(rate * dur))
+    ts = t0 + np.sort(rng.random(k)) * dur
+    idx = np.clip((ts * SR).astype(int), 0, n - 1)
+    e = np.sin(np.pi * np.clip((ts - t0) / dur, 0, 1)) ** curve
+    imp = np.zeros(n)
+    np.add.at(imp, idx, rng.lognormal(0, 0.7, k) * e * rng.choice([-1, 1], k))
+    f2 = fc * rng.uniform(2.0, 2.6)
+    y = filt(imp, lambda f: r_bp(f, lo, hi, 2) * (0.12 + r_res(f, fc, fc * bw_rel) + 0.6 * r_res(f, f2, f2 * bw_rel)))
+    return amp * pk(y)
+
+
+def swish(rng, n, count, t0, t1, lo, hi, glen=(0.003, 0.014), amp=1.0, skew=1.0, nb=6, decay=None):
+    """Grass blades brushing the shoe: short noise grains through narrow, randomly tuned resonances."""
+    out = np.zeros(n)
+    edges = np.geomspace(lo, hi, nb + 1)
+    decay = decay or (t1 - t0)
+    for b in range(nb):
+        env = np.zeros(n)
+        for _ in range(max(1, int(count) // nb)):
+            t = t0 + (t1 - t0) * rng.random() ** skew
+            L = max(8, N(rng.uniform(*glen)))
+            w = np.hanning(L) ** 1.5 * rng.lognormal(0, 0.6) * math.exp(-max(0.0, t - t0) / decay)
+            place(env, w, t)
+        fc = math.sqrt(edges[b] * edges[b + 1]) * rng.uniform(0.9, 1.1)
+        out += filt(white(rng, n) * env, lambda f: r_res(f, fc, fc / 3.0) + 0.35 * r_res(f, fc * 1.6, fc / 2.0))
+    return amp * pk(out)
+
+
+def bubble(rng, f0, tau, rise=(20, 60)):
+    """Minnaert bubble from a drop or squelch: a damped sine whose pitch rises as it surfaces."""
+    m = N(tau * 7)
+    tt = tax(m)
+    return np.sin(TAU * phase_cycles(f0 * (1 + rng.uniform(*rise) * tt))) * env_ad(m, 0.0003, tau)
+
+
+def splash(rng, n, t, amp, size=1.0):
+    """Rain water on a hard surface displaced by the sole: droplet spray, a film squish, a few bubbles."""
+    out = np.zeros(n)
+    out += grains(rng, n, 30 + 50 * size, t, 0.025 + 0.03 * size, 2200, 9500, tau=(0.0002, 0.0007), decay=0.02 + 0.02 * size)
+    sq = white(rng, n) * env_ad(n, 0.002, 0.006 + 0.006 * size, delay=t)
+    r1 = rng.uniform(700, 1300)
+    out += 0.5 * pk(filt(sq, lambda f: r_bp(f, 300, 5000) * (0.25 + r_res(f, r1, 400) + 0.6 * r_res(f, r1 * 2.7, 900))))
+    for _ in range(int(rng.integers(1, 3 + int(3 * size)))):
+        place(out, bubble(rng, rng.uniform(1300, 4200), rng.uniform(0.002, 0.006)),
+              t + rng.uniform(0.004, 0.03 + 0.06 * size), rng.uniform(0.15, 0.4) * size)
+    return amp * pk(out)
+
+
+def step_loudness(x):
+    """Rough loudness of a step: energy above 150 Hz with a presence lift, per 300 ms."""
+    y = filt(x, lambda f: r_hp(f, 150, 2) * r_peak(f, 3000, 4.0, 2.0) * r_lp(f, 9000, 1))
+    return 10 * math.log10(float((y ** 2).sum()) / N(0.3) + 1e-20)
+
+
+# Loudness targets (dB, see step_loudness). Running files sit 3 dB above walking ones; surfaces differ a little.
+STEP_LOUD = {"cobble": -23.0, "gravel": -22.0, "wood": -22.5, "mud": -22.5, "grass": -23.5, "hobnail": -21.0}
+
+
+def finish_step(rng, x, dur, surface, run):
+    x = fade(pad_to(x, N(dur)), 0.0, 0.04)
+    x = filt(x, lambda f: r_hp(f, 35, 2))
+    target = STEP_LOUD[surface] + (3.0 if run else 0.0) + rng.uniform(-1.5, 1.5)
+    x = x * db(target - step_loudness(x))
+    if np.abs(x).max() > db(-1.2):
+        x = limit(x, -1.2, release=0.02)
+    return x
+
+
+def step_times(rng, run):
+    """Heel onset, heel-to-toe gap, and how much the step varies, per footfall."""
+    t_h = rng.uniform(0.003, 0.012)
+    dt = rng.uniform(0.026, 0.045) if run else rng.uniform(0.045, 0.082)
+    return t_h, dt
+
+
+def stone_ir(rng):
+    lo = rng.uniform(0.85, 1.2)
+    return res_ir(rng, 0.05, [((700 * lo, 1050 * lo), 0.005, 1.0), ((1500 * lo, 2200 * lo), 0.0035, 0.8),
+                              ((2600 * lo, 3500 * lo), 0.0025, 0.6), ((4200, 5800), 0.0015, 0.4)],
+                  noise_tau=0.0025, noise_g=0.9,
+                  shape=lambda f: r_bp(f, 450, 10000) * r_peak(f, rng.uniform(1800, 3200), 5.0, 1.2))
+
+
+def leather_ir(rng, bright=1.0):
+    """Leather sole and stacked heel: a dull block resonance and a papery slap."""
+    return res_ir(rng, 0.04, [((350, 600), 0.004, 1.0), ((900, 1400), 0.0025, 0.7), ((2000 * bright, 2900 * bright), 0.0015, 0.4)],
+                  noise_tau=0.003, noise_g=0.7, shape=lambda f: r_bp(f, 300, 7000) * r_peak(f, 1500, 4.0, 1.5))
+
 
 def step_cobble(rng, run=False):
-    n = N(0.4)
-    x = (0.8 * pk(burst(rng, n, 0.003, 700, 6000)) + 0.6 * thud(rng, n, 0.01, hi=280)
-         + 0.5 * pk(burst(rng, n, 0.007, 300, 1500)))
-    x += 0.35 * pk(modal_ir(n, [rng.uniform(900, 1300), rng.uniform(2100, 2700)], [0.012, 0.006], [1, 0.6], rng))
-    x += 0.25 * pk(sparse_clicks(rng, n, 600 if run else 300, 0.0, 0.05, 2500, 9000))
-    dt = rng.uniform(0.045, 0.065) if run else rng.uniform(0.07, 0.11)
-    toe = 0.55 * pk(burst(rng, n, 0.0035, 900, 7000, delay=dt)) + 0.35 * thud(rng, n, 0.008, hi=300, delay=dt)
-    x += toe * rng.uniform(0.45, 0.65)
+    dur = 0.34 if run else 0.44
+    n = N(dur)
+    t_h, dt = step_times(rng, run)
+    st, st2, sole = stone_ir(rng), stone_ir(rng), leather_ir(rng)
+    heel_ir = mix_ir((st, 1.0), (sole, rng.uniform(0.4, 0.8)))
+    toe_ir = mix_ir((st2, 0.6), (sole, 1.0))
+    x = contact(n, t_h, 1.0, rng.uniform(0.0005, 0.0011) * (0.8 if run else 1.0), heel_ir)
+    x += low_thump(n, t_h, rng.uniform(80, 120), rng.uniform(0.012, 0.02), rng.uniform(0.25, 0.4) * (1.5 if run else 1.0))
+    t_t = t_h + dt
+    toe_a = rng.uniform(0.75, 1.0) if run else rng.uniform(0.4, 0.75)
+    x += contact(n, t_t, toe_a, rng.uniform(0.0022, 0.0045), toe_ir, shape=1.5)
+    x += low_thump(n, t_t, rng.uniform(70, 100), 0.014, 0.15 * toe_a)
+    # grit and sand between the setts crunch under the sole
+    x += grains(rng, n, rng.integers(4, 22), t_h, 0.02, 2500, 8000, amp=rng.uniform(0.06, 0.16))
+    x += grains(rng, n, rng.integers(3, 14), t_t, 0.025, 2500, 8000, amp=rng.uniform(0.04, 0.12))
+    # rainwater on the stones
+    wet = rng.uniform(0.3, 1.0) if rng.random() > 0.2 else rng.uniform(1.4, 1.9)   # sometimes a puddle
+    x += splash(rng, n, t_h + 0.001, rng.uniform(0.12, 0.22) * wet ** 0.7, wet)
+    x += splash(rng, n, t_t + 0.001, rng.uniform(0.06, 0.14) * wet ** 0.7, wet * 0.7)
+    # push-off scuff of leather on wet granite
     if run:
-        x += 0.25 * pk(burst(rng, n, 0.025, 1500, 8000, attack=0.008, delay=dt + 0.01))
-    return fade(normalize(x), 0, 0.05)
-
-
-def step_mud(rng, run=False):
-    n = N(0.55)
-    x = 0.7 * thud(rng, n, 0.03, hi=450, attack=0.004)
-    w = white(rng, n) * env_pts(n, [(0, 0), (0.01, 1), (0.05, 0.6), (0.09, 0.9), (0.11, 0.05), (0.2, 0)])
-    r1, r2 = rng.uniform(380, 520), rng.uniform(900, 1200)
-    x += 0.8 * pk(filt(w, lambda f: r_bp(f, 250, 1800) * (1 + 1.6 * r_res(f, r1, 120) + 1.0 * r_res(f, r2, 200))))
-    for _ in range(int(rng.integers(2, 6))):
-        m = N(0.05)
-        tt = tax(m)
-        f0 = rng.uniform(350, 900)
-        b = np.sin(TAU * phase_cycles(f0 * (1 + 22 * tt))) * env_ad(m, 0.0004, rng.uniform(0.006, 0.014))
-        place(x, b, rng.uniform(0.03, 0.25), rng.uniform(0.15, 0.35))
-    t_lift = rng.uniform(0.24, 0.34) if not run else rng.uniform(0.16, 0.22)
-    suck = filt(white(rng, n) * env_pts(n, [(0, 0), (t_lift - 0.06, 0), (t_lift, 1.0), (t_lift + 0.03, 0)]),
-                lambda f: r_bp(f, 400, 1500))
-    x += 0.4 * pk(suck)
-    if run:
-        x += 0.5 * pk(burst(rng, n, 0.04, 1000, 6000, attack=0.003))
-    return fade(normalize(x), 0, 0.05)
-
-
-def step_gravel(rng, run=False):
-    n = N(0.45)
-    x = 0.45 * thud(rng, n, 0.012, hi=250)
-    heel = sparse_clicks(rng, n, 6000 if run else 4000, 0.0, 0.09, 1200, 7000, skew=1.8, amp_sigma=0.8)
-    dt = rng.uniform(0.05, 0.07) if run else rng.uniform(0.08, 0.12)
-    toe = sparse_clicks(rng, n, 3500 if run else 2500, dt, dt + 0.08, 1200, 7000, skew=1.8, amp_sigma=0.8)
-    crunch = filt(heel + 0.7 * toe, lambda f: r_peak(f, 3000, 4.0, 1.2))
-    x += 1.0 * pk(crunch)
-    bed = white(rng, n) * (env_ad(n, 0.004, 0.04) + 0.6 * env_ad(n, 0.004, 0.04, delay=dt))
-    x += 0.25 * pk(filt(bed, lambda f: r_bp(f, 1500, 6000)))
-    return fade(normalize(x), 0, 0.05)
-
-
-def step_grass(rng, run=False):
-    n = N(0.45)
-    sw = white(rng, n) * env_pts(n, [(0, 0), (0.02, 1), (0.12, 0.4), (0.3, 0)])
-    x = 0.6 * pk(filt(sw, lambda f: r_bp(f, 1200, 7000)))
-    x += 0.7 * thud(rng, n, 0.02, hi=220)
-    x += 0.2 * pk(sparse_clicks(rng, n, 150, 0.0, 0.15, 2500, 9000))
-    dt = rng.uniform(0.05, 0.07) if run else rng.uniform(0.09, 0.13)
-    sw2 = white(rng, n) * env_pts(n, [(0, 0), (dt, 0), (dt + 0.02, 0.6), (dt + 0.15, 0)])
-    x += 0.45 * pk(filt(sw2, lambda f: r_bp(f, 1500, 7500)))
-    if run:
-        x += 0.3 * pk(filt(white(rng, n) * env_ad(n, 0.01, 0.06), lambda f: r_bp(f, 800, 5000)))
-    return fade(normalize(x), 0, 0.05)
-
-
-def wood_knock(rng, n, delay, amp):
-    fr = [rng.uniform(110, 150), rng.uniform(230, 300), rng.uniform(480, 620), rng.uniform(1050, 1400)]
-    y = pk(modal_ir(n, fr, [0.07, 0.045, 0.025, 0.012], [1, 0.7, 0.45, 0.3], rng, delay=delay))
-    y += 0.4 * pk(burst(rng, n, 0.0015, 1500, 9000, delay=delay))
-    return amp * y
-
-
-def step_wood(rng, run=False, creak=False):
-    n = N(0.85 if creak else 0.5)
-    x = wood_knock(rng, n, 0.0, 1.0) + 0.5 * thud(rng, n, 0.012, hi=250)
-    dt = rng.uniform(0.05, 0.07) if run else rng.uniform(0.08, 0.12)
-    x += wood_knock(rng, n, dt, 0.55)
-    if creak:
-        t0, dur = rng.uniform(0.05, 0.12), rng.uniform(0.25, 0.4)
-        f0 = rng.uniform(90, 160)
-        tr = np.zeros(n)
-        tt = t0
-        while tt < t0 + dur:
-            i = int(tt * SR)
-            if i < n:
-                tr[i] = 1.0
-            tt += (1.0 / f0) * (1 + 0.18 * rng.standard_normal())
-            f0 *= 1.0 + 0.004 * rng.standard_normal()
-        tr *= env_pts(n, [(0, 0), (t0, 0), (t0 + dur * 0.3, 1), (t0 + dur, 0)])
-        cr = filt(tr, lambda f: r_res(f, 520, 160) + 0.7 * r_res(f, 1350, 260) + 0.5 * r_res(f, 2800, 400))
-        x += 0.45 * pk(cr)
-    return fade(normalize(x), 0, 0.05)
+        x += scuff(rng, n, t_h, rng.uniform(0.012, 0.025), rng.uniform(0.08, 0.16), rng.uniform(1800, 3200))
+        x += scuff(rng, n, t_t + rng.uniform(0.04, 0.07), rng.uniform(0.04, 0.07), rng.uniform(0.14, 0.26), rng.uniform(1600, 3000))
+    else:
+        x += scuff(rng, n, t_t + rng.uniform(0.005, 0.03), rng.uniform(0.03, 0.06), rng.uniform(0.03, 0.08), rng.uniform(1500, 3000))
+    if rng.random() < 0.3:   # a loose sett rocks in its bed
+        rock = res_ir(rng, 0.06, [((300, 480), 0.012, 1.0), ((800, 1100), 0.006, 0.5)])
+        x += contact(n, t_t + rng.uniform(0.005, 0.02), rng.uniform(0.15, 0.3), 0.002, rock)
+    return finish_step(rng, x, dur, "cobble", run)
 
 
 def step_hobnail(rng):
-    n = N(0.5)
-    x = 1.0 * thud(rng, n, 0.018, hi=320, f0=rng.uniform(80, 100))
-    place(x, metal_hit(rng, 0.18, rng.uniform(1800, 2300), tau=(0.05, 0.008)), 0.0, 0.55)
-    for _ in range(int(rng.integers(4, 9))):
-        place(x, metal_hit(rng, 0.05, rng.uniform(3000, 6000), n_modes=3, tau=(0.015, 0.004)), rng.uniform(0, 0.012), rng.uniform(0.2, 0.35))
-    x += 0.25 * pk(sparse_clicks(rng, n, 800, 0.0, 0.06, 2500, 9000))
-    dt = rng.uniform(0.09, 0.13)
-    x += 0.5 * thud(rng, n, 0.02, hi=260, delay=dt)
-    for _ in range(int(rng.integers(5, 11))):
-        place(x, metal_hit(rng, 0.05, rng.uniform(3000, 6500), n_modes=3, tau=(0.014, 0.004)), dt + rng.uniform(0, 0.015), rng.uniform(0.18, 0.3))
-    x += 0.3 * pk(burst(rng, n, 0.03, 2000, 9000, attack=0.01, delay=dt + 0.01))
-    return fade(normalize(sat(pk(x) * 1.15, 1.3)), 0, 0.05)
+    """German marching boot on cobbles: heel iron clack, hobnail studs, heavy boot, iron scrape, wet stone."""
+    dur = 0.48
+    n = N(dur)
+    t_h = rng.uniform(0.003, 0.01)
+    dt = rng.uniform(0.05, 0.085)
+    st = stone_ir(rng)
+    iron = res_ir(rng, 0.06, [((2100, 2900), 0.009, 1.0), ((3600, 4600), 0.006, 0.8), ((5400, 6600), 0.004, 0.6),
+                              ((7400, 9000), 0.003, 0.4)], noise_tau=0.0008, noise_g=0.4,
+                  shape=lambda f: r_hp(f, 1500, 2))
+    boot = res_ir(rng, 0.05, [((260, 420), 0.006, 1.0), ((700, 1000), 0.003, 0.5)])
+    x = contact(n, t_h, 1.0, rng.uniform(0.0003, 0.0006), mix_ir((iron, 1.0), (st, 0.7), (boot, 0.5)))
+    x += low_thump(n, t_h, rng.uniform(70, 95), rng.uniform(0.018, 0.028), rng.uniform(0.45, 0.6))
+    t_t = t_h + dt
+    x += contact(n, t_t, rng.uniform(0.35, 0.55), rng.uniform(0.002, 0.004), mix_ir((st, 0.6), (boot, 1.0)), shape=1.5)
+    x += low_thump(n, t_t, rng.uniform(65, 85), 0.02, 0.25)
+    for _ in range(int(rng.integers(5, 12))):          # studs landing a few ms apart as the sole rolls
+        stud = res_ir(rng, 0.03, [((3000, 7000), 0.003, 1.0), ((7500, 11000), 0.0015, 0.5)])
+        x += contact(n, t_t + rng.uniform(-0.002, 0.012), rng.uniform(0.12, 0.3), 0.0003, stud)
+    x += scuff(rng, n, t_t + rng.uniform(0.03, 0.06), rng.uniform(0.04, 0.08), rng.uniform(0.1, 0.2),
+               rng.uniform(3000, 5000), bw_rel=0.25, lo=1500, hi=11000)
+    wet = rng.uniform(0.4, 1.2)
+    x += splash(rng, n, t_h + 0.001, 0.15 * wet, wet)
+    x += splash(rng, n, t_t + 0.001, 0.1 * wet, wet * 0.7)
+    x += grains(rng, n, rng.integers(6, 20), t_h, 0.02, 2500, 8000, amp=0.1)
+    x = sat(pk(x) * 1.1, 1.2)
+    return finish_step(rng, x, dur, "hobnail", False)
+
+
+def step_mud(rng, run=False):
+    dur = 0.36 if run else 0.48
+    n = N(dur)
+    t_h, dt = step_times(rng, run)
+    mud = res_ir(rng, 0.06, [((140, 260), 0.012, 1.0), ((380, 600), 0.007, 0.6), ((900, 1300), 0.004, 0.3)],
+                 noise_tau=0.01, noise_g=0.8, shape=lambda f: r_bp(f, 120, 1800) * r_peak(f, rng.uniform(400, 700), 5.0, 1.0))
+    x = contact(n, t_h, 0.7, rng.uniform(0.006, 0.012), mud, shape=1.5)
+    x += low_thump(n, t_h, rng.uniform(50, 72), rng.uniform(0.03, 0.045), rng.uniform(0.6, 0.85) * (1.2 if run else 1.0),
+                   attack=0.006, drop=0.3)
+    x += contact(n, t_h + dt, rng.uniform(0.3, 0.55), 0.01, mud, shape=1.5)
+    # the squelch: water and slurry squeezed out from under the sole
+    k = rng.uniform(0.7, 1.3)
+    sq = grains(rng, n, 90 * k, t_h + 0.004, 0.06 + 0.04 * k, 300, 1600, tau=(0.0015, 0.004), decay=0.06, amp=1.0, second=0.3)
+    wsh = white(rng, n) * env_pts(n, [(0, 0), (t_h + 0.004, 0), (t_h + 0.015, 1.0), (t_h + dt, 0.7), (t_h + dt + 0.06, 0)])
+    r1, r2 = rng.uniform(380, 560), rng.uniform(950, 1350)
+    wsh = filt(wsh, lambda f: r_bp(f, 200, 3000) * (0.1 + r_res(f, r1, 140) + 0.6 * r_res(f, r2, 260)))
+    x += rng.uniform(0.35, 0.55) * pk(sq) + rng.uniform(0.25, 0.4) * pk(wsh)
+    for _ in range(int(rng.integers(3, 8))):
+        place(x, bubble(rng, rng.uniform(300, 900), rng.uniform(0.006, 0.014), rise=(10, 30)),
+              t_h + rng.uniform(0.01, 0.14), rng.uniform(0.12, 0.3))
+    # suction as the boot pulls free: a rising slurp, then the seal breaks with a pop and drips fall back
+    t_lift = rng.uniform(0.17, 0.22) if run else rng.uniform(0.25, 0.34)
+    sl = N(rng.uniform(0.04, 0.07))
+    tt = tax(sl)
+    fsw = rng.uniform(260, 380) * (1 + 1.8 * (tt / tt[-1]) ** 1.5)
+    slurp = np.zeros(n)
+    nz = white(rng, sl) * np.sin(np.pi * tt / tt[-1]) ** 1.5
+    ph = phase_cycles(fsw)
+    tone = np.sin(TAU * ph) * (0.6 + 0.4 * np.sin(TAU * ph * 0.5 + 1.0))
+    sw = 0.6 * tone * np.sin(np.pi * tt / tt[-1]) + 0.5 * filt(nz, lambda f: r_bp(f, 300, 2500))
+    place(slurp, sw, t_lift - tax(sl)[-1])
+    x += rng.uniform(0.25, 0.45) * pk(slurp)
+    pop = res_ir(rng, 0.04, [((450, 800), 0.006, 1.0), ((1200, 1800), 0.003, 0.5)])
+    x += contact(n, t_lift, rng.uniform(0.3, 0.5), 0.0015, pop)
+    for _ in range(int(rng.integers(1, 4))):
+        place(x, bubble(rng, rng.uniform(500, 1200), rng.uniform(0.005, 0.012)), t_lift + rng.uniform(0.03, 0.1),
+              rng.uniform(0.08, 0.2))
+    if run:
+        x += grains(rng, n, 40, t_h + 0.01, 0.12, 400, 3000, tau=(0.001, 0.003), amp=0.25)   # flung slurry
+    return finish_step(rng, x, dur, "mud", run)
+
+
+def step_gravel(rng, run=False):
+    dur = 0.38 if run else 0.46
+    n = N(dur)
+    t_h, dt = step_times(rng, run)
+    soil = res_ir(rng, 0.05, [((150, 260), 0.008, 1.0), ((400, 650), 0.004, 0.5)], noise_tau=0.006,
+                  shape=lambda f: r_bp(f, 150, 2500))
+    x = contact(n, t_h, 0.5, rng.uniform(0.003, 0.006), soil)
+    x += low_thump(n, t_h, rng.uniform(65, 95), rng.uniform(0.018, 0.028), 0.4 * (1.3 if run else 1.0))
+    t_t = t_h + dt
+    k = rng.uniform(0.75, 1.3) * (1.4 if run else 1.0)
+    spread_h, spread_t = rng.uniform(0.06, 0.12), rng.uniform(0.06, 0.12)
+    # stones grinding against each other (lower, longer), and grit (higher, short)
+    st = grains(rng, n, 70 * k, t_h, spread_h, 900, 2800, tau=(0.0012, 0.003), amp=1.0)
+    st += grains(rng, n, 50 * k, t_t, spread_t, 900, 2800, tau=(0.0012, 0.003), amp=0.8)
+    gr = grains(rng, n, 140 * k, t_h, spread_h, 2500, 8500, tau=(0.0003, 0.001), amp=1.0)
+    gr += grains(rng, n, 100 * k, t_t, spread_t, 2500, 8500, tau=(0.0003, 0.001), amp=0.75)
+    x += rng.uniform(0.6, 0.9) * pk(st) + rng.uniform(0.5, 0.8) * pk(gr)
+    # stones settling afterwards, and on a run a few kicked pebbles landing
+    x += grains(rng, n, rng.integers(4, 12), t_t + 0.1, 0.1, 1200, 5000, tau=(0.0008, 0.002), amp=rng.uniform(0.1, 0.2))
+    if run:
+        x += scuff(rng, n, t_t + rng.uniform(0.03, 0.05), rng.uniform(0.05, 0.08), 0.25, rng.uniform(1500, 2600), rate=3000)
+        for _ in range(int(rng.integers(1, 4))):
+            peb = res_ir(rng, 0.03, [((2500, 4500), 0.002, 1.0), ((5000, 7500), 0.001, 0.5)])
+            x += contact(n, t_t + rng.uniform(0.12, 0.26), rng.uniform(0.06, 0.14), 0.0004, peb)
+    return finish_step(rng, x, dur, "gravel", run)
+
+
+def step_grass(rng, run=False):
+    dur = 0.36 if run else 0.45
+    n = N(dur)
+    t_h, dt = step_times(rng, run)
+    t_h += 0.02                                     # blades are touched before the heel reaches the soil
+    soil = res_ir(rng, 0.06, [((90, 160), 0.012, 1.0), ((250, 420), 0.006, 0.5)], noise_tau=0.008,
+                  shape=lambda f: r_bp(f, 80, 1500))
+    x = contact(n, t_h, 0.6, rng.uniform(0.007, 0.012), soil, shape=1.5)
+    x += low_thump(n, t_h, rng.uniform(55, 80), rng.uniform(0.02, 0.03), rng.uniform(0.4, 0.55) * (1.3 if run else 1.0),
+                   attack=0.005, drop=0.3)
+    x += contact(n, t_h + dt, 0.3, 0.01, soil, shape=1.5)
+    k = rng.uniform(0.7, 1.3) * (1.5 if run else 1.0)
+    # blades brushing the upper and sole: on the way in, flattened under the step, and springing back on lift
+    sw = swish(rng, n, 120 * k, t_h - 0.02, t_h + dt + 0.05, 1500, 8000, amp=1.0, skew=1.3)
+    t_lift = t_h + dt + (rng.uniform(0.07, 0.12) if run else rng.uniform(0.12, 0.2))
+    sw += swish(rng, n, 70 * k, t_lift, t_lift + 0.09, 1800, 8500, amp=0.6, skew=1.6)
+    x += rng.uniform(0.45, 0.65) * pk(sw)
+    x += grains(rng, n, rng.integers(3, 10), t_h, 0.06, 3000, 7000, tau=(0.0004, 0.001), amp=rng.uniform(0.06, 0.12))   # stems snap
+    # the turf is sodden: a small squish of water under the sole
+    sq = grains(rng, n, 30, t_h + 0.005, 0.05, 350, 1400, tau=(0.0015, 0.0035), amp=1.0, second=0.3)
+    x += rng.uniform(0.1, 0.22) * pk(sq)
+    for _ in range(int(rng.integers(0, 3))):
+        place(x, bubble(rng, rng.uniform(900, 2500), rng.uniform(0.003, 0.007)), t_h + rng.uniform(0.01, 0.1), rng.uniform(0.05, 0.12))
+    if run:
+        x += scuff(rng, n, t_h + dt + 0.04, rng.uniform(0.04, 0.07), 0.15, rng.uniform(700, 1400), lo=200, hi=4000)
+    return finish_step(rng, x, dur, "grass", run)
+
+
+def board_ir(rng, dur=0.18):
+    lo = rng.uniform(0.85, 1.2)
+    return res_ir(rng, dur, [((95 * lo, 150 * lo), 0.035, 1.0), ((210 * lo, 320 * lo), 0.025, 0.8), ((450 * lo, 700 * lo), 0.02, 0.6),
+                             ((950 * lo, 1400 * lo), 0.01, 0.45), ((1900, 2700), 0.005, 0.3)],
+                  noise_tau=0.005, noise_g=0.6, shape=lambda f: r_bp(f, 200, 6000) * r_peak(f, rng.uniform(500, 900), 5.0, 1.2))
+
+
+def step_wood(rng, run=False, creak=False):
+    dur = 0.34 if run else 0.48
+    n = N(dur)
+    t_h, dt = step_times(rng, run)
+    bd, sole = board_ir(rng), leather_ir(rng, 0.9)
+    x = contact(n, t_h, 1.0, rng.uniform(0.0008, 0.0016), mix_ir((bd, 1.0), (sole, 0.6)))
+    x += low_thump(n, t_h, rng.uniform(75, 110), rng.uniform(0.025, 0.04), rng.uniform(0.35, 0.5) * (1.3 if run else 1.0))
+    t_t = t_h + dt
+    toe_a = rng.uniform(0.7, 0.95) if run else rng.uniform(0.4, 0.7)
+    x += contact(n, t_t, toe_a, rng.uniform(0.0025, 0.0045), mix_ir((board_ir(rng), 0.7), (sole, 1.0)), shape=1.5)
+    x += grains(rng, n, rng.integers(2, 10), t_h, 0.02, 2500, 7000, amp=rng.uniform(0.04, 0.1))   # grit on the boards
+    if rng.random() < 0.35:   # a loose board knocks against its neighbour
+        x += contact(n, t_h + rng.uniform(0.006, 0.02), rng.uniform(0.15, 0.3), 0.001, board_ir(rng, 0.1))
+    if run:
+        x += scuff(rng, n, t_t + rng.uniform(0.03, 0.05), rng.uniform(0.04, 0.06), rng.uniform(0.12, 0.2), rng.uniform(1400, 2400))
+    else:
+        x += scuff(rng, n, t_t + rng.uniform(0.005, 0.03), rng.uniform(0.03, 0.05), rng.uniform(0.03, 0.06), rng.uniform(1400, 2400))
+    if creak:
+        t0, cd = t_h + rng.uniform(0.02, 0.05), rng.uniform(0.22, 0.3)
+        f0 = rng.uniform(90, 150)
+        tr = np.zeros(n)
+        tt = t0
+        while tt < t0 + cd:
+            i = int(tt * SR)
+            if i < n:
+                tr[i] = rng.lognormal(0, 0.4)
+            tt += (1.0 / f0) * (1 + 0.15 * rng.standard_normal())
+            f0 *= 1.0 + 0.006 * rng.standard_normal() + 0.002
+        tr *= env_pts(n, [(0, 0), (t0, 0), (t0 + cd * 0.3, 1), (t0 + cd, 0)])
+        cr = filt(tr, lambda f: r_res(f, 520, 140) + 0.7 * r_res(f, 1350, 220) + 0.5 * r_res(f, 2800, 380))
+        x += 0.35 * pk(cr)
+    return finish_step(rng, x, dur, "wood", run)
 
 
 # =============================================================================
@@ -1173,7 +1511,7 @@ def drips_loop(rng):
             break
         place(out, pan(drip(rng, "plink" if rng.random() < 0.6 else "plop"), rng.uniform(-1, 1)), t,
               rng.uniform(0.2, 0.7), circular=True)
-    ir = ir_street(rng)
+    ir = ir_street_drips(rng)
     wet = conv(out, ir, circular=True)
     out = out + 0.35 * pk(wet) * np.abs(out).max()
     return normalize(out, -4.0)
@@ -1452,30 +1790,60 @@ def tinnitus_loop(rng):
 # Alarm
 # =============================================================================
 
-def whistle_blast(rng, dur, f0=3050.0):
-    n = N(dur)
+def whistle_blast(rng, dur, f0=3200.0):
+    """One blast on a pea whistle. Breath pressure drives everything: the tone only speaks above a threshold,
+    pitch rises a little with pressure, and the cork pea orbiting the chamber (faster when blown harder)
+    chops the tone 20-40 times a second, pulling its pitch down each time it passes the mouth."""
+    tail = 0.1
+    n = N(dur + tail)
     t = tax(n)
-    trem = Mod(rng, dur, 6, periodic=False)
-    p = env_pts(n, [(0, 0), (0.03, 1.15), (0.08, 1.0), (dur - 0.06, 1.0), (dur, 0)]) * (1 + 0.05 * trem(t))
-    fr = 20 + 10 * p + 2 * trem(t + 0.7)
-    trill = 0.5 + 0.5 * np.cos(TAU * phase_cycles(fr))
-    am = 1 - 0.75 * trill ** 1.5
-    fm = f0 * (1 + 0.02 * p) - 110 * trill
-    ph = phase_cycles(fm)
-    tone = np.sin(TAU * ph) + 0.12 * np.sin(2 * TAU * ph)
-    noise = filt(white(rng, n), lambda f: r_bp(f, f0 * 0.6, f0 * 1.6))
-    return (pk(tone) * am + 0.15 * pk(noise) * (0.5 + 0.5 * am)) * p
+    a, r = rng.uniform(0.035, 0.07), rng.uniform(0.05, 0.1)
+    p = env_pts(n, [(0, 0), (a * 0.6, 0.75), (a, 1.1), (a + 0.07, 1.0), (dur * 0.6, rng.uniform(0.92, 1.02)),
+                    (dur - r, rng.uniform(0.88, 0.98)), (dur, 0), (dur + tail, 0)])
+    wob = Mod(rng, dur + tail, 5, periodic=False)
+    p = np.clip(p * (1 + 0.035 * wob(t)), 0, None)
+    th = 0.3
+    speak = np.clip((p - th) / (1 - th), 0, None) ** 0.7
+    rate = rng.uniform(24, 31) * (0.7 + 0.35 * p) * (1 + 0.07 * Mod(rng, dur + tail, 6, periodic=False)(t))
+    ph_r = phase_cycles(rate)
+    k = np.floor(ph_r).astype(int)
+    depth = rng.uniform(0.45, 0.95, k.max() + 2)[k]           # each orbit of the pea is a little different
+    wid = rng.uniform(0.1, 0.2, k.max() + 2)[k]
+    c = ph_r % 1.0
+    dip = np.exp(-0.5 * ((c - 0.5) / wid) ** 2)
+    am = 1 - depth * dip
+    jit = Mod(rng, dur + tail, 60, periodic=False)
+    f = f0 * (1 + 0.03 * (p - 1)) * (1 - 0.04 * depth * dip) * (1 + 0.002 * jit(t))
+    ph = phase_cycles(f)
+    tone = (np.sin(TAU * ph) + 0.09 * np.sin(2 * TAU * ph + 0.7) + 0.03 * np.sin(3 * TAU * ph + 1.9)
+            + 0.012 * np.sin(4 * TAU * ph + 0.3))
+    tone = tone * am * speak
+    # breath: edge-tone turbulence around the pitch, broadband hiss, and a low huff as the breath starts
+    edge = filt(white(rng, n), lambda fr: r_res(fr, f0, f0 * 0.25) + 0.25 * r_bp(fr, 1500, 10000, 1))
+    huff = filt(white(rng, n) * env_ad(n, 0.01, 0.04), lambda fr: r_bp(fr, 250, 2500))
+    breath = 0.07 * pk(edge) * p * (0.6 + 0.4 * am) + 0.06 * pk(huff)
+    return pk(tone) + breath
 
 
 def whistle_trill(rng, pattern):
-    blasts = [whistle_blast(rng, d, rng.uniform(2950, 3150)) for d, _ in pattern]
-    total = sum(d + g for d, g in pattern) + 0.1
+    f0 = rng.uniform(3050, 3350)
+    total = sum(d + g for d, g in pattern) + 1.4
     x = np.zeros(N(total))
     t = 0.0
-    for b, (d, g) in zip(blasts, pattern):
-        place(x, b, t)
+    for d, g in pattern:
+        place(x, whistle_blast(rng, d * rng.uniform(0.95, 1.05), f0 * rng.uniform(0.99, 1.01)), t)
         t += d + g
-    return fade(normalize(x), 0, 0.05)
+    # outdoors among stone houses: a couple of slapbacks off facades and a short bright-damped tail
+    taps = [dict(t=rng.uniform(0.03, 0.07), g=0.35, lp=7000), dict(t=rng.uniform(0.08, 0.16), g=0.22, lp=5000)]
+    for _ in range(6):
+        taps.append(dict(t=rng.uniform(0.18, 0.6), g=rng.uniform(0.05, 0.14), lp=rng.uniform(2500, 4500)))
+    late = dict(start=0.05, fade=0.1, gain=0.8, t60=[(500, 1.4), (1000, 1.2), (2000, 0.9), (4000, 0.6), (8000, 0.3)])
+    ir = ir_build(rng, 1.3, taps, late, stereo=False)
+    x = pad_to(x, len(x))
+    w = conv(x, ir)[:len(x)]
+    x = x + 0.35 * pk(w) * np.abs(x).max()
+    x = filt(x, lambda f: r_hp(f, 200, 2))
+    return fade(normalize(x, -1.5), 0, 0.3)
 
 
 def siren_hand_crank(rng):
@@ -1743,13 +2111,13 @@ def build_registry():
                     "Leather sole on floorboards, walking, with board creak", gain=-16, priority=3)
             else:
                 reg(f"footsteps/{s}_walk_{i:02d}.wav", (lambda fn: (lambda r: fn(r, False)))(fn), "footsteps",
-                    f"Player leather-soled shoe on {s}, walking", gain=-16, priority=3)
+                    f"Player leather-soled shoe on {s}, walking: heel then toe" + (", rain-wet" if s == "cobble" else ""), gain=-16, priority=3)
         for i in range(1, 5):
             reg(f"footsteps/{s}_run_{i:02d}.wav", (lambda fn: (lambda r: fn(r, True)))(fn), "footsteps",
-                f"Player leather-soled shoe on {s}, running", gain=-11, priority=3)
+                f"Player leather-soled shoe on {s}, running (heavier, shorter, more scuff)", gain=-13, priority=3)
     for i in range(1, 7):
         reg(f"footsteps/npc_hobnail_cobble_{i:02d}.wav", step_hobnail, "footsteps",
-            "German hobnailed jackboot on cobbles: heel iron clack and studs", gain=-12, priority=3)
+            "German hobnailed jackboot on wet cobbles: heel iron clack, studs, iron scrape", gain=-12, priority=3)
 
     reg("ambience/wind_gusts_loop.wav", wind_gusts_loop, "ambience", "Winter coastal wind, slow gusts with faint whistles (stereo loop)", loop=True, gain=-18, priority=4)
     reg("ambience/rain_light_loop.wav", rain_light_loop, "ambience", "Light drizzle on stone, slate and puddles (stereo loop)", loop=True, gain=-20, priority=4)
@@ -1768,8 +2136,10 @@ def build_registry():
         reg(f"player/cloth_wool_move_{i:02d}.wav", cloth_wool, "player", "Heavy wool overcoat rustle", gain=-22, priority=5)
     reg("player/tinnitus_loop.wav", tinnitus_loop, "player", "Post-gunshot tinnitus: ~4.7 kHz unsteady ring + narrow noise band", loop=True, gain=-12, priority=5)
 
-    reg("alarm/whistle_trill_01.wav", lambda r: whistle_trill(r, [(1.6, 0.0)]), "alarm", "Pea whistle, one long trilled blast", gain=-6, priority=6)
-    reg("alarm/whistle_trill_02.wav", lambda r: whistle_trill(r, [(0.35, 0.12), (0.35, 0.12), (1.2, 0.0)]), "alarm", "Pea whistle, two short blasts and one long", gain=-6, priority=6)
+    reg("alarm/whistle_trill_01.wav", lambda r: whistle_trill(r, [(0.95, 0.17), (0.9, 0.17), (1.35, 0.0)]), "alarm",
+        "Pea whistle, three long trilled blasts with short breaths between, outdoor echo", gain=-6, priority=6)
+    reg("alarm/whistle_trill_02.wav", lambda r: whistle_trill(r, [(0.35, 0.12), (0.35, 0.12), (1.2, 0.0)]), "alarm",
+        "Pea whistle, two short blasts and one long, outdoor echo", gain=-6, priority=6)
     reg("alarm/siren_hand_crank.wav", siren_hand_crank, "alarm", "Hand-cranked siren: wind up, hold, wind down", gain=-6, priority=6)
     for i, times in enumerate([[0.0, 0.45], [0.0], [0.0, 0.35, 0.8], [0.0, 0.5, 0.85, 1.6]], 1):
         reg(f"alarm/dog_bark_distant_{i:02d}.wav", (lambda tm: (lambda r: dog_bark_distant(r, tm)))(times), "alarm",

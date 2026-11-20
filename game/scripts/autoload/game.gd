@@ -42,7 +42,7 @@ const KEY_ACTIONS := {
 	"pause": [KEY_ESCAPE],
 	"fullscreen": [KEY_F11],
 	"help": [KEY_F1],
-	"watch": [KEY_X],
+	"tools": [KEY_TAB],
 	"notebook": [KEY_J],
 	"throw": [KEY_G],
 	"weapon_1": [KEY_1],

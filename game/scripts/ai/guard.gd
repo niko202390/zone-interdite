@@ -810,6 +810,36 @@ func _physics_process(delta: float) -> void:
 		velocity.y = 0.0
 	move_and_slide()
 	_animate(delta)
+	_update_footsteps(delta)
+
+
+var _stride := 0.0
+
+
+## Boots on the ground, placed in the world so you can hear which way he is and roughly how far: heavier
+## and quicker when he runs, the surface under him, and the clink of kit with every other step.
+func _update_footsteps(_delta: float) -> void:
+	var hs := Vector2(velocity.x, velocity.z).length()
+	if hs < 0.3 or not is_on_floor():
+		return
+	var running := hs > 2.6
+	_stride += hs * _delta
+	var stride_len := 1.15 if running else 0.78
+	if _stride < stride_len:
+		return
+	_stride -= stride_len
+	var surface := "cobble"
+	var q := PhysicsRayQueryParameters3D.create(global_position + Vector3.UP * 0.3, global_position + Vector3.DOWN * 0.6, Game.LAYER_WORLD, [get_rid()])
+	var hit := get_world_3d().direct_space_state.intersect_ray(q)
+	if not hit.is_empty():
+		surface = ImpactFX.surface_of(hit.collider, hit.position)
+	var key := "footsteps/%s_%s" % [surface, "run" if running else "walk"]
+	if surface in ["cobble", "stone"] and SoundLib.has_sound("footsteps/npc_hobnail_cobble"):
+		key = "footsteps/npc_hobnail_cobble"
+	elif not SoundLib.has_sound(key):
+		key = "footsteps/cobble_%s" % ("run" if running else "walk")
+	# Hobnailed jackboots are louder than the player's shoes.
+	SoundLib.play_3d(key, global_position + Vector3.UP * 0.05, 3.0 if running else -1.0, 55.0, 0.07, 2.5)
 
 
 var _moving_this_frame := false

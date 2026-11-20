@@ -50,10 +50,17 @@ func _start_tinnitus() -> void:
 
 ## level_db: peak SPL at 1 m from the source. distance: metres from the listener's ear.
 ## enclosed: walls and ceiling close by reflect the impulse back, which adds several dB.
+## Off for now: the muffling and ringing after gunfire sounded wrong in playtests. The model stays, ready
+## to switch back on once it's been reworked.
+const ENABLED := false
+
+
 func expose(level_db: float, distance: float, enclosed := false, own := false) -> void:
 	var received := level_db + linear_to_db(1.0 / maxf(distance, 1.0)) + (8.0 if enclosed else 0.0) \
 		+ (OWN_SHOT_DB if own else STARTLE_DB)
 	exposed.emit(received)
+	if not ENABLED:
+		return
 	_energy += pow(10.0, (received - 150.0) / 10.0)
 	var cumulative := 150.0 + 10.0 * log(maxf(_energy, 1e-9)) / log(10.0)
 	var dose := clampf((cumulative - SHIFT_THRESHOLD_DB) / SHIFT_RANGE_DB, 0.0, 1.0)

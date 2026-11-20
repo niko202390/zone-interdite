@@ -409,6 +409,9 @@ func _hammer_fall(extra_spread_deg: float) -> void:
 	hammer_cocked = false
 	if not chambered:
 		SoundLib.play_2d(data.sound_dry, 0.0)
+		# Click. A rifleman's hand goes straight to the bolt.
+		if data.action == "bolt" and mag_rounds > 0:
+			_bolt_queued = true
 		return
 	_discharge(extra_spread_deg)
 
@@ -577,6 +580,7 @@ func _start_reload() -> void:
 		player.note("Your spare magazines are empty.", 2.0)
 		return
 	if mag_inserted and mag_rounds >= best and chambered:
+		player.note("Magazine's full. Your spares are no better." if mag_rounds >= data.magazine_capacity else "Your spares have fewer rounds than this one.", 2.0)
 		return
 	_reload_empty = slide_locked or not chambered
 	_begin_busy("reload", data.reload_empty_time if _reload_empty else data.reload_time)
@@ -588,6 +592,7 @@ func _start_fixed_reload() -> void:
 	var pool: int = player.ammo.get(data.caliber, 0)
 	var space := data.magazine_capacity - mag_rounds
 	if space <= 0 and chambered:
+		player.note("The rifle's full: five in the magazine, one up the spout.", 2.0)
 		return
 	if space <= 0:
 		# A full magazine but an empty chamber: just work the bolt.

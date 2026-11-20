@@ -65,9 +65,11 @@ func peaceful() -> bool:
 func _run_views() -> void:
 	var outdir: String = args.get("outdir", OS.get_user_data_dir().path_join("shots"))
 	DirAccess.make_dir_recursive_absolute(outdir)
+	# Wait for the level to exist and finish building (it builds over many frames).
 	var level := get_tree().get_first_node_in_group("level")
-	while level and not level.get("is_built"):
+	while level == null or not level.get("is_built"):
 		await get_tree().process_frame
+		level = get_tree().get_first_node_in_group("level")
 	await _frames(int(args.get("warm", "240")))
 	var player := get_tree().get_first_node_in_group("player") as Player
 	if player and args.has("rifle"):
@@ -75,6 +77,13 @@ func _run_views() -> void:
 		player.firearm.equip(Player.KAR98K)
 		if args.has("disguise"):
 			player.wear(String(args["disguise"]), 0.85)
+	if player and args.has("journal"):
+		player.overlay.journal.complete("checkpoint")
+		player.overlay.journal.complete("bbc")
+		player.overlay.add_lead("The harbour master drinks at the café. His satchel is behind it.")
+		player.overlay.journal.toggle()
+	if player and args.has("tools"):
+		player.overlay.instruments.force = true
 	for spec: String in String(args["views"]).split(";", false):
 		var parts := spec.split(":")
 		var view_name := parts[0]

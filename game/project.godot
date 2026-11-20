@@ -46,3 +46,7 @@ global_illumination/sdfgi/probe_ray_count=2
 environment/volumetric_fog/volume_size=96
 environment/volumetric_fog/volume_depth=96
 anti_aliasing/quality/use_taa=true
+
+[audio]
+
+general/3d_panning_strength=1.0

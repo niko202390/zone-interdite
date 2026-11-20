@@ -151,14 +151,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		select_weapon(1)
 	elif event.is_action_pressed("interact"):
 		_interact()
-	elif event.is_action_pressed("watch"):
-		var t := Game.clock_text()
-		if Game.curfew_active():
-			note("Your watch: %s. Curfew." % t, 3.0)
-		elif Game.clock_minutes >= Game.CURFEW_START - 30:
-			note("Your watch: %s. Curfew soon." % t, 3.0)
-		else:
-			note("Your watch: %s." % t, 2.5)
 
 
 ## Recoil from the weapon. A share of it ("stick") moves the aim permanently, like CS spray climb.

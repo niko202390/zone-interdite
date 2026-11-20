@@ -5,7 +5,7 @@ extends CanvasLayer
 const CONTROLS := """WASD  move        Mouse wheel  walking pace        Shift  sprint
 C  crouch        Space  jump        Q / E  lean
 RMB  aim        LMB  fire        R  reload        T  check magazine        1 / 2  pistol / rifle
-B  safety (decocks the hammer)        H  holster        F  interact / take down / search        hold F  drag a body        G  throw        X  watch        J  notebook
+B  safety (decocks the hammer)        H  holster        F  interact / take down / search        hold F  drag a body        G  throw        hold Tab  watch & compass        J  journal
 F1  this card        F11  fullscreen        Esc  pause / settings        F10  quit"""
 
 const INK := Color(0.86, 0.83, 0.76)
@@ -18,25 +18,22 @@ var _hint: Label
 var _hint_text := ""
 var _subtitle: Label
 var _subtitle_t := 0.0
-var _notebook: Label
-## Pages of the player's notebook: objectives and leads, in their own shorthand. Set by the level.
-var notebook_text := ""
-## Things noticed or overheard, added as the player discovers them.
-var leads: PackedStringArray = PackedStringArray()
+## The agent's journal (J): tasks, crossed out as they're done, and Intel. Filled in by the level.
+var journal: Journal
+## Watch and compass, held up while Tab is down.
+var instruments: Instruments
+var _intel_count := 0
 
 
+## Something worth remembering goes into the journal's Intel. The first time, you're told where it went.
 func add_lead(text: String) -> void:
-	if text == "" or leads.has(text):
+	if journal == null or not journal.add_intel(text):
 		return
-	leads.append(text)
-	if _notebook and _notebook.visible:
-		_notebook.text = _notebook_page()
-
-
-func _notebook_page() -> String:
-	if leads.is_empty():
-		return notebook_text
-	return notebook_text + "\n\nLEADS\n  - " + "\n  - ".join(leads)
+	_intel_count += 1
+	SoundLib.play_2d("ui/pen_scratch_loop", -20.0)
+	if _intel_count == 1:
+		get_tree().create_timer(3.0, false).timeout.connect(func() -> void:
+			note("You make a note of it. (J: your journal)", 4.0))
 
 
 var _pause: Control
@@ -93,27 +90,11 @@ func _ready() -> void:
 	_subtitle.modulate.a = 0.0
 	add_child(_subtitle)
 
-	_notebook = _label(19)
-	_notebook.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	_notebook.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-	_notebook.set_anchors_and_offsets_preset(Control.PRESET_LEFT_WIDE)
-	_notebook.offset_left = 70
-	_notebook.offset_right = 760
-	_notebook.offset_top = 110
-	_notebook.offset_bottom = -110
-	_notebook.add_theme_color_override("font_color", Color(0.12, 0.1, 0.08))
-	_notebook.add_theme_constant_override("outline_size", 0)
-	var paper := StyleBoxFlat.new()
-	paper.bg_color = Color(0.86, 0.82, 0.72, 0.96)
-	paper.content_margin_left = 34
-	paper.content_margin_right = 34
-	paper.content_margin_top = 30
-	paper.content_margin_bottom = 30
-	paper.shadow_size = 12
-	paper.shadow_color = Color(0, 0, 0, 0.5)
-	_notebook.add_theme_stylebox_override("normal", paper)
-	_notebook.visible = false
-	add_child(_notebook)
+	instruments = Instruments.new()
+	instruments.player = get_parent() as Node3D
+	add_child(instruments)
+	journal = Journal.new()
+	add_child(journal)
 
 	_help = _label(17)
 	_help.text = CONTROLS
@@ -216,6 +197,19 @@ func _build_pause() -> void:
 	_check_row(grid, "Fullscreen", Settings.fullscreen, func(on: bool) -> void: Settings.set_value("fullscreen", on))
 	_check_row(grid, "Vertical sync", Settings.vsync, func(on: bool) -> void: Settings.set_value("vsync", on))
 
+	var buttons := HBoxContainer.new()
+	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
+	buttons.add_theme_constant_override("separation", 30)
+	col.add_child(buttons)
+	var resume := Button.new()
+	resume.text = "  Resume  "
+	resume.pressed.connect(func() -> void: _set_paused(false))
+	buttons.add_child(resume)
+	var close := Button.new()
+	close.text = "  Close game  "
+	close.pressed.connect(func() -> void: get_tree().quit())
+	buttons.add_child(close)
+
 	var controls := _label(16)
 	controls.text = "\n" + CONTROLS
 	col.add_child(controls)
@@ -301,8 +295,7 @@ func _input(event: InputEvent) -> void:
 		_set_paused(not get_tree().paused)
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("notebook") and not get_tree().paused:
-		_notebook.text = _notebook_page()
-		_notebook.visible = not _notebook.visible
+		journal.toggle()
 		SoundLib.play_2d("player/cloth_wool_move", -6.0)
 	elif event.is_action_pressed("help"):
 		_help_t = 0.0 if _help_t > 0.0 else 30.0

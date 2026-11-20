@@ -37,5 +37,5 @@ func _run() -> void:
 		if sub != last:
 			print("RADIO t=%3d %s  %s" % [i * 2, root.get_node("Game").clock_text(), sub])
 			last = sub
-	print("RADIO leads: ", player.overlay.leads)
+	print("RADIO intel: ", player.overlay.journal.intel, " bbc done=", player.overlay.journal.is_done("bbc"))
 	quit()
