@@ -27,6 +27,15 @@ const BARKS := {
 	"inspect": [["Zeigen Sie mal her.", "Let's have a look."]],
 	"pass": [["Gut. Weitergehen.", "Fine. Move along."]],
 	"no_pass": [["Kein Passierschein für die Sperrzone. Zurück!", "No pass for the restricted zone. Go back!"]],
+	"closed": [["Heute Nacht kommt hier keiner durch. Alarm. Zurück!", "Nobody gets through tonight. There's an alert. Go back!"]],
+	"where": [["Wohin wollen Sie?", "Where are you going?"]],
+	"pass_q": [["Und Ihr Passierschein für die Zone?", "And your pass for the zone?"]],
+	"parole": [["Halt! Parole?", "Halt! Password?"]],
+	"liar": [["Das ist der Schein von Guégans Schreiber! Sie lügen! Hände hoch!", "That's Guégan's clerk's pass! You're lying! Hands up!"]],
+	"parole_ok": [["Gut. Weiter, Kamerad.", "Good. Carry on, mate."]],
+	"parole_bad": [["Falsche Parole! Stehenbleiben!", "Wrong password! Stand still!"]],
+	"parole_forgot": [["Vergessen? Dann bleiben Sie draußen, bis Ihr Unteroffizier Sie holt.", "Forgot it? Then you stay out until your sergeant comes for you."]],
+	"silent": [["Na? Hat's Ihnen die Sprache verschlagen?", "Well? Cat got your tongue?"]],
 	"curfew": [["Sperrstunde! Was machen Sie hier draußen?", "Curfew! What are you doing out here?"]],
 	"wounded": [["Was ist mit Ihnen passiert? Mitkommen!", "What happened to you? Come with me!"]],
 	"warning": [["Halt! Oder ich schieße!", "Halt! Or I shoot!"]],
@@ -41,9 +50,21 @@ const BARKS := {
 }
 
 ## Small talk at the checkpoint, [sentry line, patrol reply]. Some of it is useful to an eavesdropper.
+## Tonight's password for anyone in uniform after dark at the harbour checkpoint.
+const PAROLE := "Seeadler"
 const CHATS := [
 	[["Die Leitung zum Hafen spinnt schon wieder.", "The line to the harbour's playing up again."],
-	 ["Solange sie bis zur Kommandantur geht, ist mir das egal.", "As long as it reaches HQ, I don't care."]],
+	 ["Solange sie bis zur Kommandantur geht, ist mir das egal.", "As long as it reaches HQ, I don't care."],
+	 "The checkpoint phone line runs to HQ. Cut it and the sentry can't call."],
+	[["Wie war die Parole heute Nacht nochmal?", "What was tonight's password again?"],
+	 ["Seeadler. Und frag nicht nochmal, sonst lass ich dich draußen stehen.", "Seeadler. Don't ask again or I'll leave you standing outside."],
+	 "Tonight's password at the checkpoint, for anyone in uniform: SEEADLER."],
+	[["Halb acht, Zigarette beim Café?", "Half seven, a smoke by the café?"],
+	 ["Wie jeden Abend. Bis viertel vor acht.", "Same as every night. Till quarter to eight."],
+	 "The street patrol stops for a cigarette outside the café from 19:30 to about 19:45."],
+	[["Um zehn werd' ich abgelöst. Bis Müller vom Hafen hochkommt, steht der Posten leer.", "I'm relieved at ten. Till Müller comes up from the harbour, the post stands empty."],
+	 ["Lass das bloß nicht den Leutnant hören.", "Don't let the lieutenant hear that."],
+	 "At 22:00 the checkpoint sentry walks down to the harbour for his relief. The post is empty for a few minutes."],
 	[["Guégan hat seine Tasche schon wieder hinterm Café liegen lassen.", "Guégan's left his satchel behind the café again."],
 	 ["Der säuft sich noch um seinen Posten. Mit Passierschein und allem.", "He'll drink himself out of his job. Pass and all."]],
 	[["Hast du die Mäntel der Marine auf der Leine gesehen? Hinter den Häusern.", "Seen the navy coats on the washing line? Behind the houses."],
@@ -56,6 +77,9 @@ const CHATS := [
 	 ["Und dann Sperrstunde. Dann schießen wir wenigstens auf was.", "Then curfew. At least then we get to shoot at something."]],
 ]
 static var _chat_index := 0
+## The town's alert level tonight: 0 calm, 1 local (shots heard), 2 town (a body, an intruder seen for what he
+## is), 3 regional (a call got through to HQ). It only ever goes up.
+static var town_alert := 0
 ## Seconds a turned-back civilian has to leave the restricted zone before the sentry treats them as hostile.
 const TURN_BACK_GRACE := 8.0
 
@@ -64,6 +88,11 @@ const LOUD_BARKS := ["alerted", "body", "search", "warning", "challenge"]
 const FELDGRAU := Color(0.29, 0.31, 0.27)
 
 @export var patrol_points: PackedVector3Array = PackedVector3Array()
+## Routines by the clock: [{"from": minutes, "to": minutes, "pos": Vector3, "yaw": degrees}]. While one is on, a
+## calm guard goes there and stays, then goes back to his rounds.
+var schedule: Array = []
+var _answer := -1
+var _question := ""
 @export var walk_speed := 1.25
 @export var run_speed := 4.0
 @export var view_distance := 48.0
@@ -396,6 +425,8 @@ func _hostility() -> float:
 ## Called by the level on load so one run's paperwork doesn't leak into the next.
 static func reset_shared() -> void:
 	phone_line_ok = true
+	town_alert = 0
+	_chat_index = 0
 	_papers_checkers.clear()
 	_cleared_until = -1.0
 	_grace_until_ms = 0
@@ -454,9 +485,13 @@ func _update_chat(delta: float) -> void:
 		_chat_index += 1
 		say(pair[0])
 		var other := g
+		var intel: String = pair[2] if pair.size() > 2 else ""
 		get_tree().create_timer(3.2, false).timeout.connect(func() -> void:
 			if is_instance_valid(other):
-				other.say(pair[1]))
+				other.say(pair[1])
+				# Close enough to follow it, and something worth remembering.
+				if intel != "" and _player and _player.global_position.distance_to(global_position) < 16.0 and _player.overlay:
+					_player.overlay.add_lead(intel))
 		return
 	_chat_cd = 2.0
 
@@ -488,10 +523,93 @@ func present_papers(p: Node3D) -> void:
 		return
 	_enter(State.INSPECT)
 	if p is Player:
-		(p as Player).busy = 3.6
+		(p as Player).busy = 14.0
+
+
+## He looks at the papers, then asks a question. The answer decides it: the right one gets you through,
+## a wrong one is worse than saying nothing.
+func _ask(kind: String) -> void:
+	_question = kind
+	_answer = -1
+	if _player == null or _player.overlay == null:
+		return
+	var opts: Array = []
+	var bark_kind := ""
+	match kind:
+		"where":
+			bark_kind = "where"
+			opts = ["Au bureau du port. Je travaille pour M. Guégan.", "Chez ma tante, près du quai.", "(Say nothing)"]
+		"pass_q":
+			bark_kind = "pass_q"
+			opts = ["Je l'ai oublié chez moi, monsieur.", "Je suis d'ici. Je n'en ai pas besoin.", "(Say nothing)"]
+		"parole":
+			bark_kind = "parole"
+			opts = ["Seeadler.", "Edelweiss.", "Hab' ich vergessen, Kamerad."]
+	get_tree().create_timer(0.9, false).timeout.connect(func() -> void:
+		_bark_cd = 0.0
+		bark(bark_kind)
+		_player.overlay.ask(opts, 9.0, func(i: int) -> void: _answer = i))
 
 
 func _papers_verdict() -> void:
+	if _player.busy > 0.0:
+		_player.busy = 0.6
+	if _question == "parole":
+		_question = ""
+		_bark_cd = 0.0
+		if _answer == 0:
+			bark("parole_ok")
+			_cleared_until = Game.clock_minutes + 60.0
+			suspicion = 0.0
+			_enter(State.PATROL)
+		elif _answer == 1:
+			bark("parole_bad")
+			_player.wear("", 0.0)
+			raise_town(2, "unmasked")
+			_combat_t = 0.0
+			suspicion = 1.3
+			_enter(State.ALERTED)
+		else:
+			bark("parole_forgot")
+			_turned_away_t = 0.0
+			_grace_until_ms = Time.get_ticks_msec() + int(TURN_BACK_GRACE * 1000.0)
+			suspicion = 0.5
+			_enter(State.PATROL)
+		return
+	var q := _question
+	_question = ""
+	if q == "where" and _answer == 1:
+		# The pass is made out to Guégan's clerk. Any other story gives it away.
+		_bark_cd = 0.0
+		bark("liar")
+		_player.papers["zone_pass"] = false
+		_combat_t = 0.0
+		suspicion = 1.3
+		_enter(State.ALERTED)
+		return
+	if q == "where" and _answer == 2 and randf() < 0.5:
+		_bark_cd = 0.0
+		bark("silent")
+		_player.papers["zone_pass"] = false
+		_turned_away_t = 0.0
+		_grace_until_ms = Time.get_ticks_msec() + int(TURN_BACK_GRACE * 1000.0)
+		suspicion = 0.5
+		_enter(State.PATROL)
+		return
+	_papers_judge(q)
+
+
+func _papers_judge(q: String) -> void:
+	_bark_cd = 0.0
+	if town_alert >= 2:
+		bark("closed")
+		_turned_away_t = 0.0
+		_grace_until_ms = Time.get_ticks_msec() + int(TURN_BACK_GRACE * 1000.0)
+		suspicion = 0.6
+		_enter(State.PATROL)
+		return
+	if q == "pass_q" and _answer == 1:
+		suspicion = 0.7   # a smart answer: he'll remember your face
 	if _player.health < 60.0:
 		bark("wounded")
 		_combat_t = 0.0
@@ -512,7 +630,7 @@ func _papers_verdict() -> void:
 		bark("no_pass")
 		_turned_away_t = 0.0
 		_grace_until_ms = Time.get_ticks_msec() + int(TURN_BACK_GRACE * 1000.0)
-		suspicion = 0.3
+		suspicion = maxf(suspicion, 0.3)
 		_enter(State.PATROL)
 
 
@@ -572,6 +690,7 @@ func _perceive() -> void:
 			var navy: bool = _player.disguise == "kriegsmarine"
 			_player.wear("", 0.0)
 			_player.note("He's seen through the coat.", 3.0)
+			raise_town(2, "unmasked")
 			_bark_cd = 0.0
 			bark("unmasked" if navy else "unmasked_army")
 			_combat_t = 0.0
@@ -597,6 +716,7 @@ func _on_noise(pos: Vector3, loudness: float, source: Node) -> void:
 	var guess := pos + Vector3(randf_range(-err, err), 0, randf_range(-err, err))
 	if loudness >= 110.0:
 		# A gunshot or a whistle. Something is wrong; go and find out, fast.
+		raise_town(1, "shots")
 		_combat_t = 0.0
 		alertness = minf(alertness + 0.5, 1.5)
 		if state != State.ALERTED:
@@ -642,10 +762,26 @@ func _enter(s: State) -> void:
 			_warn_t = 0.0
 			bark("challenge")
 		State.INSPECT:
-			bark("inspect")
+			if _question == "parole":
+				pass
+			elif _player.health < 60.0 or Game.curfew_active() or town_alert >= 2:
+				bark("inspect")
+				_question = "none"
+			else:
+				bark("inspect")
+				_ask("where" if _player.papers.get("zone_pass", false) else "pass_q")
+
+
+## Raise the town's alert. The level hears about it and changes the night accordingly.
+func raise_town(level: int, reason: String) -> void:
+	if level <= town_alert:
+		return
+	town_alert = level
+	get_tree().call_group("level", "on_town_alert", level, reason)
 
 
 func _raise_alarm() -> void:
+	get_tree().call_group("level", "on_alarm")
 	if _whistle_cd > 0.0:
 		return
 	_whistle_cd = 25.0
@@ -674,6 +810,15 @@ func _think(delta: float) -> void:
 	if checkpoint and _player.disguise != "" and _can_see_player and state == State.PATROL \
 			and global_position.distance_to(_player.global_position) < 9.0 and _bark_cd <= 0.0 and randf() < 0.02:
 		bark("greet" if _player.disguise == "kriegsmarine" else "greet_army")
+	if checkpoint and _player.disguise != "" and state in [State.PATROL, State.CURIOUS, State.SUSPICIOUS] and not hostile \
+			and _can_see_player and _player_in_challenge_zone() \
+			and Game.clock_minutes >= 20.0 * 60.0 and Game.clock_minutes > _cleared_until and _turned_away_t > 30.0 \
+			and global_position.distance_to(_player.global_position) < 7.0:
+		_question = "parole"
+		_enter(State.INSPECT)
+		_ask("parole")
+		if _player.busy < 1.0:
+			_player.busy = 11.0
 	if checkpoint and _player.disguise == "" and _turned_away_t > 60.0 and state in [State.PATROL, State.CURIOUS, State.SUSPICIOUS] \
 			and _can_see_player and not hostile and (_player_in_challenge_zone() or _zone_violation()):
 		_enter(State.CHALLENGE)
@@ -698,7 +843,11 @@ func _think(delta: float) -> void:
 				_bark_cd = 0.0
 				bark("challenge")
 		State.INSPECT:
-			if _state_t > 3.5:
+			# A plain look at the papers takes a few seconds; a question waits for its answer.
+			var waiting := _question != "" and _question != "none" and _answer < 0 and _state_t < 11.0
+			if _state_t > 3.5 and not waiting:
+				if _question == "none":
+					_question = ""
 				_papers_verdict()
 		State.PATROL:
 			if suspicion >= 0.25:
@@ -731,6 +880,21 @@ func _think(delta: float) -> void:
 		_enter(State.ALERTED)
 
 
+func _active_routine() -> Dictionary:
+	if town_alert >= 2:
+		return {}   # nobody takes a cigarette break with the town on alert
+	var m := fposmod(Game.clock_minutes, 1440.0)
+	for r: Dictionary in schedule:
+		if m >= float(r["from"]) and m < float(r["to"]):
+			return r
+	return {}
+
+
+## Is this guard away from his post on a routine right now (for the level and tests)?
+func on_routine() -> bool:
+	return not _active_routine().is_empty()
+
+
 func _physics_process(delta: float) -> void:
 	if state == State.DEAD:
 		_update_death(delta)
@@ -759,11 +923,17 @@ func _physics_process(delta: float) -> void:
 	match state:
 		State.PATROL:
 			_look_yaw = sin(_state_t * 0.35) * 0.45 if _wait > 0.0 else move_toward(_look_yaw, 0.0, delta)
-			if patrol_points.is_empty():
+			var routine := _active_routine()
+			if not routine.is_empty():
+				# A routine by the clock: a smoke at the café, the walk down for the relief.
+				if _move_toward_point(routine["pos"], walk_speed, delta):
+					face_dir = Vector3.FORWARD.rotated(Vector3.UP, deg_to_rad(float(routine.get("yaw", 0.0))))
+					_look_yaw = sin(_state_t * 0.25) * 0.3
+			elif patrol_points.is_empty():
 				pass
 			elif _wait > 0.0:
 				_wait -= delta
-			elif _move_toward_point(patrol_points[_patrol_i], walk_speed, delta):
+			elif _move_toward_point(patrol_points[_patrol_i], walk_speed * (1.35 if town_alert >= 2 else 1.0), delta):
 				_patrol_i = (_patrol_i + 1) % patrol_points.size()
 				_wait = randf_range(3.0, 7.0) if patrol_points.size() > 1 else 9999.0
 			if patrol_points.size() <= 1 and _wait > 0.0:
@@ -985,6 +1155,7 @@ func take_hit(damage: float, pos: Vector3, _dir: Vector3, attacker: Node) -> voi
 
 func _die(quiet := false) -> void:
 	_died_quietly = quiet
+	get_tree().call_group("level", "on_guard_died", self, quiet)
 	_papers_checkers.erase(self)
 	state = State.DEAD
 	_state_t = 0.0
@@ -1098,6 +1269,7 @@ func _update_phone_call(delta: float) -> bool:
 		_bark_cd = 0.0
 		if phone_line_ok:
 			bark("phone_ok")
+			raise_town(3, "call")
 			get_tree().call_group("level", "call_reinforcements", target_pos)
 		else:
 			bark("phone_dead")
@@ -1165,6 +1337,8 @@ func _check_bodies() -> void:
 			continue
 		var g := b as Guard
 		var bp := g.body_center()
+		if bp.y < -0.75:
+			continue   # under the water
 		var to := bp - eye
 		var light_f := clampf(Visibility.light_level(get_world_3d(), bp, [g.get_rid()]) / 0.5, 0.12, 2.5)
 		# A body on the ground is harder to make out than a man standing up.
@@ -1178,6 +1352,7 @@ func _check_bodies() -> void:
 		g.discovered = true
 		_bark_cd = 0.0
 		bark("body")
+		raise_town(2, "body")
 		target_pos = bp
 		alertness = 1.5
 		_combat_t = 0.0

@@ -23,6 +23,36 @@ var journal: Journal
 ## Watch and compass, held up while Tab is down.
 var instruments: Instruments
 var _intel_count := 0
+var _ask_box: Label
+var _ask_cb: Callable
+var _ask_t := 0.0
+var _ask_n := 0
+
+
+## A question you answer out loud: the choices appear under the subtitle, 1 to 3. Not answering in time is the
+## last choice (usually saying nothing).
+func ask(options: Array, seconds: float, on_answer: Callable) -> void:
+	var lines := PackedStringArray()
+	for i in options.size():
+		lines.append("%d   %s" % [i + 1, options[i]])
+	_ask_box.text = "\n".join(lines)
+	_ask_cb = on_answer
+	_ask_t = seconds
+	_ask_n = options.size()
+
+
+func is_asking() -> bool:
+	return _ask_t > 0.0
+
+
+func _answer(i: int) -> void:
+	if _ask_t <= 0.0:
+		return
+	_ask_t = 0.0
+	var cb := _ask_cb
+	_ask_cb = Callable()
+	if cb.is_valid():
+		cb.call(i)
 
 
 ## Something worth remembering goes into the journal's Intel. The first time, you're told where it went.
@@ -90,6 +120,16 @@ func _ready() -> void:
 	_subtitle.modulate.a = 0.0
 	add_child(_subtitle)
 
+	_ask_box = _label(19)
+	_ask_box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_ask_box.offset_top = -330
+	_ask_box.offset_bottom = -200
+	_ask_box.offset_left = -600
+	_ask_box.offset_right = 600
+	_ask_box.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_ask_box.add_theme_color_override("font_color", Color(0.95, 0.88, 0.7))
+	_ask_box.modulate.a = 0.0
+	add_child(_ask_box)
 	instruments = Instruments.new()
 	instruments.player = get_parent() as Node3D
 	add_child(instruments)
@@ -291,6 +331,12 @@ func fade_to(alpha: float) -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if _ask_t > 0.0 and not get_tree().paused:
+		for k in 3:
+			if k < _ask_n and event.is_action_pressed(["weapon_1", "weapon_2", "answer_3"][k]):
+				_answer(k)
+				get_viewport().set_input_as_handled()
+				return
 	if event.is_action_pressed("pause"):
 		_set_paused(not get_tree().paused)
 		get_viewport().set_input_as_handled()
@@ -318,5 +364,11 @@ func _process(delta: float) -> void:
 	_help.modulate.a = move_toward(_help.modulate.a, 0.8 if _help_t > 0.0 else 0.0, delta * 1.5)
 	_fade.color.a = move_toward(_fade.color.a, _fade_target, delta * 0.6)
 	_hint.modulate.a = move_toward(_hint.modulate.a, 0.55 if _hint_text != "" else 0.0, delta * 4.0)
+	if _ask_t > 0.0:
+		_ask_t -= delta
+		if _ask_t <= 0.0:
+			_ask_t = 0.001
+			_answer(_ask_n - 1)
+	_ask_box.modulate.a = move_toward(_ask_box.modulate.a, 0.95 if _ask_t > 0.0 else 0.0, delta * 4.0)
 	_subtitle_t -= delta
 	_subtitle.modulate.a = move_toward(_subtitle.modulate.a, 0.95 if _subtitle_t > 0.0 else 0.0, delta * 3.0)

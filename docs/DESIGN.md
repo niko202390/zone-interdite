@@ -1,6 +1,6 @@
 # Zone Interdite: design document
 
-This is a living document. Historical research that supports it lives in `docs/research/`. Asset conventions live in `docs/ASSET_PIPELINE.md`. The ten-mission campaign and its story are in `docs/CAMPAIGN.md`, and the full design of Mission 1 is in `docs/MISSION_01.md`.
+This is a living document. For what makes it a *game* (the loop, the choices, the lessons from other stealth games) see `docs/DESIGN_REVIEW.md`. Historical research that supports it lives in `docs/research/`. Asset conventions live in `docs/ASSET_PIPELINE.md`. The ten-mission campaign and its story are in `docs/CAMPAIGN.md`, and the full design of Mission 1 is in `docs/MISSION_01.md`.
 
 ## Pitch
 

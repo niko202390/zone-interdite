@@ -82,6 +82,12 @@ func _run_views() -> void:
 		player.overlay.journal.complete("bbc")
 		player.overlay.add_lead("The harbour master drinks at the café. His satchel is behind it.")
 		player.overlay.journal.toggle()
+	if player and args.has("ask"):
+		player.overlay.subtitle("Wohin wollen Sie?", "Where are you going?")
+		player.overlay.subtitle_t_override(60.0)
+		player.overlay.ask(["Au bureau du port. Je travaille pour M. Guégan.", "Chez ma tante, près du quai.", "(Say nothing)"], 60.0, func(_i: int) -> void: pass)
+	if player and args.has("debrief"):
+		level._show_report("cove")
 	if player and args.has("tools"):
 		player.overlay.instruments.force = true
 	for spec: String in String(args["views"]).split(";", false):

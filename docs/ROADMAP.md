@@ -4,6 +4,17 @@ We build this in small sessions over several weeks. Each "improve and work on th
 
 The milestones and design are in `docs/DESIGN.md`.
 
+## Plouzennec until it's right (from docs/DESIGN_REVIEW.md §7)
+We stay on this one level until the user is satisfied. In order:
+1. [ ] **The Hôtel de la Plage interior and the key sheets:** kitchen, dining room, stairs, and the first-floor signals room with the cabinet. Copy by hand (slow) or photograph (the camera from the dead drop), and put everything back.
+2. [ ] **Ways into the hotel:** the coal chute (kit `CoalChute`), the kitchen door with the cook, and the front door in a navy coat (kit `Door`).
+3. [ ] **People on schedules inside:** Brenner and his cabinet key, the radio operator's watch, the door sentry's relief.
+4. [ ] **The boat:** 02:30–03:15 at the cove; signal K by torch; the dinghy; London's report. *(The report exists now.)*
+5. [ ] **Interrogation:** take a guard from behind and threaten instead of kill. The password, Brenner's room.
+6. [ ] **Doors as evidence:** an open door gets noticed and closed, and suspicion rises.
+7. [ ] **The dog** in the hotel yard after 21:00.
+8. [ ] **The opening** (MISSION_01 §0), once the level plays well.
+
 ## Next session, first
 - [x] Integrate the **rigged soldier** (done 19 Nov): AnimationPlayer driven by guard state, the Kar98k on its socket, the torch on TorchMount, a Feldgendarmerie variant at the checkpoint.
 - [x] Integrate the **house interiors** (done 19 Nov): coloured doors, lamps, an interior probe. The hooks already exist in village_test.gd `_setup_interior`.
@@ -66,6 +77,12 @@ The milestones and design are in `docs/DESIGN.md`.
 - [ ] A better rain bed, and rework the dog barks if they don't convince.
 
 ## Session log
+- **2026-11-21:** Design review (docs/DESIGN_REVIEW.md): what the player does, what's hard, what they choose, and lessons from Splinter Cell, Hitman, 007 First Light and MOHAA's undercover mission. Cohesive pass:
+  - The town's alert level (calm/local/town/regional) never resets tonight. At town level the checkpoint closes, patrols hurry, and whistles and dogs sound.
+  - Checkpoint questions answered with 1–3, where the right answer depends on your intel. Uniforms after dark need the password (SEEADLER, overheard).
+  - Guards keep routines by the clock: the café smoke at 19:30, the relief at 22:00 leaves the post empty. Overheard chats put intel in the journal.
+  - Bodies in water are never found.
+  - London's typed report at the cove or on death, with a verdict (« Ils n'ont rien su » / « Ils se doutent » / « Ils savent » / « Disparu »).
 - **2026-11-19 (late):** Enemy weapons and uniforms. Dropped Kar98ks can be picked up: bolt action, five-round stripper clips or loose rounds from your pockets, and keys 1 and 2 to swap weapons, each keeping its own state. Bodies can be searched (rifle clips; a P38 magazine from a Feldgendarm) and stripped of the greatcoat, which gives a Wehrmacht disguise. Its quality is 0.85 after a knife and 0.7 after a shot, and the unmasking distance scales with it. Hold F to drag a body. A civilian carrying a rifle is hostile. Map structure pass on Plouzennec with the town kit (13 models): harbour and quay, boats, fish hall, the Hotel de la Plage with a door sentry, a quay patrol, the church and parish close, the mairie on the square, the headland strongpoint with a sweeping searchlight, wire and mine signs, the Le Goff farm start, the mill and plank bridge, and the wood with the SOE container. The objective is now the cove. New test: tools/godot/test_pickup.gd.
 - **2026-11-19 (afternoon):** Self-updating builds. The repo is public. Full build base-0.3.0 released (the last big download). Patch 0.3.1 (14.8 KB) verified end to end: the game downloaded it, checked the SHA-256, restarted and ran as v0.3.1.
 - **2026-11-19 (day):** Checked the agents: soldier, interiors and nature all complete. The rigged soldiers and the Feldgendarm sentry are in, with state-driven animation, rifle sockets and dropping. The BBC wireless is in the café, with the V-signal, news, and messages personnels including ours, plus static, jamming and a radio bus. Rain no longer falls indoors (heightfield roof collision). F prefers what you're looking at. Opening, deer and parachute ideas went into MISSION_01 §0.

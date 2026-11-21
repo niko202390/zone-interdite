@@ -63,6 +63,8 @@ func _run() -> void:
 	await _wait(0.4)
 	player._refresh_interact()
 	player._interact()
+	await _wait(2.5)
+	player.overlay._answer(0)   # "To the harbour office, for M. Guégan": the clerk's pass backs it up
 	await _wait(4.5)
 	print("PASS   sentry=%s  subtitle=%s" % [sentry.state_name(), player.overlay._subtitle.text.replace("\n", " ")])
 	player.debug_place(Vector3(1.0, 0.05, 52.0), 0.0, 0.0)

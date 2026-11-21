@@ -549,7 +549,11 @@ func _die() -> void:
 	if overlay:
 		overlay.fade_to(1.0)
 	note("You were killed.", 9.0)
-	get_tree().create_timer(7.0, false).timeout.connect(get_tree().reload_current_scene)
+	var level := get_tree().get_first_node_in_group("level")
+	if level and level.has_method("on_player_died"):
+		level.on_player_died()
+	else:
+		get_tree().create_timer(7.0, false).timeout.connect(get_tree().reload_current_scene)
 
 
 func note(text: String, seconds := 3.0) -> void:

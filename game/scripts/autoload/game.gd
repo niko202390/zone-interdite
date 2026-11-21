@@ -47,6 +47,7 @@ const KEY_ACTIONS := {
 	"throw": [KEY_G],
 	"weapon_1": [KEY_1],
 	"weapon_2": [KEY_2],
+	"answer_3": [KEY_3],
 	"quit": [KEY_F10],
 }
 const MOUSE_ACTIONS := {

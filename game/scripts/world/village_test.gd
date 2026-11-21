@@ -149,6 +149,8 @@ func _spawn_guards() -> void:
 	add_child(sentry)
 	sentry.global_position = Vector3(2.4, 0.05, 46.6)
 	sentry.rotation.y = deg_to_rad(8.0)
+	# At ten he walks down to the harbour to fetch his relief, and the post stands empty for a few minutes.
+	sentry.schedule = [{"from": 22.0 * 60.0, "to": 22.0 * 60.0 + 7.0, "pos": Vector3(9.0, 0.05, 78.0), "yaw": 180.0}]
 
 	var patrol := Guard.new()
 	patrol.name = "Patrol"
@@ -156,6 +158,8 @@ func _spawn_guards() -> void:
 		Vector3(1.0, 0.05, -44.0), Vector3(-1.0, 0.05, 2.0)])
 	add_child(patrol)
 	patrol.global_position = Vector3(1.2, 0.05, 30.0)
+	# Every evening at half seven: a cigarette outside the café, back on his rounds by quarter to eight.
+	patrol.schedule = [{"from": 19.0 * 60.0 + 30.0, "to": 19.0 * 60.0 + 46.0, "pos": Vector3(-2.3, 0.05, -48.6), "yaw": -90.0}]
 	patrol.rotation.y = 0.0
 
 	# Kriegsmarine signals post: a sentry on the hotel door, and a man walking the quay.
@@ -929,8 +933,11 @@ func _setup_test_objective() -> void:
 	shore.position = cove_position()
 	shore.body_entered.connect(func(b: Node) -> void:
 		if b == player and not player.dead:
-			player.note("The Anse de Kerlo. Shingle, and the sea. You made it past them, for now. (Test objective complete.)", 8.0)
-			_task_done("cove"))
+			player.note("The Anse de Kerlo. Shingle, and the sea. You made it past them, for now.", 6.0)
+			_task_done("cove")
+			get_tree().create_timer(5.0, false).timeout.connect(_show_report.bind("cove")))
+	player.firearm.fired.connect(func(_o: Vector3, _d: Vector3) -> void: stats["shots"] = int(stats["shots"]) + 1)
+	stats["start"] = Game.clock_minutes
 	# Taught as you go, not in the journal: a word about the watch and compass, and the journal itself.
 	get_tree().create_timer(2.5, false).timeout.connect(func() -> void:
 		player.note("Plouzennec, 17:40. Your notes are in your coat. (J)", 6.0))
@@ -938,6 +945,147 @@ func _setup_test_objective() -> void:
 		if not _tab_taught:
 			player.note("The bourg is north, past the church spire. (Hold Tab: watch and compass)", 6.0))
 	player.overlay.instruments.first_used.connect(func() -> void: _tab_taught = true)
+
+
+# --- the night's record, the town's alert, and London's report ---------------------------------
+
+## What happened tonight, for the report.
+var stats := {"shots": 0, "killed": 0, "killed_quiet": 0, "alarms": 0, "max_alert": 0, "disguises": [],
+	"hidden": 0, "start": 17.0 * 60.0 + 40.0}
+var _awake_t := 10.0
+var _drowned := {}
+var _report_shown := false
+
+
+func on_town_alert(level: int, reason: String) -> void:
+	stats["max_alert"] = maxi(int(stats["max_alert"]), level)
+	match level:
+		2:
+			player.note("Whistles across the bourg, and dogs. They know someone's out here tonight.", 6.0)
+			player.overlay.add_lead("The town is on alert (" + {"body": "a body was found", "unmasked": "I was seen through"}.get(reason, "an intruder") + "). The checkpoint is closed to everyone, and the patrols are hurrying.")
+		3:
+			player.note("An engine on the coast road. The call got through: more men are coming.", 6.0)
+			player.overlay.add_lead("They telephoned headquarters. More men are coming, and the boat may not risk the cove.")
+
+
+func on_alarm() -> void:
+	stats["alarms"] = int(stats["alarms"]) + 1
+
+
+func on_guard_died(_g: Node, quiet: bool) -> void:
+	stats["killed"] = int(stats["killed"]) + 1
+	if quiet:
+		stats["killed_quiet"] = int(stats["killed_quiet"]) + 1
+
+
+## Once the town is awake it sounds it: whistles, dogs, a shout far off, an engine.
+func _update_town_sounds(delta: float) -> void:
+	if Guard.town_alert < 2 or player == null:
+		return
+	_awake_t -= delta
+	if _awake_t > 0.0:
+		return
+	_awake_t = randf_range(10.0, 26.0)
+	var a := randf() * TAU
+	var pos := player.global_position + Vector3(cos(a), 0.0, sin(a)) * randf_range(55.0, 120.0) + Vector3.UP * 2.0
+	var pick := randi() % 4
+	match pick:
+		0:
+			SoundLib.play_3d("alarm/whistle_trill", pos, -2.0, 400.0, 0.06, 18.0)
+		1:
+			SoundLib.play_3d("alarm/dog_bark_distant", pos, 0.0, 400.0, 0.08, 18.0)
+		2:
+			SoundLib.play_3d("voice/de_shout_l", pos, -2.0, 300.0, 0.08, 14.0)
+		_:
+			if Guard.town_alert >= 3:
+				SoundLib.play_3d("ambience/distant_engine_pass", pos, 4.0, 600.0, 0.03, 30.0)
+
+
+func _update_record() -> void:
+	if player.disguise != "" and not (stats["disguises"] as Array).has(player.disguise):
+		(stats["disguises"] as Array).append(player.disguise)
+	for n in get_tree().get_nodes_in_group("bodies"):
+		var g := n as Guard
+		if g and not _drowned.has(g) and g.body_center().y < -0.75:
+			_drowned[g] = true
+			stats["hidden"] = int(stats["hidden"]) + 1
+			player.note("The water takes him. Nobody will find him tonight.", 4.0)
+
+
+func _bodies_found() -> int:
+	var n := 0
+	for b in get_tree().get_nodes_in_group("bodies"):
+		if b is Guard and (b as Guard).discovered:
+			n += 1
+	return n
+
+
+## F Section's report: how it went, in their dry voice.
+func _report(outcome: String) -> Array:
+	var j := player.overlay.journal as Journal
+	var t := Game.clock_text()
+	var shots := int(stats["shots"])
+	var found := _bodies_found()
+	var alert := int(stats["max_alert"])
+	var alert_names := ["none", "local (shots heard)", "town (on alert)", "regional (HQ called)"]
+	var lines := PackedStringArray()
+	lines.append("MOST SECRET                                F/31/LAP")
+	lines.append("")
+	lines.append("SPECIAL OPERATIONS EXECUTIVE.   F SECTION.")
+	lines.append("REPORT ON OPERATION \"PINCH\".   Agent TAILLEUR.")
+	lines.append("")
+	if outcome == "cove":
+		lines.append("1.  Agent reached the ANSE DE KERLO at %s." % t)
+	else:
+		lines.append("1.  Agent missing at %s. Presumed killed or taken." % t)
+	lines.append("2.  B.B.C. message:  %s." % ("heard" if j.is_done("bbc") else "not heard"))
+	lines.append("3.  Key sheets:  not obtained.")
+	lines.append("    (The signals post is not yet in this build.)")
+	lines.append("4.  Shots fired by the agent:  %d." % shots)
+	lines.append("5.  Enemy dead:  %d  (%d quietly)." % [int(stats["killed"]), int(stats["killed_quiet"])])
+	lines.append("    Bodies found by the enemy:  %d.   Put in the water:  %d." % [found, int(stats["hidden"])])
+	lines.append("6.  Alarms raised:  %d.   Highest alert:  %s." % [int(stats["alarms"]), alert_names[clampi(alert, 0, 3)]])
+	lines.append("7.  Telephone line:  %s." % ("cut" if not Guard.phone_line_ok else "intact"))
+	var dz: Array = stats["disguises"]
+	lines.append("8.  Disguise:  %s." % ("none" if dz.is_empty() else ", ".join(dz.map(func(d: String) -> String:
+		return {"kriegsmarine": "Kriegsmarine greatcoat", "wehrmacht": "Wehrmacht greatcoat"}.get(d, d)))))
+	lines.append("")
+	var verdict := ""
+	var comment := ""
+	if outcome != "cove":
+		verdict = "« DISPARU »"
+		comment = "We shall hold his place for forty-eight hours, as instructed. After that, the circuit is to be considered blown."
+	elif alert == 0 and found == 0 and shots == 0:
+		verdict = "« ILS N'ONT RIEN SU »"
+		comment = "Clean work. As far as the enemy is concerned, nobody was ever there."
+	elif alert <= 1 and found == 0:
+		verdict = "« ILS SE DOUTENT »"
+		comment = "Shots were heard. They will be uneasy, and they will check their locks. Not ideal."
+	else:
+		verdict = "« ILS SAVENT »"
+		comment = "The town is roused. Expect reprisals in Plouzennec, and assume anything you touched is compromised."
+	lines.append("ASSESSMENT.  " + comment)
+	lines.append("")
+	lines.append("                                              F.")
+	return ["\n".join(lines), verdict]
+
+
+func _show_report(outcome: String) -> void:
+	if _report_shown:
+		return
+	_report_shown = true
+	var r := _report(outcome)
+	print("REPORT ", outcome, " ", r[1])
+	var d := Debrief.new(r[0], r[1], func() -> void:
+		if outcome == "cove":
+			get_tree().change_scene_to_file("res://scenes/ui/title.tscn")
+		else:
+			get_tree().reload_current_scene())
+	add_child(d)
+
+
+func on_player_died() -> void:
+	get_tree().create_timer(4.0, false).timeout.connect(_show_report.bind("dead"))
 
 
 ## A task done: crossed out in the journal, and a quiet word that it's been noted.
@@ -953,6 +1101,7 @@ func _update_tasks(delta: float) -> void:
 	if _task_t > 0.0 or player == null:
 		return
 	_task_t = 0.5
+	_update_record()
 	var p := player.global_position
 	if p.z > 54.0 and absf(p.x) < 50.0 and p.z < 95.0:
 		_task_done("checkpoint")
@@ -1447,6 +1596,7 @@ func _build_bounds() -> void:
 func _process(_delta: float) -> void:
 	_update_searchlight()
 	_update_tasks(_delta)
+	_update_town_sounds(_delta)
 	if _rain and player:
 		_rain.global_position = player.global_position + Vector3(0, 11, 0) + player.velocity * 0.6
 	var t := Time.get_ticks_msec() / 1000.0
