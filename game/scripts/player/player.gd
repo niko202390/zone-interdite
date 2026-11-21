@@ -340,6 +340,9 @@ func _search_body(g: Guard) -> void:
 			found.append("a full P38 magazine")
 	if loot.get("cigarettes", false):
 		found.append("cigarettes")
+	if loot.get("cabinet_key", false):
+		items["cabinet_key"] = true
+		found.append("a small steel key on his watch chain")
 	if loot.has("paybook"):
 		found.append("his Soldbuch")
 	SoundLib.play_2d("player/cloth_wool_move", -2.0)

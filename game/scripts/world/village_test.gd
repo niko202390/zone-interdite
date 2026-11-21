@@ -60,7 +60,9 @@ func _ready() -> void:
 			_build_square()
 			_build_checkpoint(), 12.0],
 		["The harbour", _build_harbour, 8.0],
-		["The church and the mairie", _build_church_and_mairie, 5.0],
+		["The church and the mairie", func() -> void:
+			_build_church_and_mairie()
+			_build_dead_drop(), 5.0],
 		["The headland", _build_strongpoint, 3.0],
 		["Farms, the mill and the wood", func() -> void:
 			_build_farm()
@@ -162,6 +164,8 @@ func _spawn_guards() -> void:
 	patrol.schedule = [{"from": 19.0 * 60.0 + 30.0, "to": 19.0 * 60.0 + 46.0, "pos": Vector3(-2.3, 0.05, -48.6), "yaw": -90.0}]
 	patrol.rotation.y = 0.0
 
+	if hotel_post:
+		hotel_post.spawn_people()
 	# Kriegsmarine signals post: a sentry on the hotel door, and a man walking the quay.
 	var door := Guard.new()
 	door.name = "HotelSentry"
@@ -557,6 +561,8 @@ const HOTEL_DOOR := Vector3(-24.0, 0.05, 67.2)
 const STRONGPOINT := Vector3(-128.0, 0.0, 58.0)
 const FARM := Vector3(-16.0, 0.0, -120.0)
 const CACHE := Vector3(-70.0, 0.0, -88.0)
+var hotel_node: Node3D
+var hotel_post: HotelPost
 
 
 func _ground_at(x: float, z: float, y_offset := 0.0) -> Vector3:
@@ -590,7 +596,17 @@ func _build_harbour() -> void:
 	spawn("fish_hall", Vector3(16.0, 0.0, 79.0), 0.0, "wood", Vector3(16.0, 6.0, 9.0))
 	# The harbourmaster's house, and the Kriegsmarine signals post in the old seafront hotel.
 	spawn("house_bourg", Vector3(34.0, 0.0, 70.0), 180.0, "stone", _fallback_house_size("house_bourg"))
-	spawn("hotel_de_la_plage", HOTEL, 180.0, "stone", Vector3(24.0, 11.0, 13.0))
+	# The enterable version when it's been built; the solid one otherwise.
+	var hotel_asset := "hotel_de_la_plage_int" if ResourceLoader.exists(TOWN + "hotel_de_la_plage_int.glb") else "hotel_de_la_plage"
+	hotel_node = spawn(hotel_asset, HOTEL, 180.0, "stone", Vector3(24.0, 11.0, 13.0))
+	if HotelPost.available(hotel_node):
+		hotel_post = HotelPost.new()
+		hotel_post.name = "HotelPost"
+		add_child(hotel_post)
+		hotel_post.setup(self, hotel_node, player)
+		hotel_post.sheets_obtained.connect(func(kind: String) -> void:
+			if kind != "strip":
+				_task_done("keys"))
 	for p in [Vector3(-10.0, 0, 88.5), Vector3(-6.0, 0, 89.2), Vector3(30.0, 0, 88.0)]:
 		spawn("crate_wood", p, randf_range(0.0, 90.0), "wood", Vector3(0.8, 0.6, 0.6))
 	spawn("barrel_wood", Vector3(8.0, 0, 89.0), 0.0, "wood", Vector3(0.6, 0.9, 0.6))
@@ -896,9 +912,11 @@ func _build_junction_box(pole: Node3D) -> void:
 const TASKS := [
 	["checkpoint", "Get past the checkpoint into the harbour zone. Papers, a disguise, or round it."],
 	["signals_post", "Find the Kriegsmarine signals post."],
+	["hotel", "Get inside the Hôtel de la Plage."],
 	["bbc", "Listen to London at 19:30 or 21:15. Is the boat coming?"],
 	["keys", "Copy the key sheets. Leave no trace."],
 	["cove", "Reach the Anse de Kerlo for the boat."],
+	["boat", "02:30: signal K seaward by torch. Get the sheets aboard."],
 ]
 const INTEL := [
 	"Sentry at the checkpoint box, with a field telephone. A second man walks the street.",
@@ -907,6 +925,8 @@ const INTEL := [
 	"Never stand against the sky.",
 	"Yann's café has a wireless. If London reads \"le chat de la voisine\", the boat comes tonight.",
 	"P.38: eight rounds, two spare magazines. Every shot carries a long way.",
+	"Brenner, who commands the post, dines at 20:00 and is in bed before midnight. The cabinet key never leaves his watch chain.",
+	"Pierre's camera is in our dead drop: the loose stone by the church door. Three exposures left.",
 ]
 var _hotel_notable: Notable
 var _task_t := 0.0
@@ -932,10 +952,11 @@ func _setup_test_objective() -> void:
 	add_child(shore)
 	shore.position = cove_position()
 	shore.body_entered.connect(func(b: Node) -> void:
-		if b == player and not player.dead:
-			player.note("The Anse de Kerlo. Shingle, and the sea. You made it past them, for now.", 6.0)
-			_task_done("cove")
-			get_tree().create_timer(5.0, false).timeout.connect(_show_report.bind("cove")))
+		if b == player and not player.dead and not _at_cove:
+			_at_cove = true
+			player.note("The Anse de Kerlo. Shingle, and the sea. The boat comes at half past two, if it comes at all.", 6.0)
+			_task_done("cove"))
+	_build_boat_signal()
 	player.firearm.fired.connect(func(_o: Vector3, _d: Vector3) -> void: stats["shots"] = int(stats["shots"]) + 1)
 	stats["start"] = Game.clock_minutes
 	# Taught as you go, not in the journal: a word about the watch and compass, and the journal itself.
@@ -1034,13 +1055,14 @@ func _report(outcome: String) -> Array:
 	lines.append("SPECIAL OPERATIONS EXECUTIVE.   F SECTION.")
 	lines.append("REPORT ON OPERATION \"PINCH\".   Agent TAILLEUR.")
 	lines.append("")
-	if outcome == "cove":
+	if outcome == "boat":
+		lines.append("1.  Agent embarked at the ANSE DE KERLO at %s." % t)
+	elif outcome == "cove":
 		lines.append("1.  Agent reached the ANSE DE KERLO at %s." % t)
 	else:
 		lines.append("1.  Agent missing at %s. Presumed killed or taken." % t)
 	lines.append("2.  B.B.C. message:  %s." % ("heard" if j.is_done("bbc") else "not heard"))
-	lines.append("3.  Key sheets:  not obtained.")
-	lines.append("    (The signals post is not yet in this build.)")
+	lines.append("3.  Key sheets:  %s" % (hotel_post.report_line() if hotel_post else "not obtained. (The signals post is not in this build.)"))
 	lines.append("4.  Shots fired by the agent:  %d." % shots)
 	lines.append("5.  Enemy dead:  %d  (%d quietly)." % [int(stats["killed"]), int(stats["killed_quiet"])])
 	lines.append("    Bodies found by the enemy:  %d.   Put in the water:  %d." % [found, int(stats["hidden"])])
@@ -1052,13 +1074,23 @@ func _report(outcome: String) -> Array:
 	lines.append("")
 	var verdict := ""
 	var comment := ""
-	if outcome != "cove":
+	var trace := hotel_post.trace() if hotel_post else 0
+	var got := hotel_post != null and (hotel_post.monthly != "" or hotel_post.strip)
+	if outcome == "boat":
+		outcome = "cove"
+	if outcome == "cove" and not got:
+		verdict = "« LES MAINS VIDES »"
+		comment = "You came out, and that is something. But London sent you for the keys."
+	elif outcome != "cove":
 		verdict = "« DISPARU »"
 		comment = "We shall hold his place for forty-eight hours, as instructed. After that, the circuit is to be considered blown."
-	elif alert == 0 and found == 0 and shots == 0:
+	elif trace >= 2:
+		verdict = "« ILS SAVENT »"
+		comment = "They will know by breakfast that the sheets are compromised, and change everything. All that for nothing."
+	elif alert == 0 and found == 0 and shots == 0 and trace == 0:
 		verdict = "« ILS N'ONT RIEN SU »"
 		comment = "Clean work. As far as the enemy is concerned, nobody was ever there."
-	elif alert <= 1 and found == 0:
+	elif alert <= 1 and found == 0 and trace <= 1:
 		verdict = "« ILS SE DOUTENT »"
 		comment = "Shots were heard. They will be uneasy, and they will check their locks. Not ideal."
 	else:
@@ -1077,7 +1109,7 @@ func _show_report(outcome: String) -> void:
 	var r := _report(outcome)
 	print("REPORT ", outcome, " ", r[1])
 	var d := Debrief.new(r[0], r[1], func() -> void:
-		if outcome == "cove":
+		if outcome == "cove" or outcome == "boat":
 			get_tree().change_scene_to_file("res://scenes/ui/title.tscn")
 		else:
 			get_tree().reload_current_scene())
@@ -1086,6 +1118,137 @@ func _show_report(outcome: String) -> void:
 
 func on_player_died() -> void:
 	get_tree().create_timer(4.0, false).timeout.connect(_show_report.bind("dead"))
+
+
+# --- the boat ---------------------------------------------------------------------------------------
+
+const BOAT_FROM := 2.0 * 60.0 + 30.0
+const BOAT_TO := 3.0 * 60.0 + 15.0
+var _at_cove := false
+var _boat_answered := false
+var _dinghy: Node3D
+
+
+func _in_boat_window() -> bool:
+	var m := fposmod(Game.clock_minutes, 1440.0)
+	return m >= BOAT_FROM and m < BOAT_TO
+
+
+## Madame Le Goff's torch at the farm, and the signal to the boat from the cove. The flashes are real light:
+## the strongpoint can see them too.
+func _build_boat_signal() -> void:
+	var torch := Interactable.new()
+	torch.prompt = "take the torch with the blue filter"
+	torch.radius = 1.0
+	add_child(torch)
+	torch.global_position = _ground_at(FARM.x - 1.5, FARM.z + 5.0, 0.9)
+	torch.on_use = func(_p: Node3D) -> void:
+		torch.enabled = false
+		player.items["torch"] = true
+		player.note("Madame Le Goff's torch, a square of blue gel over the glass. For the boat, and nothing else.", 4.5)
+	_notable(torch.global_position, "A torch hung by the farm door, blue paper over the lens.", "", 6.0)
+	var cove := cove_position()
+	var seaward := Vector3(0, 0, 1)
+	var sig := Interactable.new()
+	sig.prompt = "signal the boat with your torch"
+	sig.radius = 9.0
+	add_child(sig)
+	sig.global_position = cove + Vector3.UP * 1.2
+	sig.on_use = func(_p: Node3D) -> void:
+		if not player.items.get("torch", false):
+			player.note("You've nothing to signal with. The torch at the farm.", 3.0)
+			return
+		if _boat_answered:
+			return
+		if not _in_boat_window():
+			var m := fposmod(Game.clock_minutes, 1440.0)
+			player.note("Too late. Nobody's out there now." if m >= BOAT_TO and m < 12.0 * 60.0 else
+				"Nothing out there yet. Half past two. Don't signal unless you're certain.", 3.5)
+			return
+		player.overlay.ask(["K:  dash, dot, dash.", "B:  dash, dot, dot, dot.", "V:  dot, dot, dot, dash."], 10.0,
+			func(i: int) -> void: _flash_signal(i, seaward))
+	# The dinghy waits offshore, out of sight, until it's answered.
+	_dinghy = spawn("dinghy", cove + seaward * 70.0 + Vector3(0, Terrain.SEA_LEVEL - cove.y, 0), 180.0, "wood", Vector3(1.4, 0.6, 3.6))
+	_dinghy.visible = false
+
+
+func _flash_signal(letter: int, seaward: Vector3) -> void:
+	var codes := [[0.9, 0.3, 0.9], [0.9, 0.3, 0.3, 0.3], [0.3, 0.3, 0.3, 0.9]]
+	var lamp := SpotLight3D.new()
+	lamp.light_color = Color(0.45, 0.6, 1.0)
+	lamp.light_energy = 0.0
+	lamp.spot_range = 120.0
+	lamp.spot_angle = 12.0
+	add_child(lamp)
+	lamp.global_position = player.camera.global_position + seaward * 0.5
+	lamp.look_at(lamp.global_position + seaward + Vector3.DOWN * 0.05, Vector3.UP)
+	Visibility.register_light(lamp)
+	var tw := create_tween()
+	for d: float in codes[letter]:
+		tw.tween_callback(func() -> void:
+			lamp.light_energy = 4.0
+			SoundLib.play_2d("ui/lighter_open", -16.0))
+		tw.tween_interval(d)
+		tw.tween_callback(func() -> void: lamp.light_energy = 0.0)
+		tw.tween_interval(0.35)
+	tw.tween_callback(lamp.queue_free)
+	Game.emit_noise(player.global_position, 30.0, player)
+	if letter != 0:
+		tw.tween_callback(func() -> void:
+			player.note("Nothing. Only the sea. Was it K?", 4.0))
+		return
+	tw.tween_interval(6.0)
+	tw.tween_callback(func() -> void:
+		_boat_answered = true
+		player.note("Out on the black water, a blue pinprick: dash, dot, dash. They're here.", 5.0))
+	tw.tween_interval(4.0)
+	tw.tween_callback(_bring_dinghy)
+
+
+func _bring_dinghy() -> void:
+	var cove := cove_position()
+	_dinghy.visible = true
+	var shore_pos := cove + Vector3(0, 0, 1) * 6.0
+	shore_pos.y = Terrain.SEA_LEVEL
+	var tw := create_tween()
+	tw.tween_property(_dinghy, "global_position", shore_pos, 28.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tw.tween_callback(func() -> void:
+		var board := Interactable.new()
+		board.prompt = "wade out and climb into the dinghy"
+		board.radius = 6.0
+		add_child(board)
+		board.global_position = _dinghy.global_position + Vector3.UP * 1.0
+		board.on_use = func(_p: Node3D) -> void:
+			board.enabled = false
+			_task_done("boat")
+			player.busy = 99.0
+			player.overlay.fade_to(1.0)
+			player.note("Hands pull you over the gunwale. Nobody speaks. The oars dip.", 6.0)
+			get_tree().create_timer(5.0, false).timeout.connect(_show_report.bind("boat")))
+
+
+## The dead drop by the church door, where Pierre left his camera before they took him.
+func _build_dead_drop() -> void:
+	var church := get_node_or_null("ChurchPlouzennec") as Node3D
+	var door := church.find_child("Door", true, false) as Node3D if church else null
+	var pos := (door.global_position if door else Vector3(26.5, 0.0, 3.0))
+	var out := (pos - church.global_position) if church else Vector3(-1, 0, 0)
+	out.y = 0.0
+	pos += out.normalized() * 1.2 + Vector3(0, 0.35, 1.4)
+	var it := Interactable.new()
+	it.prompt = "work the loose stone free"
+	it.radius = 1.0
+	it.busy_time = 3.0
+	it.noise_db = 30.0
+	add_child(it)
+	it.global_position = pos
+	it.on_use = func(_p: Node3D) -> void:
+		it.enabled = false
+		if hotel_post:
+			hotel_post.camera_found = true
+		player.note("Behind the stone, in oilcloth: Pierre's little camera. Three exposures left on the film.", 5.0)
+		player.overlay.add_lead("I have Pierre's camera: three exposures. Photographing the sheets is quicker than copying them.")
+	_notable(pos, "A loose stone at the foot of the church wall, by the door.", "", 4.0)
 
 
 ## A task done: crossed out in the journal, and a quiet word that it's been noted.

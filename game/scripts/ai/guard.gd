@@ -91,6 +91,10 @@ const FELDGRAU := Color(0.29, 0.31, 0.27)
 ## Routines by the clock: [{"from": minutes, "to": minutes, "pos": Vector3, "yaw": degrees}]. While one is on, a
 ## calm guard goes there and stays, then goes back to his rounds.
 var schedule: Array = []
+## Asleep in his bed: blind, hard of hearing, and helpless. Set by a routine with "sleep": true.
+var asleep := false
+## Oberleutnant Brenner carries the key to the signals-room cabinet on his watch chain.
+var carries_key := false
 var _answer := -1
 var _question := ""
 @export var walk_speed := 1.25
@@ -637,7 +641,7 @@ func _papers_judge(q: String) -> void:
 func _perceive() -> void:
 	_can_see_player = false
 	_visibility = 0.0
-	if _player == null or _player.dead or Debug.peaceful():
+	if _player == null or _player.dead or Debug.peaceful() or asleep:
 		return
 	var eye := _eye_pos()
 	var chest := _player.global_position + Vector3.UP * (0.6 if _player.crouching else 1.15)
@@ -709,6 +713,13 @@ func _on_noise(pos: Vector3, loudness: float, source: Node) -> void:
 	if not get_world_3d().direct_space_state.intersect_ray(q).is_empty():
 		received -= 14.0
 	var perceived := received - Visibility.noise_floor_db
+	if asleep:
+		# Only a real noise wakes a sleeping man.
+		if perceived < 20.0:
+			return
+		_set_asleep(false)
+		_bark_cd = 0.0
+		bark("curious")
 	if perceived <= 4.0:
 		return
 	# Hearing gives only a rough location, and the further away the worse it is.
@@ -880,6 +891,18 @@ func _think(delta: float) -> void:
 		_enter(State.ALERTED)
 
 
+func _set_asleep(on: bool) -> void:
+	asleep = on
+	if _model:
+		# Lying on his back in bed; standing up again when he wakes.
+		_model.rotation = Vector3(-PI * 0.5 if on else 0.0, PI, 0.0)
+		_model.position = Vector3(0, 0.62, 0.9) if on else Vector3.ZERO
+	if _rifle and on:
+		_rifle.visible = false
+	elif _rifle:
+		_rifle.visible = true
+
+
 func _active_routine() -> Dictionary:
 	if town_alert >= 2:
 		return {}   # nobody takes a cigarette break with the town on alert
@@ -924,11 +947,15 @@ func _physics_process(delta: float) -> void:
 		State.PATROL:
 			_look_yaw = sin(_state_t * 0.35) * 0.45 if _wait > 0.0 else move_toward(_look_yaw, 0.0, delta)
 			var routine := _active_routine()
+			if routine.is_empty() and asleep:
+				_set_asleep(false)
 			if not routine.is_empty():
-				# A routine by the clock: a smoke at the café, the walk down for the relief.
-				if _move_toward_point(routine["pos"], walk_speed, delta):
+				# A routine by the clock: a smoke at the café, the walk down for the relief, bed.
+				if asleep or _move_toward_point(routine["pos"], walk_speed, delta):
 					face_dir = Vector3.FORWARD.rotated(Vector3.UP, deg_to_rad(float(routine.get("yaw", 0.0))))
-					_look_yaw = sin(_state_t * 0.25) * 0.3
+					_look_yaw = sin(_state_t * 0.25) * 0.3 if not asleep else 0.0
+					if routine.get("sleep", false) and not asleep:
+						_set_asleep(true)
 			elif patrol_points.is_empty():
 				pass
 			elif _wait > 0.0:
@@ -1221,6 +1248,8 @@ func take_loot() -> Dictionary:
 	if model_variant == "feldgendarm":
 		loot["7.92x57"] = 10
 		loot["p38_mag"] = 1
+	if carries_key:
+		loot["cabinet_key"] = true
 	return loot
 
 
@@ -1295,6 +1324,8 @@ func can_be_taken_down_by(p: Node3D) -> bool:
 	to_p.y = 0.0
 	if to_p.length() > 1.4:
 		return false
+	if asleep:
+		return true
 	var behind := (-global_basis.z).angle_to(to_p.normalized()) > deg_to_rad(105.0)
 	return behind or (not _can_see_player and suspicion < 0.5)
 
