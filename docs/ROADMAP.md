@@ -6,12 +6,12 @@ The milestones and design are in `docs/DESIGN.md`.
 
 ## Plouzennec until it's right (from docs/DESIGN_REVIEW.md §7)
 We stay on this one level until the user is satisfied. In order:
-1. [ ] **The Hôtel de la Plage interior and the key sheets:** kitchen, dining room, stairs, and the first-floor signals room with the cabinet. Copy by hand (slow) or photograph (the camera from the dead drop), and put everything back.
-2. [ ] **Ways into the hotel:** the coal chute (kit `CoalChute`), the kitchen door with the cook, and the front door in a navy coat (kit `Door`).
-3. [ ] **People on schedules inside:** Brenner and his cabinet key, the radio operator's watch, the door sentry's relief.
-4. [ ] **The boat:** 02:30–03:15 at the cove; signal K by torch; the dinghy; London's report. *(The report exists now.)*
+1. [x] **The Hôtel de la Plage interior and the key sheets** (21 Nov). *Next: Brenner sometimes stops short of his bed (pathing), and the sleeping pose needs placing in the bed.* kitchen, dining room, stairs, and the first-floor signals room with the cabinet. Copy by hand (slow) or photograph (the camera from the dead drop), and put everything back.
+2. [~] **Ways into the hotel** (the chute and the locked-after-21:30 kitchen door are done; the cook is next): the coal chute (kit `CoalChute`), the kitchen door with the cook, and the front door in a navy coat (kit `Door`).
+3. [~] **People on schedules inside** (Brenner and the operator are done): Brenner and his cabinet key, the radio operator's watch, the door sentry's relief.
+4. [x] **The boat** (21 Nov): 02:30–03:15 at the cove; signal K by torch; the dinghy; London's report. *(The report exists now.)*
 5. [ ] **Interrogation:** take a guard from behind and threaten instead of kill. The password, Brenner's room.
-6. [ ] **Doors as evidence:** an open door gets noticed and closed, and suspicion rises.
+6. [x] **Doors as evidence** (21 Nov): an open door gets noticed and closed, and suspicion rises.
 7. [ ] **The dog** in the hotel yard after 21:00.
 8. [ ] **The opening** (MISSION_01 §0), once the level plays well.
 

@@ -1,6 +1,7 @@
 """Zone Interdite - Plouzennec town landmarks, harbour and coastal-defence pieces.
 
 Usage (from repo root):
+  (hotel_de_la_plage_int is the enterable hotel: see hotel_int.py)
   "C:/Program Files/Blender Foundation/Blender 5.3/blender.exe" --background --factory-startup \
       --python-exit-code 1 --python tools/blender/town/build_town.py -- [names...] [--no-preview] [--force-tex]
 
@@ -26,6 +27,7 @@ import importlib  # noqa: E402
 
 ASSETS = {
     "hotel_de_la_plage": ("hotel", "build"),
+    "hotel_de_la_plage_int": ("hotel_int", "build"),
     "church_plouzennec": ("church", "build"),
     "mairie": ("mairie", "build"),
     "quay_10m": ("harbour", "quay_10m"),
@@ -62,6 +64,8 @@ def build_asset(name, preview=True):
             pv = dict(pv)
             suffix = pv.pop("suffix", "" if i == 0 else f"_{i}")
             geo.render_preview(name + suffix, visual, **pv)
+        if res.get("previews_in"):         # enterable buildings: lamplit interior shots
+            res["previews_in"]()
         print(f"[town] {name}: previews written ({time.time() - t0:.1f}s)")
     return info
 

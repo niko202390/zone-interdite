@@ -469,6 +469,12 @@ func _refresh_interact() -> void:
 			return
 		elif g.can_be_taken_down_by(self):
 			var d2 := global_position.distance_to(g.global_position)
+			# A sleeping man offers other things (his key); only knife him if nothing else is on offer.
+			if g.asleep and _interactable != null:
+				continue
+			# With something else in reach, only a man you're looking at gets the knife.
+			if _interactable != null and rad_to_deg(look.angle_to(g.global_position + Vector3.UP - eye)) > 35.0:
+				continue
 			if d2 < best + 0.5:
 				best = d2
 				_interact_target = g

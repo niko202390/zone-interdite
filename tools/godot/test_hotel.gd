@@ -36,6 +36,8 @@ func _load(clock: String) -> void:
 
 
 func _use_nearest(prompt_part: String) -> String:
+	while player.busy > 0.0:
+		await process_frame
 	player._refresh_interact()
 	var it: Node = player._interactable
 	var got: String = it.prompt if it else "-"
@@ -60,7 +62,7 @@ func _run() -> void:
 	player.debug_place(chute.global_position + outward.normalized() * 1.0, 0.0, -30.0)
 	player.look_at(chute.global_position, Vector3.UP)
 	await _wait(0.3)
-	print("CHUTE prompt=%s" % _use_nearest("coal"))
+	print("CHUTE prompt=%s" % await _use_nearest("coal"))
 	await _wait(3.0)
 	print("CHUTE inside=%s pos=%s" % [post.player_inside(), player.global_position])
 
@@ -75,24 +77,30 @@ func _run() -> void:
 		b._set_asleep(true)
 	player.debug_place(b.global_position + Vector3(0.8, 0.1, 0.0), 0.0, -40.0)
 	await _wait(0.4)
-	print("KEY prompt=%s" % _use_nearest("key"))
+	print("KEY prompt=%s" % await _use_nearest("key"))
 	await _wait(3.0)
 	print("KEY has=%s brenner_asleep=%s" % [player.items.get("cabinet_key", false), b.asleep])
 
-	# The cabinet: copy by hand, standing still.
+	# The cabinet: copy by hand, standing still, with the operator away from his desk.
+	post.operator.global_position = post.stand_at("Dorm_Bunks")
+	post.operator.patrol_points = PackedVector3Array([post.stand_at("Dorm_Bunks")])
 	var cab: Vector3 = post.mpos("Cabinet")
-	player.debug_place(cab + (post.hotel.global_position - cab).normalized() * 0.9 * Vector3(1, 0, 1), 0.0, -10.0)
+	player.debug_place(post.stand_at("Cabinet", 0.8), 0.0, -10.0)
+	player.look_at(cab + Vector3.UP * 1.2, Vector3.UP)
 	await _wait(0.4)
-	print("CABINET prompt=%s" % _use_nearest("cabinet"))
+	print("CABINET prompt=%s" % await _use_nearest("cabinet"))
 	await _wait(1.0)
+	print("CABINET open=%s asking=%s key=%s busy=%.1f" % [post.cabinet_open, player.overlay.is_asking(), player.items.get("cabinet_key", false), player.busy])
 	player.overlay._answer(0)
+	await _wait(2.0)
+	print("COPYING %s anchor_d=%.2f" % [post._copying, player.global_position.distance_to(post._copy_anchor)])
 	await _wait(post.COPY_TIME + 3.0)
 	print("COPY monthly=%s cabinet_open=%s" % [post.monthly, post.cabinet_open])
 
 	# Put the key back.
 	player.debug_place(b.global_position + Vector3(0.8, 0.1, 0.0), 0.0, -40.0)
 	await _wait(0.4)
-	print("RETURN prompt=%s" % _use_nearest("put the key"))
+	print("RETURN prompt=%s" % await _use_nearest("put the key"))
 	await _wait(3.0)
 	print("RETURN returned=%s trace=%d line=%s" % [post.key_returned, post.trace(), post.report_line()])
 	var r: Array = level._report("cove")

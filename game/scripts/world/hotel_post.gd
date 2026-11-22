@@ -102,7 +102,9 @@ func _setup_lamps() -> void:
 		l.light_color = Color(1.0, 0.64, 0.36)
 		l.light_energy = 1.0
 		l.omni_range = 5.5
-		l.shadow_enabled = true
+		# Shadows only where they matter for hiding: the signals room and Brenner's rooms.
+		var idx := String(n.name).trim_prefix("Lamp_").to_int()
+		l.shadow_enabled = idx in [13, 14, 15, 16, 17]
 		(n as Node3D).add_child(l)
 		Visibility.register_light(l)
 
@@ -110,7 +112,7 @@ func _setup_lamps() -> void:
 ## Is the player inside the building (either floor)?
 func player_inside() -> bool:
 	var lp := hotel.global_transform.affine_inverse() * player.global_position
-	return lp.x > -12.8 and lp.x < 12.8 and lp.z > -7.0 and lp.z < 6.6 and lp.y > -0.5 and lp.y < 8.0
+	return lp.x > -12.8 and lp.x < 12.8 and lp.z > -7.0 and lp.z < 6.6 and lp.y > -2.5 and lp.y < 8.0
 
 
 # --- the cabinet, the strip, the copying ---------------------------------------------------------
@@ -330,6 +332,12 @@ func spawn_people() -> void:
 
 
 ## A step in from a furniture marker toward the middle of the building, so people stand beside it, not in it.
+## Where a person stands to use the furniture at a marker: its forward (-Z) points out of the furniture.
+func stand_at(n: String, dist := 0.75) -> Vector3:
+	var m := marker(n)
+	return m.global_position - m.global_basis.z * dist + Vector3.UP * 0.05 if m else Vector3.INF
+
+
 func _toward_room(p: Vector3) -> Vector3:
 	var c := hotel.global_position + Vector3.UP * (p.y - hotel.global_position.y)
 	var d := c - p
