@@ -135,7 +135,13 @@ func _build_navigation() -> void:
 	nm.filter_baking_aabb = AABB(Vector3(-60.0, -2.0, -80.0), Vector3(120.0, 14.0, 175.0))
 	region.navigation_mesh = nm
 	add_child(region)
-	region.bake_finished.connect(func() -> void: Visibility.nav_ready = true)
+	# Doors are left out of the bake (guards open them as they come), then made solid again.
+	for d in get_tree().get_nodes_in_group("swing_doors"):
+		(d as SwingDoor).set_collision(false)
+	region.bake_finished.connect(func() -> void:
+		Visibility.nav_ready = true
+		for d in get_tree().get_nodes_in_group("swing_doors"):
+			(d as SwingDoor).set_collision(true))
 	region.bake_navigation_mesh(true)
 
 
@@ -498,20 +504,7 @@ func _row(side: int, z_from: float, z_to: float, order: Array, gaps: Array) -> v
 func _setup_interior(house: Node3D) -> void:
 	var door := house.find_child("Door", true, false) as Node3D
 	if door:
-		var it := Interactable.new()
-		it.prompt = "open the door"
-		it.radius = 1.3
-		it.noise_db = 44.0
-		add_child(it)
-		it.global_position = door.global_position + house.global_basis.z * 0.5 + Vector3.UP * 1.0
-		var closed_y := door.rotation.y
-		var state := {"open": false}
-		it.on_use = func(_p: Node3D) -> void:
-			state["open"] = not state["open"]
-			it.prompt = "close the door" if state["open"] else "open the door"
-			var tw := create_tween()
-			tw.tween_property(door, "rotation:y", closed_y + (deg_to_rad(90.0) if state["open"] else 0.0), 0.9) 				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-			SoundLib.play_3d("impacts/impact_wood", door.global_position + Vector3.UP, -14.0, 25.0, 0.2, 2.0)
+		SwingDoor.make(self, door, String(house.name))
 	# Lamp bodies mustn't shadow their own flames.
 	for lamp in house.find_children("Lamp_*", "MeshInstance3D", true, false):
 		(lamp as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -989,6 +982,10 @@ func on_town_alert(level: int, reason: String) -> void:
 			player.overlay.add_lead("They telephoned headquarters. More men are coming, and the boat may not risk the cove.")
 
 
+func on_door_noticed() -> void:
+	stats["doors"] = int(stats.get("doors", 0)) + 1
+
+
 func on_alarm() -> void:
 	stats["alarms"] = int(stats["alarms"]) + 1
 
@@ -1067,7 +1064,7 @@ func _report(outcome: String) -> Array:
 	lines.append("5.  Enemy dead:  %d  (%d quietly)." % [int(stats["killed"]), int(stats["killed_quiet"])])
 	lines.append("    Bodies found by the enemy:  %d.   Put in the water:  %d." % [found, int(stats["hidden"])])
 	lines.append("6.  Alarms raised:  %d.   Highest alert:  %s." % [int(stats["alarms"]), alert_names[clampi(alert, 0, 3)]])
-	lines.append("7.  Telephone line:  %s." % ("cut" if not Guard.phone_line_ok else "intact"))
+	lines.append("7.  Telephone line:  %s.   Doors found standing open:  %d." % ["cut" if not Guard.phone_line_ok else "intact", int(stats.get("doors", 0))])
 	var dz: Array = stats["disguises"]
 	lines.append("8.  Disguise:  %s." % ("none" if dz.is_empty() else ", ".join(dz.map(func(d: String) -> String:
 		return {"kriegsmarine": "Kriegsmarine greatcoat", "wehrmacht": "Wehrmacht greatcoat"}.get(d, d)))))

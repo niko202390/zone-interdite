@@ -86,31 +86,11 @@ func _setup_doors() -> void:
 
 
 func _door(door: Node3D, room: String) -> void:
-	var it := Interactable.new()
-	it.prompt = "open the door"
-	it.radius = 1.2
-	it.noise_db = 42.0
-	add_child(it)
-	# Stand the prompt a little out from the hinge along the door's width.
-	var leaf := AABB()
-	for mi in door.find_children("*", "MeshInstance3D", true, false):
-		leaf = (door.global_transform.affine_inverse() * (mi as MeshInstance3D).global_transform) * (mi as MeshInstance3D).get_aabb()
-		break
-	it.global_position = door.global_transform * (leaf.get_center() if leaf.size != Vector3.ZERO else Vector3(0.5, 1.0, 0.0))
-	var closed_y := door.rotation.y
-	var st := {"open": false}
-	it.on_use = func(_p: Node3D) -> void:
-		if room == "Kitchen" and not st["open"] and fposmod(Game.clock_minutes, 1440.0) >= LOCK_KITCHEN_AT \
-				and fposmod(Game.clock_minutes, 1440.0) < 6.0 * 60.0:
-			player.note("Locked. The cook has gone home for the night.", 2.5)
-			SoundLib.play_3d("impacts/impact_wood", it.global_position, -16.0, 15.0, 0.1, 1.5)
-			return
-		st["open"] = not st["open"]
-		it.prompt = "close the door" if st["open"] else "open the door"
-		var tw := create_tween()
-		tw.tween_property(door, "rotation:y", closed_y + (deg_to_rad(90.0) if st["open"] else 0.0), 0.9) \
-			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-		SoundLib.play_3d("impacts/impact_wood", door.global_position + Vector3.UP, -14.0, 25.0, 0.2, 2.0)
+	var d := SwingDoor.make(self, door, room)
+	if room == "Kitchen":
+		d.lock_check = func() -> String:
+			var m := fposmod(Game.clock_minutes, 1440.0)
+			return "Locked. The cook has gone home for the night." if m >= LOCK_KITCHEN_AT or m < 6.0 * 60.0 else ""
 
 
 func _setup_lamps() -> void:

@@ -36,6 +36,7 @@ const BARKS := {
 	"parole_bad": [["Falsche Parole! Stehenbleiben!", "Wrong password! Stand still!"]],
 	"parole_forgot": [["Vergessen? Dann bleiben Sie draußen, bis Ihr Unteroffizier Sie holt.", "Forgot it? Then you stay out until your sergeant comes for you."]],
 	"silent": [["Na? Hat's Ihnen die Sprache verschlagen?", "Well? Cat got your tongue?"]],
+	"door": [["Die Tür steht offen... die war doch zu.", "That door's open... it was shut."], ["Wer hat die Tür aufgelassen?", "Who left that door open?"]],
 	"curfew": [["Sperrstunde! Was machen Sie hier draußen?", "Curfew! What are you doing out here?"]],
 	"wounded": [["Was ist mit Ihnen passiert? Mitkommen!", "What happened to you? Come with me!"]],
 	"warning": [["Halt! Oder ich schieße!", "Halt! Or I shoot!"]],
@@ -1259,6 +1260,33 @@ func take_coat() -> float:
 	return 0.85 if _died_quietly else 0.7
 
 
+## A door the player left open, standing where it should be shut: worth a look, and worth closing.
+func _check_doors() -> void:
+	if state != State.PATROL and state != State.CURIOUS:
+		return
+	var eye := _eye_pos()
+	var look := (-global_basis.z).rotated(Vector3.UP, _look_yaw)
+	for n in get_tree().get_nodes_in_group("swing_doors"):
+		var d := n as SwingDoor
+		if d == null or not d.left_open_by_player or d.noticed_by != null:
+			continue
+		var to := d.global_position - eye
+		if to.length() > 12.0 or rad_to_deg(look.angle_to(Vector3(to.x, 0, to.z).normalized())) > fov_deg * 0.5:
+			continue
+		var q := PhysicsRayQueryParameters3D.create(eye, d.global_position, Game.LAYER_WORLD, [get_rid()])
+		var hit := get_world_3d().direct_space_state.intersect_ray(q)
+		if not hit.is_empty() and (hit.position as Vector3).distance_to(d.global_position) > 1.0:
+			continue
+		d.noticed_by = self
+		_bark_cd = 0.0
+		bark("door")
+		suspicion = maxf(suspicion, 0.55)
+		target_pos = d.global_position
+		_enter(State.SUSPICIOUS)
+		get_tree().call_group("level", "on_door_noticed")
+		return
+
+
 ## Sent by headquarters after a call: run to the trouble and search.
 func dispatch_to(pos: Vector3) -> void:
 	target_pos = pos
@@ -1358,8 +1386,9 @@ func drag_toward(shoulder_target: Vector3, puller: Vector3, delta: float) -> voi
 
 
 func _check_bodies() -> void:
-	if Debug.peaceful():
+	if Debug.peaceful() or asleep:
 		return
+	_check_doors()
 	var eye := _eye_pos()
 	var look := (-global_basis.z).rotated(Vector3.UP, _look_yaw)
 	var space := get_world_3d().direct_space_state
